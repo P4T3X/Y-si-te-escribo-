@@ -548,3 +548,20 @@ body.hotflash::after{content:"";position:fixed;inset:0;z-index:200;pointer-event
 .bottle{width:80px;height:80px;margin:0 auto 10px;display:grid;place-items:center;animation:spinB 1.2s cubic-bezier(.2,.9,.3,1)}
 .bottle .ai{width:70px;height:70px;color:var(--c)}
 @keyframes spinB{from{transform:rotate(-1080deg)}}
+
+.ai-up .th{animation:aiBob 1.6s ease-in-out infinite}.ai-wand .sp1{animation:aiTw 1.4s infinite}.ai-wand .sp2{animation:aiBlink 1s infinite}.ai-brainUp .pl{animation:aiTw 1.6s infinite}
+.fb{display:flex;gap:6px;align-items:center;margin-left:auto}
+.fbb{background:none;border:1px solid var(--line);color:var(--mut);border-radius:10px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer}
+.fbb .ai{width:18px;height:18px}
+.fbb.on.up{background:#3fd59a22;border-color:var(--green);color:var(--green)}
+.fbb.on.down{background:#ff4f8b22;border-color:var(--pink);color:var(--pink)}
+.acts{flex-wrap:wrap}
+.tweaks{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;animation:slideUp .3s both}
+.tweaks .chip{min-height:36px;padding:6px 12px;font-size:12px}
+.tweakout{margin-top:10px}
+.tweakout .opt{margin-left:10px;border-style:dashed}
+.quick{animation:slideUp .5s both;margin-bottom:14px}
+.quick h3{margin:0 0 8px;font:700 15px "Space Grotesk";display:flex;align-items:center;gap:6px}
+.quick textarea{min-height:60px}
+.learn{display:flex;gap:12px;align-items:center}
+.learn .ai{width:36px;height:36px;color:var(--green)}

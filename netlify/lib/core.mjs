@@ -54,8 +54,39 @@ MÉTODO (lo que mejor funciona al chatear, según coaches y datos de apps de cit
 6. Evita: respuestas de una palabra, frases cliché de ligue, exceso de cumplidos, negatividad, quejas, insistir si no responde, sonar necesitado.
 7. Si el interés es alto, propón verse con algo concreto (actividad + día) ligado a lo que a ella le gusta. El objetivo del chat es la cita, no chatear para siempre.
 8. Mejor cerrar en un punto alto que dejar morir la charla.
-9. Si responde corto, tarde o seco varias veces, dilo con honestidad: soltar también es una opción.`;
+9. Si responde corto, tarde o seco varias veces, dilo con honestidad: soltar también es una opción.
 
+CÓMO SONAR HUMANO (lo más importante):
+- Escribe como un chico real de 18-28 años por WhatsApp: casi todo en minúsculas, sin punto final, frases cortas, a veces sin tildes, "jaja" o "jsjs" solo si hay algo gracioso.
+- Prohibido sonar a IA o a guion: nada de "¡Claro!", "¡Qué interesante!", "Me encantaría saber más", "¿Y tú qué opinas?", "suena genial", signos de exclamación dobles, ni frases de libro de autoayuda.
+- Prohibido el cliché de ligue: nada de "¿te dolió cuando caíste del cielo?", "eres un ángel", "tus ojos son…", ni piropos de póster.
+- Concreto antes que bonito: mejor un detalle real del chat que un cumplido genérico.
+- Imperfecto a propósito: está bien empezar con "oe", "ya pero", "nah", "asu", "jajaja no", "ok pero", usar una abreviación o dejar la idea un poco abierta.
+- Una idea por mensaje. Si la respuesta tiene dos partes, mejor que parezcan dos mensajes cortos separados por " / ".
+- Máximo 1 emoji y solo si ella también usa emojis.
+- Las 6 respuestas deben ser distintas entre sí (no la misma idea con otras palabras).
+
+EJEMPLOS (ella → mal / bien):
+- "jaja y tú qué haces?" → MAL: "¡Hola! Aquí relajándome, ¿y tú qué tal tu día? 😊" / BIEN: "nada, viendo cómo inventarme un plan para salir de aquí jaja"
+- "me fui a la playa hoy" → MAL: "¡Qué bonito! ¿Te divertiste mucho?" / BIEN: "y no me llevaste?? ya me caíste mal" o "ojo que te broncean y ya no te reconozco"
+- "estoy cansadísima" → MAL: "Descansa mucho, te lo mereces 💕" / BIEN: "nivel de cansancio: zombie o persona que aún puede ir por un café?"
+- "jsjs ok" → MAL: "¿Pasó algo? ¿Estás bien?" / BIEN: (no insistir) "bueno, te dejo tranqui, luego te cuento algo que te va a dar risa"`;
+
+const REGIONES = {
+  peru: "Perú: usa jerga peruana natural con moderación (oe, ya, chévere, bacán, asu, causa solo si hay confianza, al toque, xd, jaja), nada de 'güey' ni 'boludo'.",
+  mexico: "México: jerga mexicana natural (wey solo si hay confianza, qué onda, chido, neta, va, jaja), nada de 'pana' ni 'boludo'.",
+  argentina: "Argentina: voseo (vos tenés, querés), jerga rioplatense natural (che, re, posta, dale, jaja).",
+  colombia: "Colombia: jerga colombiana natural (parce solo si hay confianza, qué más, bacano, de una, jaja).",
+  chile: "Chile: jerga chilena natural (wena, po, bacán, cachai, al tiro, jaja), sin exagerar.",
+  espana: "España: español de España natural (tío/tía con confianza, guay, vale, qué fuerte, jaja), usa vosotros si aplica.",
+  neutro: "Español latino neutro, sin jerga marcada de ningún país.",
+};
+function regionCtx(p) { return REGIONES[p.region] ? `\nForma de hablar: ${REGIONES[p.region]}` : ""; }
+function gustosCtx(p) {
+  const li = (p.likes || []).slice(0, 6).map((x) => `"${String(x).slice(0, 140)}"`).join(", ");
+  const di = (p.dislikes || []).slice(0, 6).map((x) => `"${String(x).slice(0, 140)}"`).join(", ");
+  return (li ? `\nRespuestas que al usuario SÍ le gustaron (imita su tono): ${li}.` : "") + (di ? `\nRespuestas que NO le gustaron (evita ese estilo): ${di}.` : "");
+}
 function targetCtx(p) {
   const t = p.target === "chico" ? "un chico (usa él/lo)" : p.target === "persona" ? "una persona (usa lenguaje neutro, sin asumir género)" : "";
   return t ? `\nEl usuario le habla a ${t}. Donde el método dice "ella", aplícalo a esa persona.` : "";
@@ -73,26 +104,26 @@ function crushCtx(c) {
 
 const MODES = {
   reply: (p) => ({
-    text: `${p.hasImages ? "Te paso capturas de un chat. Los mensajes del usuario suelen estar a la DERECHA; los de la otra persona a la IZQUIERDA.\n" : ""}${p.chat ? "Chat en texto:\n" + p.chat + "\n" : ""}${p.ctx ? "Contexto: " + p.ctx + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
+    text: `${p.hasImages ? "Te paso capturas de un chat. Los mensajes del usuario suelen estar a la DERECHA; los de la otra persona a la IZQUIERDA.\n" : ""}${p.chat ? "Chat en texto:\n" + p.chat + "\n" : ""}${p.ctx ? "Contexto: " + p.ctx + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
 Lee el último mensaje de ella y el tono, y propone respuestas.
 JSON: {"interes":0-100,"lectura":"1-2 frases sobre cómo va","picara":[{"msg":"","por":"por qué funciona","tecnica":"nombre corto de la técnica del MÉTODO, ej. Callback"},{"msg":"","por":"","tecnica":""}],"normal":[{"msg":"","por":"","tecnica":""},{"msg":"","por":"","tecnica":""}],"seguir":[{"msg":"","por":"","tecnica":""},{"msg":"","por":"","tecnica":""}],"error":"si el usuario cometió un error en el chat (modo entrevista, respuestas secas, etc.), dilo en una frase; si no, vacío","consejo":"consejo corto"}`,
     max: 1200,
   }),
   opener: (p) => ({
-    text: `${p.hasImages ? "Te paso capturas de su perfil (fotos, bio, historias). Fíjate en detalles concretos: lugares, mascotas, gustos, estilo.\n" : ""}${p.bio ? "Lo que el usuario sabe de ella: " + p.bio + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
+    text: `${p.hasImages ? "Te paso capturas de su perfil (fotos, bio, historias). Fíjate en detalles concretos: lugares, mascotas, gustos, estilo.\n" : ""}${p.bio ? "Lo que el usuario sabe de ella: " + p.bio + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
 Crea 6 mensajes para iniciar conversación, basados en detalles concretos (nada de "hola, ¿cómo estás?"). Mezcla tipos.
 JSON: {"detalles":["detalle que notaste", "..."],"abridores":[{"tipo":"pícaro|gracioso|curioso|directo","msg":"","por":""}]}`,
     max: 1000,
   }),
   check: (p) => ({
     text: `El usuario está a punto de mandar este mensaje: "${p.mensaje}".${p.chat ? "\nContexto del chat:\n" + p.chat : ""}${crushCtx(p.crush)}
-Evalúalo con honestidad usando el MÉTODO antes de que lo envíe.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
+Evalúalo con honestidad usando el MÉTODO antes de que lo envíe.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
 JSON: {"puntaje":0-10,"veredicto":"frase corta y graciosa","bien":["lo que funciona"],"riesgos":["lo que puede salir mal"],"mejoradas":[{"msg":"","por":""},{"msg":"","por":""}]}`,
     max: 800,
   }),
   decode: (p) => ({
     text: `Ella escribió: "${p.mensaje}".${p.chat ? "\nContexto del chat:\n" + p.chat : ""}${crushCtx(p.crush)}
-Decodifica qué pudo querer decir. Sé realista, sin crear falsas esperanzas.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
+Decodifica qué pudo querer decir. Sé realista, sin crear falsas esperanzas.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
 JSON: {"lecturas":[{"significado":"","probabilidad":0-100}],"senales":["señal que se nota en el mensaje"],"que_hacer":"consejo corto","respuesta":{"msg":"","por":""}}`,
     max: 800,
   }),
@@ -108,14 +139,20 @@ Revisa su perfil como coach honesto y amable. Juzga solo lo que se ve (calidad d
 JSON: {"puntaje":0-100,"resumen":"1-2 frases","primera_foto":"qué foto poner primero (por su número) y por qué","fotos":[{"n":1,"nota":0-10,"consejo":"breve"}],"bio_comentario":"qué está bien o mal de la bio","bios":["3 bios nuevas cortas en su estilo"],"agregar":["tipo de foto que le falta"]}`,
     max: 1200,
   }),
+  tweak: (p) => ({
+    text: `Este es un mensaje que el usuario piensa mandar: "${p.msg}".${p.chat ? "\nContexto:\n" + p.chat : ""}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
+Reescríbelo ${p.accion || "más natural"}. Dame 2 versiones distintas, igual de cortas o más, que suenen 100% humanas.
+JSON: {"opciones":[{"msg":"","por":"qué cambiaste"},{"msg":"","por":""}]}`,
+    max: 400,
+  }),
   invite: (p) => ({
-    text: `El usuario quiere invitar a salir a ${p.crush?.name || "una chica"}.${crushCtx(p.crush)}${p.chat ? "\nCómo va el chat:\n" + p.chat : ""}${p.ciudad ? "\nCiudad: " + p.ciudad : ""}${p.presupuesto ? "\nPresupuesto: " + p.presupuesto : ""}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
+    text: `El usuario quiere invitar a salir a ${p.crush?.name || "una chica"}.${crushCtx(p.crush)}${p.chat ? "\nCómo va el chat:\n" + p.chat : ""}${p.ciudad ? "\nCiudad: " + p.ciudad : ""}${p.presupuesto ? "\nPresupuesto: " + p.presupuesto : ""}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
 Propón 3 planes de primera cita concretos, baratos y cómodos (lugares públicos, de día o temprano), ligados a lo que a ella le gusta, y para cada uno un mensaje para invitarla con día propuesto. Incluye cuándo conviene mandarlo.
 JSON: {"listo":0-100,"comentario":"¿ya es buen momento para invitarla? 1 frase","planes":[{"titulo":"","por":"por qué a ella le gustaría","msg":"mensaje para invitarla"}],"si_dice_no":"cómo responder con buena onda si no puede"}`,
     max: 1000,
   }),
   double: (p) => ({
-    text: `Situación: ${p.quien === "yo" ? "el usuario escribió último y ella no ha respondido" : "ella escribió último"}. Tiempo desde el último mensaje: ${p.tiempo || "no indicado"}.${p.chat ? "\nÚltimos mensajes:\n" + p.chat : ""}${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
+    text: `Situación: ${p.quien === "yo" ? "el usuario escribió último y ella no ha respondido" : "ella escribió último"}. Tiempo desde el último mensaje: ${p.tiempo || "no indicado"}.${p.chat ? "\nÚltimos mensajes:\n" + p.chat : ""}${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}${regionCtx(p)}${gustosCtx(p)}
 ¿Debería el usuario escribirle ahora? Sé honesto: insistir demasiado resta. Si conviene escribir, propone mensajes que no suenen a reclamo (nada de "¿por qué no respondes?"), ligeros y con algo nuevo.
 JSON: {"semaforo":"verde|amarillo|rojo","veredicto":"frase corta","por":"explicación breve","esperar":"cuánto conviene esperar si no es verde","mensajes":[{"msg":"","por":""},{"msg":"","por":""}]}`,
     max: 700,
@@ -123,7 +160,7 @@ JSON: {"semaforo":"verde|amarillo|rojo","veredicto":"frase corta","por":"explica
   sim: (p) => ({
     system: `Interpretas a ${p.persona?.name || "Vale"}, ${p.persona?.genero === "m" ? "un chico ficticio" : "una chica ficticia"} de ${p.persona?.edad || 22} años, en un simulador para que el usuario practique a chatear. NUNCA rompas el personaje ni digas que eres IA.
 Personalidad: ${p.persona?.vibe || "simpática pero no fácil de impresionar"}.
-Forma de escribir: ${p.persona?.estilo || "minúsculas, frases cortas, 'jaja', algún emoji"}.
+Forma de escribir: ${p.persona?.estilo || "minúsculas, frases cortas, 'jaja', algún emoji"}.${REGIONES[p.region] ? " Eres de " + REGIONES[p.region].split(":")[0] + ", habla como alguien de ahí." : ""}
 ${p.escenario ? "ESCENARIO DE PRÁCTICA: " + p.escenario + "\nActúa según esa situación desde el inicio.\n" : ""}${p.persona?.genero === "m" ? "Eres hombre: adapta todo (pronombres, forma de hablar) a un chico.\n" : ""}${p.hot ? "MODO HOT: eres más coqueta y atrevida de lo normal y te gusta el juego de tensión y doble sentido (sin nada explícito).\n" : ""}Dificultad: ${p.dificultad || "normal"} (fácil = se abre rápido; normal = hay que ganarse su interés; difícil = muy exigente, se aburre fácil).
 ${p.llamada ? `ESTO ES UNA LLAMADA DE VOZ, no un chat. Habla como se habla por teléfono: frases cortas y naturales dichas en voz alta, con muletillas ("eh", "o sea", "a ver", "jaja"), sin emojis, sin abreviaciones, sin "jsjs". Si él se queda callado o es aburrido, lo notas ("¿aló?", "bueno…"). Si es irrespetuoso o muy pesado, cuelgas ("colgar": true). Pon "msgs" con UNA sola frase hablada.
 ` : ""}Escribe como una chica real por WhatsApp, no como un asistente:

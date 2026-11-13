@@ -56,6 +56,10 @@ const ICONS = {
   brain: '<path d="M18 8a6 6 0 0 0-6 6 6 6 0 0 0-4 10 6 6 0 0 0 5 9 6 6 0 0 0 11 3V10a5 5 0 0 0-6-2zM30 8a6 6 0 0 1 6 6 6 6 0 0 1 4 10 6 6 0 0 1-5 9 6 6 0 0 1-11 3"/><circle class="b1" cx="18" cy="20" r="2" fill="var(--ai2,#ffd166)" stroke="none"/><circle class="b2" cx="31" cy="27" r="2" fill="var(--ai2,#ffd166)" stroke="none"/>',
   phone: '<path class="ring" d="M14 6h6l3 9-4 3a24 24 0 0 0 11 11l3-4 9 3v6a4 4 0 0 1-4 4C21 38 10 27 10 10a4 4 0 0 1 4-4z"/><path class="wv" d="M30 6a12 12 0 0 1 12 12M30 12a6 6 0 0 1 6 6" stroke="var(--ai2,#3fd59a)"/>',
   share: '<path d="M24 30V6M15 14l9-9 9 9"/><path d="M10 24v14a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4V24"/>',
+  up: '<path class="th" d="M14 22l8-14a4 4 0 0 1 6 3l-1 9h11a4 4 0 0 1 4 5l-3 13a4 4 0 0 1-4 3H14z"/><path d="M6 22h8v19H6z"/>',
+  down: '<path class="th2" d="M14 26l8 14a4 4 0 0 0 6-3l-1-9h11a4 4 0 0 0 4-5l-3-13a4 4 0 0 0-4-3H14z"/><path d="M6 7h8v19H6z"/>',
+  wand: '<path d="M10 38L32 16"/><path class="sp1" d="M36 6l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="currentColor"/><path class="sp2" d="M20 8l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="var(--ai2,#ffd166)" stroke="none"/>',
+  brainUp: '<path d="M18 8a6 6 0 0 0-6 6 6 6 0 0 0-4 10 6 6 0 0 0 5 9 6 6 0 0 0 11 3V10a5 5 0 0 0-6-2zM30 8a6 6 0 0 1 6 6 6 6 0 0 1 4 10 6 6 0 0 1-5 9 6 6 0 0 1-11 3"/><path class="pl" d="M38 2v8M34 6h8" stroke="var(--ai2,#3fd59a)"/>',
 };
 function ic(name, cls = "") {
   const b = ICONS[name];

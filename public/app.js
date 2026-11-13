@@ -84,6 +84,9 @@ async function ai(mode, payload) {
   if (pr.voice && pr.voiceOn !== false) payload = { ...payload, voice: pr.voice };
   if (pr.hot) payload = { ...payload, hot: true };
   if (pr.target && pr.target !== "chica") payload = { ...payload, target: pr.target };
+  if (pr.region) payload = { ...payload, region: pr.region };
+  if ((DATA.likes || []).length) payload = { ...payload, likes: DATA.likes.slice(0, 6) };
+  if ((DATA.dislikes || []).length) payload = { ...payload, dislikes: DATA.dislikes.slice(0, 6) };
   const d = await api("ai", "POST", { mode, payload });
   return d.result;
 }
@@ -109,6 +112,7 @@ const BADGES = [
   { id: "share", e: "share", t: "Lo compartí" },
   { id: "heat", e: "fire", t: "Zona HOT" },
   { id: "escena", e: "target", t: "Escenario superado" },
+  { id: "aprende", e: "brainUp", t: "IA entrenada" },
   { id: "perfil", e: "camera2", t: "Perfil revisado" },
 ];
 function level(xp) { let i = 0; LEVELS.forEach((l, k) => { if (xp >= l[0]) i = k; }); return i; }
@@ -267,7 +271,7 @@ function enterApp(isNew) {
   takeShared().then((ok) => ok && go("reply"));
   $("#auth").classList.add("hide"); $("#landing").classList.add("hide"); $("#app").classList.remove("hide");
   renderTop(); go("home");
-  if (isNew) { hearts(innerWidth / 2, innerHeight / 3, 24); setTimeout(() => toast("Tip: en Perfil elige si le hablas a chicas, chicos o sin especificar"), 4000); modal(`<div class="big" data-ic="face-flirty"></div><h2>¡Bienvenido, ${esc(DATA.profile.name)}!</h2><p class="lead">Gana XP usando las herramientas, mantén tu racha diaria y desbloquea logros. Empieza subiendo la captura de un chat.</p>`); }
+  if (isNew) { hearts(innerWidth / 2, innerHeight / 3, 24); setTimeout(() => toast("Tip: en Perfil elige de dónde eres y a quién le hablas"), 4000); modal(`<div class="big" data-ic="face-flirty"></div><h2>¡Bienvenido, ${esc(DATA.profile.name)}!</h2><p class="lead">Gana XP usando las herramientas, mantén tu racha diaria y desbloquea logros. Empieza subiendo la captura de un chat.</p>`); }
 }
 async function boot() {
   if (!TOKEN) return showLanding();
@@ -349,9 +353,40 @@ async function withLoading(btn, msgs, fn) {
 }
 function optCard(o, cat, color, delay, tag) {
   const isFav = DATA.favs.some((f) => f.msg === o.msg);
-  return `<div class="opt ${cat}" style="--c:${color};animation-delay:${delay}s">${tag ? `<span class="tag tec">${esc(tag)}</span>` : ""}<p>${esc(o.msg)}</p>${o.por ? `<small>${esc(o.por)}</small>` : ""}<div class="acts"><button class="copy" data-copy="${esc(o.msg)}" data-cat="${cat}">${cat === "picara" ? ic("copy") + " Copiar" : ic("copy") + " Copiar"}</button><button class="copy ${isFav ? "faved" : ""}" data-fav="${esc(o.msg)}" data-cat="${cat}" aria-label="Guardar en favoritos">${isFav ? ic("starF") + " Guardada" : ic("star") + " Guardar"}</button></div></div>`;
+  const liked = (DATA.likes || []).includes(o.msg), disliked = (DATA.dislikes || []).includes(o.msg);
+  return `<div class="opt ${cat}" style="--c:${color};animation-delay:${delay}s">${tag ? `<span class="tag tec">${esc(tag)}</span>` : ""}<p>${esc(o.msg)}</p>${o.por ? `<small>${esc(o.por)}</small>` : ""}<div class="acts"><button class="copy" data-copy="${esc(o.msg)}" data-cat="${cat}">${ic("copy")} Copiar</button><button class="copy ${isFav ? "faved" : ""}" data-fav="${esc(o.msg)}" data-cat="${cat}" aria-label="Guardar en favoritos">${isFav ? ic("starF") + " Guardada" : ic("star") + " Guardar"}</button><button class="copy" data-tw="${esc(o.msg)}" aria-label="Ajustar respuesta">${ic("wand")} Ajustar</button><span class="fb"><button class="fbb up ${liked ? "on" : ""}" data-like="${esc(o.msg)}" aria-label="Me gusta">${ic("up")}</button><button class="fbb down ${disliked ? "on" : ""}" data-dislike="${esc(o.msg)}" aria-label="No me gusta">${ic("down")}</button></span></div></div>`;
+}
+const TWEAKS = ["más corto", "más pícaro", "más tierno", "más gracioso", "más directo", "más natural"];
+function wireExtras(root = V) {
+  const mark = (msg, good, btn) => {
+    DATA.likes = (DATA.likes || []).filter((x) => x !== msg); DATA.dislikes = (DATA.dislikes || []).filter((x) => x !== msg);
+    const opt = btn.closest(".opt"); const was = btn.classList.contains("on");
+    opt.querySelectorAll(".fbb").forEach((b) => b.classList.remove("on"));
+    if (!was) { (good ? DATA.likes : DATA.dislikes).unshift(msg); btn.classList.add("on"); }
+    DATA.likes = DATA.likes.slice(0, 20); DATA.dislikes = DATA.dislikes.slice(0, 20); save();
+    if (!was) { toast(good ? "Anotado: la IA hará más respuestas así" : "Anotado: la IA evitará ese estilo"); if ((DATA.likes.length + DATA.dislikes.length) >= 5) badge("aprende"); }
+  };
+  $$("[data-like]", root).forEach((b) => (b.onclick = (e) => { mark(b.dataset.like, true, b); if (b.classList.contains("on")) hearts(e.clientX, e.clientY, 5); }));
+  $$("[data-dislike]", root).forEach((b) => (b.onclick = () => mark(b.dataset.dislike, false, b)));
+  $$("[data-tw]", root).forEach((b) => (b.onclick = () => {
+    const opt = b.closest(".opt"); let box = opt.querySelector(".tweaks");
+    if (box) { box.remove(); return; }
+    box = document.createElement("div"); box.className = "tweaks";
+    box.innerHTML = TWEAKS.map((t) => `<button class="chip" data-a="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("");
+    opt.append(box);
+    $$("[data-a]", box).forEach((c) => (c.onclick = async () => {
+      $$("[data-a]", box).forEach((x) => (x.disabled = true)); c.textContent = "Pensando…";
+      try {
+        const r = await ai("tweak", { msg: b.dataset.tw, accion: c.dataset.a });
+        const out = document.createElement("div"); out.className = "tweakout";
+        out.innerHTML = (r.opciones || []).map((o) => optCard(o, "normal", "var(--violet)", 0, c.dataset.a)).join("");
+        box.replaceWith(out); wireOpts(out); addXP(2);
+      } catch (e) { toast(e.message); box.remove(); }
+    }));
+  }));
 }
 function wireOpts(root = V) {
+  wireExtras(root);
   $$("[data-copy]", root).forEach((b) => (b.onclick = async (e) => {
     hearts(e.clientX, e.clientY, b.dataset.cat === "picara" ? 16 : 8);
     try { await navigator.clipboard.writeText(b.dataset.copy); toast(b.dataset.cat === "picara" ? "¡Copiado! Atrévete" : "¡Copiado! Ahora mándaselo"); addXP(2); }
@@ -417,14 +452,17 @@ const VIEWS = {
     const s = DATA.streak.count || 0;
     V.innerHTML = `
       ${(() => { const r = retoHoy(), done = DATA.daily && DATA.daily.date === new Date().toISOString().slice(0, 10) && DATA.daily.done; return `<div class="card daily ${done ? "done" : ""}">${ic(done ? "check" : r.ic)}<div><small>Reto del día</small><b>${esc(r.t)}</b></div><span class="xp">${done ? "Hecho" : "+30 XP"}</span></div>`; })()}
+      <form class="card quick" id="qForm"><h3>${ic("bolt")} Respuesta rápida</h3><textarea id="qText" rows="2" placeholder="Pega lo que te escribió y te doy respuestas al toque"></textarea><button class="go" style="margin-top:10px">${ic("sparkle")} Responder</button></form>
       <div class="card streak"><span class="fire">${ic("fire")}</span><div><b>Racha de ${s} día${s === 1 ? "" : "s"}</b><small>${s >= 3 ? "¡Estás que ardes! No la pierdas." : "Entra cada día para mantener tu racha."}</small></div></div>
       ${DATA.profile.hot ? `<div class="card hotbanner">${ic("fire")}<div><b>Modo HOT activo</b><small>Todas las respuestas salen más atrevidas</small></div></div>` : ""}
       <div class="grid">${Object.entries(TOOLS).filter(([, t]) => !t.hot || DATA.profile.hot).map(([k, t], i) => `<button class="tool ${t.big ? "big" : ""}" data-tool="${k}" style="--c:${t.c};animation-delay:${i * 0.07}s">${t.nuevo ? '<span class="new">NUEVO</span>' : ""}<span class="ic">${ic(t.e)}</span><b>${t.t}</b><small>${t.d}</small></button>`).join("")}</div>
       <div class="card tipday" style="animation-delay:.4s"><b>${ic("bulb")} Tip del día:</b> ${TIPS[new Date().getDate() % TIPS.length]}</div>`;
     $$("[data-tool]", V).forEach((b) => (b.onclick = () => go(b.dataset.tool)));
+    $("#qForm", V).onsubmit = (e) => { e.preventDefault(); const t = $("#qText", V).value.trim(); if (!t) return toast("Pega primero lo que te escribió"); go("reply", { quick: t }); };
   },
 
-  reply(crushId) {
+  reply(arg) {
+    const quick = arg && arg.quick ? arg.quick : null, crushId = typeof arg === "string" ? arg : null;
     const up = uploader("dropR");
     V.innerHTML = `${backBtn()}<h1 class="title">${ic("camera")} Responder chat</h1><p class="lead">Sube la captura y te doy respuestas pícaras, normales y para seguir la conversación.</p>
       ${up.html}
@@ -452,6 +490,7 @@ const VIEWS = {
       });
     };
     $("#rGo", V).onclick = run;
+    if (quick) { $("#rText", V).value = "Ella: " + quick; setTimeout(run, 150); }
   },
 
   opener() {
@@ -891,6 +930,8 @@ const VIEWS = {
       <div class="pfoto"><button class="avatar" id="pAv" aria-label="Cambiar foto">${avatarInner()}</button><div class="btns"><button class="btn" id="pPhoto">${ic("camera2")} ${DATA.profile.photo ? "Cambiar foto" : "Agregar foto"}</button>${DATA.profile.photo ? `<button class="btn" id="pDelPhoto">${ic("close")} Quitar</button>` : ""}<input type="file" id="pFile" accept="image/*" hidden></div></div>
       <label for="pName">Tu nombre o apodo</label><input id="pName" value="${esc(DATA.profile.name)}">
       <label>Le hablo a…</label><div class="row" id="pTarget">${[["chica", "Chicas"], ["chico", "Chicos"], ["persona", "Sin especificar"]].map(([v, t]) => `<button class="chip ${(DATA.profile.target || "chica") === v ? "on" : ""}" data-v="${v}">${t}</button>`).join("")}</div>
+      <label>¿De dónde eres? (la IA habla con tu jerga)</label><div class="row" id="pRegion">${[["peru", "Perú"], ["mexico", "México"], ["argentina", "Argentina"], ["colombia", "Colombia"], ["chile", "Chile"], ["espana", "España"], ["neutro", "Neutro"]].map(([v, t]) => `<button class="chip ${(DATA.profile.region || "neutro") === v ? "on" : ""}" data-v="${v}">${t}</button>`).join("")}</div>
+      <div class="card learn" style="margin-top:14px">${ic("brainUp")}<div><b style="font-family:Space Grotesk">La IA aprende de ti</b><small class="lead" style="display:block">${(DATA.likes || []).length} respuestas que te gustaron · ${(DATA.dislikes || []).length} que no. Usa 👍 y 👎 en cada respuesta para que suene más a ti.</small>${(DATA.likes || []).length + (DATA.dislikes || []).length ? `<button class="btn" id="pLearnReset" style="margin-top:8px">${ic("refresh")} Empezar de cero</button>` : ""}</div></div>
       <label>Tu ícono en el ranking</label><div class="row" id="pIcon">${["face", "face-cool", "face-flirty", "face-laugh", "fire", "bolt", "starF", "heart"].map((v) => `<button class="chip ${(DATA.profile.icon || "face") === v ? "on" : ""}" data-v="${v}" aria-label="${v}">${ic(v)}</button>`).join("")}</div>
       <div class="card voicecard"><h3 style="margin:0 0 6px;font-size:15px;font-family:Space Grotesk">${ic("voice")} Suena como tú ${DATA.profile.voice ? '<span class="on">· activado</span>' : ""}</h3><p class="lead" style="margin:0 0 8px">Pega 3 a 5 mensajes reales que hayas escrito tú. La IA copia tu forma de escribir (minúsculas, jerga, emojis) para que las respuestas no suenen a robot.</p>
         <textarea id="pVoice" rows="4" placeholder="ej: jajaja nooo pero q pasó&#10;oe yaaa vamos el sábado&#10;tmr no puede ser 😂">${esc(DATA.profile.voice || "")}</textarea>
@@ -908,6 +949,8 @@ const VIEWS = {
     $("#pName", V).onchange = (e) => { DATA.profile.name = e.target.value.trim().slice(0, 40); save(); renderTop(); toast("Nombre guardado"); };
     $("#pOut", V).onclick = logout;
     $$("#pTarget .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.target = b.dataset.v; save(); toast("Listo: el simulador y las respuestas se adaptan"); go("profile"); }));
+    $$("#pRegion .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.region = b.dataset.v; save(); toast("Listo: la IA ahora habla así"); go("profile"); }));
+    if ($("#pLearnReset", V)) $("#pLearnReset", V).onclick = () => { DATA.likes = []; DATA.dislikes = []; save(); go("profile"); };
     $$("#pIcon .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.icon = b.dataset.v; save(); go("profile"); }));
     if ($("#hotInline", V)) $("#hotInline", V).onsubmit = (e) => { e.preventDefault(); if (activarHot($("#hotIn", V).value)) go("profile"); else { $("#hotIn", V).value = ""; toast("Código incorrecto"); } };
     $("#hotNewF", V).onsubmit = (e) => { e.preventDefault(); const c = normCode($("#hotNew", V).value); if (c.length < 3) return toast("Mínimo 3 letras o números"); DATA.profile.hotCode = c; save(); toast("Código guardado: " + c); go("profile"); };
