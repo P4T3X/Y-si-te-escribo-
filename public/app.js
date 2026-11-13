@@ -236,13 +236,22 @@ function setHot(on, anim) {
 }
 let logoTaps = [];
 function secretTap() {
-  const now = Date.now(); logoTaps = logoTaps.filter((t) => now - t < 3000); logoTaps.push(now);
-  if (logoTaps.length >= 7) { logoTaps = []; pedirCodigo(); }
+  const now = Date.now(); logoTaps = logoTaps.filter((t) => now - t < 4000); logoTaps.push(now);
+  if (logoTaps.length >= 5) { logoTaps = []; pedirCodigo(); }
+}
+const normCode = (v) => String(v || "").toUpperCase().normalize("NFD").replace(/[^A-Z0-9]/g, "");
+function codigoValido(v) { const c = normCode(v); return !!c && (c === "HOT" || c === normCode(DATA.profile.hotCode)); }
+function activarHot(v) {
+  if (!codigoValido(v)) return false;
+  setHot(true, true); save(); toast("Modo HOT activado"); return true;
 }
 function pedirCodigo() {
-  modal(`<div class="big" data-ic="fire"></div><h2>Zona secreta</h2><p class="lead">Escribe el código especial para activar el Modo HOT.</p><input id="hotCode" placeholder="Código" autocomplete="off" style="text-align:center;font:700 22px Space Grotesk;letter-spacing:4px;margin:6px 0 4px">`);
-  setTimeout(() => { const i = $("#hotCode"); if (!i) return; i.focus(); const ok = () => { if (i.value.trim().toUpperCase() === "HOT") { $("#modal").classList.add("hide"); setHot(true, true); save(); toast("Modo HOT activado"); go(current); } else if (i.value) { i.value = ""; i.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); toast("Código incorrecto"); } };
-    i.onkeydown = (e) => { if (e.key === "Enter") ok(); }; $("#mClose").textContent = "Activar"; $("#mClose").onclick = ok; }, 50);
+  modal(`<div class="big" data-ic="fire"></div><h2>Zona secreta</h2><p class="lead">Escribe tu código secreto para activar el Modo HOT.</p><form id="hotForm"><input id="hotCode" placeholder="Código" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" style="text-align:center;font:700 22px Space Grotesk;letter-spacing:4px;margin:6px 0 4px"></form>`);
+  const i = $("#hotCode"), btn = $("#mClose");
+  btn.textContent = "Activar";
+  const ok = (e) => { if (e) e.preventDefault(); if (activarHot(i.value)) { $("#modal").classList.add("hide"); go(current); } else { i.value = ""; i.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); toast(i.value ? "Código incorrecto" : "Código incorrecto"); } };
+  btn.onclick = ok; $("#hotForm").onsubmit = ok;
+  setTimeout(() => i.focus(), 80);
 }
 async function takeShared() {
   if (!/[?&]shared=1/.test(location.search) || !("caches" in window)) return false;
@@ -391,6 +400,7 @@ const TOOLS = {
   decode: { e: "search", t: "¿Qué quiso decir?", d: "Decodifica sus mensajes raros", c: "var(--blue)", nuevo: true },
   invite: { e: "calendar", t: "Invítala", d: "Planes de cita y el mensaje para invitarla", c: "var(--pink)", nuevo: true },
   double: { e: "traffic", t: "¿Le escribo otra vez?", d: "Semáforo para no insistir de más", c: "var(--yellow)", nuevo: true },
+  juegos: { e: "party", t: "Juegos para la previa", d: "Verdad o reto, yo nunca, botella… con versión picante", c: "#ff2d6f", nuevo: true },
   escenas: { e: "target", t: "Escenarios", d: "Practica situaciones difíciles: reconectar, pedir el número, primera cita…", c: "var(--green)", nuevo: true },
   perfil: { e: "camera2", t: "Revisa mi perfil", d: "Qué foto poner primero y una bio que funcione", c: "#ff7a3d", nuevo: true },
   progreso: { e: "chart", t: "Mi progreso", d: "Cómo vas mejorando semana a semana", c: "var(--blue)", nuevo: true },
@@ -639,6 +649,7 @@ const VIEWS = {
   },
 
   ruleta() { vistaRuleta(); },
+  juegos() { vistaJuegos(); },
 
   invite(crushId) {
     V.innerHTML = `${backBtn()}<h1 class="title">${ic("calendar")} Invítala</h1><p class="lead">El chat es para llegar a la cita. Te digo si ya es buen momento, te doy planes concretos según lo que le gusta y el mensaje exacto para invitarla.</p>
@@ -888,15 +899,18 @@ const VIEWS = {
       <h3 style="margin:22px 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)">Logros (${DATA.badges.length}/${BADGES.length})</h3>
       <div class="badges">${BADGES.map((b) => `<div class="badge ${DATA.badges.includes(b.id) ? "got" : ""}"><span>${ic(b.e)}</span>${b.t}</div>`).join("")}</div>
       ${DATA.history.length ? `<h3 style="margin:22px 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)">Actividad reciente</h3><div class="card"><ul class="list">${DATA.history.slice(0, 8).map((h) => `<li>${TOOLS[h.tool] ? ic(TOOLS[h.tool].e) : ""} ${esc(h.summary)}</li>`).join("")}</ul></div>` : ""}
-      <div class="card voicecard ${DATA.profile.hot ? "hotcard" : ""}"><h3 style="margin:0 0 6px;font-size:15px;font-family:Space Grotesk">${ic("fire")} ${DATA.profile.hot ? "Modo HOT activo" : "Código secreto"}</h3>
-        ${DATA.profile.hot ? `<p class="lead" style="margin:0 0 8px">Las respuestas y el simulador están en modo atrevido.</p><button class="btn" id="hotOff">${ic("snow")} Desactivar Modo HOT</button>` : `<p class="lead" style="margin:0 0 8px">¿Tienes un código especial? Escríbelo aquí.</p><button class="btn" id="hotOn">${ic("bolt")} Ingresar código</button>`}</div>
+      <div class="card voicecard ${DATA.profile.hot ? "hotcard" : ""}"><h3 style="margin:0 0 6px;font-size:15px;font-family:Space Grotesk">${ic("fire")} ${DATA.profile.hot ? "Modo HOT activo" : "Modo HOT"}</h3>
+        ${DATA.profile.hot ? `<p class="lead" style="margin:0 0 8px">Las respuestas, el simulador y los juegos están en modo atrevido.</p><button class="btn" id="hotOff">${ic("snow")} Desactivar Modo HOT</button>` : `<p class="lead" style="margin:0 0 8px">Escribe tu código para activarlo. Si no creaste uno, el código es <b>HOT</b>.</p><form class="sendrow" id="hotInline"><input id="hotIn" placeholder="Código" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go"><button aria-label="Activar">${ic("bolt")}</button></form>`}
+        <label for="hotNew">Crea tu propio código secreto</label><form class="sendrow" id="hotNewF"><input id="hotNew" placeholder="${DATA.profile.hotCode ? "Ya tienes uno · escribe otro para cambiarlo" : "Ej: PATO23"}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false"><button aria-label="Guardar código">${ic("check")}</button></form>
+        <small class="lead">Truco: toca 5 veces rápido el logo de arriba para abrir la zona secreta.</small></div>
       <button class="go alt" id="pOut">${ic("logout")} Cerrar sesión</button>`;
     wireStyles();
     $("#pName", V).onchange = (e) => { DATA.profile.name = e.target.value.trim().slice(0, 40); save(); renderTop(); toast("Nombre guardado"); };
     $("#pOut", V).onclick = logout;
     $$("#pTarget .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.target = b.dataset.v; save(); toast("Listo: el simulador y las respuestas se adaptan"); go("profile"); }));
     $$("#pIcon .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.icon = b.dataset.v; save(); go("profile"); }));
-    if ($("#hotOn", V)) $("#hotOn", V).onclick = pedirCodigo;
+    if ($("#hotInline", V)) $("#hotInline", V).onsubmit = (e) => { e.preventDefault(); if (activarHot($("#hotIn", V).value)) go("profile"); else { $("#hotIn", V).value = ""; toast("Código incorrecto"); } };
+    $("#hotNewF", V).onsubmit = (e) => { e.preventDefault(); const c = normCode($("#hotNew", V).value); if (c.length < 3) return toast("Mínimo 3 letras o números"); DATA.profile.hotCode = c; save(); toast("Código guardado: " + c); go("profile"); };
     if ($("#hotOff", V)) $("#hotOff", V).onclick = () => { setHot(false); save(); toast("Modo HOT desactivado"); go("profile"); };
     const pick = () => $("#pFile", V).click();
     $("#pAv", V).onclick = pick; $("#pPhoto", V).onclick = pick;
@@ -1155,6 +1169,97 @@ function vistaRuleta() {
       wireOpts(); addXP(2); dailyEvent({ type: "tool", v: "ruleta" });
     }, reduce ? 50 : 4100);
   };
+}
+
+
+/* ---------- Juegos para la previa ---------- */
+const JUEGOS = {
+  verdad: {
+    suave: ["¿Cuál ha sido tu cita más desastrosa?", "¿A quién del grupo le pedirías consejo de amor?", "¿Qué es lo más vergonzoso que te ha pasado frente a alguien que te gustaba?", "¿Cuál es tu tipo ideal en 3 palabras?", "¿Alguna vez stalkeaste a alguien hasta fotos de hace años?", "¿Cuál es el apodo más raro que te han puesto?", "¿Qué canción te dedicarías a ti mismo?", "¿Cuál es tu mayor red flag?", "¿Qué fue lo último que buscaste en Google?", "¿Has dejado en visto a alguien que te gustaba?", "¿Cuál es tu peor hábito?", "¿Qué es lo que más te atrae de una persona?"],
+    hot: ["¿Quién del grupo te parece más guapo o guapa?", "¿Cuál es el mensaje más atrevido que has mandado?", "¿Alguna vez te gustó alguien que está aquí?", "¿Cuál fue tu primer beso y cómo fue?", "¿Qué es lo más loco que has hecho por alguien que te gustaba?", "Del 1 al 10, ¿qué tan buen coqueto o coqueta eres?", "¿Con quién de tus contactos tienes más química por chat?", "¿Cuál es la frase para ligar que mejor te ha funcionado?", "¿Qué te pone nervioso o nerviosa en una cita?", "¿Has escrito un mensaje y lo borraste antes de enviarlo? ¿A quién?", "¿Qué es lo primero que miras en alguien?", "¿Cuál es tu crush famoso?"],
+  },
+  reto: {
+    suave: ["Imita a alguien del grupo hasta que adivinen quién es", "Habla con acento extranjero hasta tu próximo turno", "Cuenta un chiste malo; si nadie se ríe, repites", "Haz tu mejor pose de modelo por 10 segundos", "Deja que el grupo te ponga un apodo por el resto de la noche", "Canta el coro de una canción que elija el grupo", "Haz 10 sentadillas mientras dices cumplidos", "Muestra la última foto de tu galería (puedes elegir otra si es privada)", "Baila sin música por 15 segundos", "Di 3 cosas buenas de la persona a tu izquierda"],
+    hot: ["Mándale un mensaje coqueto a tu crush (lo escribe el grupo, tú decides si lo envías)", "Dile tu mejor piropo a la persona de tu derecha", "Muéstrale al grupo tu último chat con alguien que te gusta (o pasa)", "Haz tu mejor mirada seductora a la cámara por 5 segundos", "Imita cómo coqueteas por chat, en voz alta", "Escoge a alguien y dile qué es lo que más te atrae de su personalidad", "Deja que el grupo escriba tu bio de Tinder", "Cuenta en 20 segundos cómo sería tu cita perfecta", "Llama a alguien y dile que lo extrañas (puedes elegir a tu mamá)", "Susúrrale un cumplido a alguien del grupo"],
+  },
+  yonunca: {
+    suave: ["Yo nunca nunca he dejado a alguien en visto a propósito", "Yo nunca nunca he fingido estar ocupado para no salir", "Yo nunca nunca he stalkeado a un ex", "Yo nunca nunca me he enamorado de alguien por chat", "Yo nunca nunca he mandado un audio y luego lo borré", "Yo nunca nunca he olvidado el nombre de alguien con quien salí", "Yo nunca nunca he usado una frase de internet para ligar", "Yo nunca nunca he llorado viendo una película romántica"],
+    hot: ["Yo nunca nunca he besado a alguien en la primera cita", "Yo nunca nunca he tenido un crush en alguien de este grupo", "Yo nunca nunca he mandado un mensaje coqueto y me arrepentí", "Yo nunca nunca he salido con dos personas en la misma semana", "Yo nunca nunca he besado a alguien que conocí ese mismo día", "Yo nunca nunca he escrito a un ex a medianoche", "Yo nunca nunca he dado el primer beso yo", "Yo nunca nunca he tenido una cita a ciegas"],
+  },
+  prefieres: {
+    suave: ["¿Qué prefieres: que te dejen en visto o que te respondan con 'ok'?", "¿Qué prefieres: cita en la playa o en un concierto?", "¿Qué prefieres: que te escriban todos los días o que te sorprendan de vez en cuando?", "¿Qué prefieres: primera cita con cena o con helado y caminar?", "¿Qué prefieres: alguien muy gracioso o muy detallista?", "¿Qué prefieres: audios o mensajes de texto?"],
+    hot: ["¿Qué prefieres: un beso inesperado o una declaración por chat?", "¿Qué prefieres: que te coqueteen directo o con indirectas?", "¿Qué prefieres: tu crush lee todos tus chats o tú lees todos los suyos?", "¿Qué prefieres: una cita romántica o una cita llena de adrenalina?", "¿Qué prefieres: que tu ex te escriba o que tu crush te ignore?", "¿Qué prefieres: abrazo largo o beso corto?"],
+  },
+  probable: {
+    suave: ["¿Quién es más probable que se enamore en una semana?", "¿Quién es más probable que deje en visto a todos?", "¿Quién es más probable que se case primero?", "¿Quién es más probable que se pierda camino a una cita?", "¿Quién es más probable que escriba 'jaja' sin reírse?"],
+    hot: ["¿Quién es más probable que tenga un crush secreto aquí?", "¿Quién es más probable que le escriba a su ex esta noche?", "¿Quién es más probable que bese primero en una cita?", "¿Quién es más probable que tenga más matches en Tinder?", "¿Quién es más probable que coquetee con el mesero?"],
+  },
+  botella: {
+    suave: ["Díganse un cumplido sincero", "Cuéntense su peor cita", "Hagan una pose juntos para una foto", "Elijan juntos una canción y cántenla", "Uno le pregunta algo al otro y debe responder sí o sí"],
+    hot: ["Mírense a los ojos 10 segundos sin reírse", "Díganse qué es lo que más les atrae del otro", "Bailen juntos el coro de una canción", "Uno le escribe al otro el mensaje más coqueto que se le ocurra", "Abrazo de 5 segundos (o paso, si no quieren)"],
+  },
+};
+const JMETA = [
+  ["verdad", "Verdad o reto", "face-flirty", "#ff4f8b"],
+  ["yonunca", "Yo nunca nunca", "bolt", "#a45cff"],
+  ["prefieres", "¿Qué prefieres?", "face-think", "#4fa3ff"],
+  ["probable", "¿Quién es más probable…?", "target", "#ffd166"],
+  ["botella", "Gira la botella", "refresh", "#3fd59a"],
+];
+function vistaJuegos() {
+  const hot = !!DATA.profile.hot;
+  let jugadores = (DATA.players || []).slice(0, 12), juego = null, turno = 0, usados = {};
+  const pick = (arr) => { const k = arr.join("|").length; usados[k] = usados[k] || []; let pool = arr.filter((x) => !usados[k].includes(x)); if (!pool.length) { usados[k] = []; pool = arr; } const x = pool[Math.floor(Math.random() * pool.length)]; usados[k].push(x); return x; };
+  const lista = (id) => { const g = JUEGOS[id]; return hot ? [...g.suave, ...g.hot, ...g.hot] : g.suave; };
+  const render = () => {
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("party")} Juegos para la previa</h1>
+      <p class="lead">${hot ? "Modo HOT activo: las preguntas y retos salen más picantes." : "Activa el Modo HOT en Perfil para la versión picante."} Siempre se puede decir <b>paso</b>.</p>
+      <div class="card"><h3 style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)">Jugadores (${jugadores.length})</h3>
+        <div class="row" id="jp">${jugadores.map((n, i) => `<button class="chip" data-del="${i}">${esc(n)} ${ic("close")}</button>`).join("")}</div>
+        <form class="sendrow" id="jf"><input id="jn" placeholder="Agregar nombre" autocomplete="off" maxlength="16"><button aria-label="Agregar">${ic("plus")}</button></form></div>
+      <div class="grid" style="margin-top:14px">${JMETA.map(([id, t, icn, c], i) => `<button class="tool ${i === 0 ? "big" : ""}" data-j="${id}" style="--c:${c};animation-delay:${i * 0.06}s;min-height:110px"><span class="ic">${ic(icn)}</span><b>${t}</b></button>`).join("")}</div>`;
+    wireBack();
+    $("#jf", V).onsubmit = (e) => { e.preventDefault(); const n = $("#jn", V).value.trim(); if (!n) return; jugadores.push(n.slice(0, 16)); DATA.players = jugadores; save(); render(); setTimeout(() => $("#jn", V).focus(), 50); };
+    $$("[data-del]", V).forEach((b) => (b.onclick = () => { jugadores.splice(+b.dataset.del, 1); DATA.players = jugadores; save(); render(); }));
+    $$("[data-j]", V).forEach((b) => (b.onclick = () => { juego = b.dataset.j; turno = 0; jugar(); }));
+  };
+  const nombre = (k = 0) => (jugadores.length ? jugadores[(turno + k) % jugadores.length] : "");
+  const jugar = (tipo) => {
+    const meta = JMETA.find((m) => m[0] === juego);
+    let titulo = meta[1], txt = "", quien = nombre(), extra = "";
+    if (juego === "verdad") {
+      if (!tipo) {
+        V.innerHTML = `${backBtn("juegos")}<h1 class="title">${ic(meta[2])} ${titulo}</h1><div class="card gamecard" style="--c:${meta[3]}"><small>${quien ? "Turno de" : "Tu turno"}</small><b class="who">${esc(quien || "¿Quién empieza?")}</b><p class="lead">Elige:</p><div class="row" style="justify-content:center"><button class="go" id="gv" style="width:auto;padding:16px 30px">Verdad</button><button class="go alt" id="gr" style="width:auto;padding:16px 30px">Reto</button></div></div>`;
+        $$("[data-back]", V).forEach((b) => (b.onclick = render));
+        $("#gv", V).onclick = () => jugar("verdad"); $("#gr", V).onclick = () => jugar("reto");
+        return;
+      }
+      txt = pick(lista(tipo)); titulo = tipo === "verdad" ? "Verdad" : "Reto";
+    } else if (juego === "botella") {
+      if (jugadores.length < 2) { toast("Agrega al menos 2 jugadores"); return render(); }
+      const a = Math.floor(Math.random() * jugadores.length); let b = Math.floor(Math.random() * (jugadores.length - 1)); if (b >= a) b++;
+      quien = jugadores[a]; extra = jugadores[b]; txt = pick(lista("botella"));
+    } else {
+      txt = pick(lista(juego));
+      if (juego === "yonunca") extra = "Si lo hiciste, baja un dedo. Quien baje los 5 primero, cumple un reto.";
+      if (juego === "probable") { extra = "A la cuenta de 3, todos señalan a alguien."; quien = ""; }
+      if (juego === "prefieres") extra = "Todos responden y explican por qué.";
+    }
+    V.innerHTML = `${backBtn("juegos")}<h1 class="title">${ic(meta[2])} ${esc(meta[1])}</h1>
+      <div class="card gamecard pop" style="--c:${meta[3]}">
+        ${juego === "botella" ? `<div class="bottle" id="bt">${ic("refresh")}</div><small>La botella eligió a</small><b class="who">${esc(quien)} y ${esc(extra)}</b>` : quien ? `<small>Turno de</small><b class="who">${esc(quien)}</b>` : ""}
+        <div class="gtag">${esc(titulo)}${DATA.profile.hot && JUEGOS[juego === "verdad" ? (titulo === "Reto" ? "reto" : "verdad") : juego]?.hot.includes(txt) ? " · " + ic("fire") + " picante" : ""}</div>
+        <p class="gtxt">${esc(txt)}</p>
+        ${extra && juego !== "botella" ? `<p class="lead">${esc(extra)}</p>` : ""}
+      </div>
+      <div class="row"><button class="go" id="gn" style="flex:1">${ic("refresh")} Siguiente</button><button class="go alt" id="gp" style="flex:1">Paso</button></div>`;
+    $$("[data-back]", V).forEach((b) => (b.onclick = render));
+    const next = () => { turno++; addXP(1); jugar(); };
+    $("#gn", V).onclick = (e) => { hearts(e.clientX, e.clientY, 8); next(); };
+    $("#gp", V).onclick = () => { toast("Paso, sin problema"); next(); };
+    if (!reduce) { const c = $(".gamecard", V); c.animate([{ transform: "rotateY(90deg) scale(.8)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 450, easing: "cubic-bezier(.3,1.4,.5,1)" }); }
+  };
+  render();
 }
 
 /* PWA */

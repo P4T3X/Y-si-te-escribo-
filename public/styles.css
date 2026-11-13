@@ -537,3 +537,14 @@ body.hotflash::after{content:"";position:fixed;inset:0;z-index:200;pointer-event
 .rkrow b .ai{width:16px;height:16px;color:#ff6a00}
 .rkrow .xp{font:700 14px "Space Grotesk";color:var(--yellow)}
 .freebadge{display:inline-flex;align-items:center;gap:6px;background:var(--y);color:var(--wine);font:700 13px Inter;padding:8px 14px;border-radius:999px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 4px 0 #c48a00}
+
+/* Juegos */
+.gamecard{text-align:center;padding:28px 20px;margin:10px 0 14px;border-color:var(--c);box-shadow:0 0 40px color-mix(in srgb,var(--c) 30%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 22%,var(--card)),var(--card))}
+.gamecard small{color:var(--mut);font-size:13px;display:block}
+.gamecard .who{display:block;font:700 34px "Space Grotesk";margin:4px 0 12px;color:var(--c)}
+.gtag{display:inline-flex;align-items:center;gap:4px;font:700 12px Inter;text-transform:uppercase;letter-spacing:1px;background:#0004;padding:6px 12px;border-radius:99px;margin-bottom:12px}
+.gtag .ai{width:14px;height:14px;color:#ff6a00}
+.gtxt{font:600 24px/1.35 "Space Grotesk";margin:6px 0 10px}
+.bottle{width:80px;height:80px;margin:0 auto 10px;display:grid;place-items:center;animation:spinB 1.2s cubic-bezier(.2,.9,.3,1)}
+.bottle .ai{width:70px;height:70px;color:var(--c)}
+@keyframes spinB{from{transform:rotate(-1080deg)}}
