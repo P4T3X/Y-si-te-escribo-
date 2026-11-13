@@ -136,6 +136,13 @@ section{position:relative}
 .tile p{font-size:18px;line-height:1.5;color:#86868b}
 .tile .links{display:flex;gap:22px;margin-top:20px;flex-wrap:wrap}
 .tile .art{margin-top:auto;display:grid;place-items:center;padding-top:30px}
+.tile.museum .art{width:100%}
+.carpic{margin:0;width:100%;max-width:460px;position:relative;border-radius:22px;overflow:hidden;aspect-ratio:3/2;box-shadow:0 30px 60px rgba(0,0,0,.5);transform:rotate(-3deg) scale(.96);transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+.carpic img{width:100%;height:100%;object-fit:cover;object-position:60% 55%;transform:scale(1.08);transition:transform 1.4s cubic-bezier(.2,.8,.2,1)}
+.carpic::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.82));pointer-events:none}
+.carpic figcaption{position:absolute;left:14px;bottom:12px;z-index:1;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#e9d7a8;font-weight:700;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.tile.museum:hover .carpic,.tile.museum.in .carpic{transform:rotate(0) scale(1)}
+.tile.museum:hover .carpic img{transform:scale(1)}
 .tile.apps .art .phone{width:150px;height:300px;border-radius:30px;background:#0e0d12;border:7px solid #1d1d1f;position:relative;overflow:hidden;box-shadow:0 30px 60px #0002;transform:rotate(-6deg);transition:transform .8s cubic-bezier(.2,.8,.2,1)}
 .tile.apps:hover .art .phone{transform:rotate(0) translateY(-6px)}
 .tile.apps .phone i{position:absolute;left:12px;right:30px;height:22px;border-radius:12px;background:#2a2733}
@@ -247,7 +254,7 @@ footer .sp{flex:1}
         <h3>El museo de autos clásicos de Arequipa.</h3>
         <p>Una colección viva de vehículos de los años 20 a los 70, restaurados y listos para contarte su historia.</p>
         <div class="links"><a class="lnk" href="/coleccion/">Visitar la web</a><a class="lnk" href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener">Comprar entradas</a><a class="lnk" href="#visita">Cómo llegar</a></div>
-        <div class="art"><svg viewBox="0 0 300 120" width="300" fill="none" stroke="#a8894f" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 84 C20 70 30 64 46 62 L88 58 C104 40 124 32 156 32 L210 32 C232 33 248 42 262 56 L284 60 C292 62 296 70 296 84"/><path d="M20 84 H60 M108 84 H232 M276 84 H296"/><circle cx="84" cy="86" r="18"/><circle cx="254" cy="86" r="18"/></svg></div>
+        <div class="art"><figure class="carpic" aria-label="Auto clásico de los años 20 de la Colección Lucioni"><img src="/coleccion/img/auto-clasico.jpg" alt="Sedán clásico de los años 20, color marrón y negro, con ruedas de rayos de madera" loading="lazy"><figcaption>De la colección · años 20</figcaption></figure></div>
       </article>
       <article class="tile apps rv d1">
         <div class="k">Lucioni Apps</div>
