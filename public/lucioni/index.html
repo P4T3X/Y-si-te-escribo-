@@ -21,6 +21,33 @@ nav{position:fixed;top:0;left:0;right:0;z-index:50;height:52px;display:flex;alig
 nav .in{width:min(1000px,92vw);display:flex;align-items:center;gap:28px;color:#e8e8ed;font-size:12.5px;letter-spacing:.2px}
 nav .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:4px;font-size:12px}
 nav .brand svg{width:22px;height:22px}
+nav .brand{cursor:pointer;background:none;border:0;color:inherit;font:inherit;padding:8px 0}
+nav .brand .chev{width:10px;height:10px;margin-left:-2px;transition:transform .35s cubic-bezier(.2,.8,.2,1);opacity:.7}
+nav.open .brand .chev{transform:rotate(180deg)}
+nav.open{background:rgba(22,22,23,.96)}
+.mega{position:fixed;top:52px;left:0;right:0;z-index:49;background:rgba(22,22,23,.96);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);color:#e8e8ed;clip-path:inset(0 0 100% 0);visibility:hidden;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),visibility .5s;max-height:calc(100svh - 52px);overflow:auto}
+.mega.on{clip-path:inset(0 0 0 0);visibility:visible}
+.mega .mi{width:min(1000px,92vw);margin:0 auto;padding:34px 0 44px;display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr;gap:34px}
+.mega h4{margin:0 0 14px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#86868b}
+.mega ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.mega a{color:#f5f5f7;text-decoration:none}
+.mega .big a{font-size:21px;font-weight:600;letter-spacing:-.01em;display:inline-block;transition:color .2s}
+.mega .big a:hover,.mega .sm a:hover{color:#a8894f}
+.mega .sm a,.mega .sm span{font-size:14px;color:#d2d2d7}
+.mega .soon{font-size:13px;color:#86868b}
+.mega .col{opacity:0;transform:translateY(-8px);transition:opacity .4s,transform .5s cubic-bezier(.2,.8,.2,1)}
+.mega.on .col{opacity:1;transform:none}
+.mega.on .col:nth-child(2){transition-delay:.05s}.mega.on .col:nth-child(3){transition-delay:.1s}.mega.on .col:nth-child(4){transition-delay:.15s}
+.mega .brands{display:flex;flex-wrap:wrap;gap:8px}
+.mega .brands span{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:7px 12px;font-size:13px;color:#e8e8ed}
+.mega .clothes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mega .clothes a{display:block;font-size:12px;color:#d2d2d7;line-height:1.3}
+.mega .clothes img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;margin-bottom:6px;background:#2a2a2c;transition:transform .4s}
+.mega .clothes a:hover img{transform:scale(1.04)}
+.mega .all{display:inline-block;margin-top:14px;font-size:14px;color:#a8894f!important}
+.mscrim{position:fixed;inset:0;z-index:48;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .4s}
+.mscrim.on{opacity:1;pointer-events:auto}
+@media(max-width:820px){.mega .mi{grid-template-columns:1fr 1fr;gap:28px 22px;padding:24px 0 34px}.mega .wide{grid-column:1/-1}.mega .big a{font-size:19px}}
 nav .sp{flex:1}
 nav a.l{opacity:.8;transition:opacity .2s;padding:10px 0}
 nav a.l:hover{opacity:1}
@@ -147,12 +174,22 @@ footer .sp{flex:1}
 <body>
 
 <nav aria-label="Principal"><div class="in">
-  <a class="brand" href="#top"><svg viewBox="0 0 150 150" aria-hidden="true"><rect x="5" y="5" width="140" height="140" fill="none" stroke="#e8e8ed" stroke-width="6"/><path d="M52 36 V108 H106" fill="none" stroke="#e8e8ed" stroke-width="12"/><rect x="95" y="36" width="14" height="14" fill="#a8894f"/></svg>LUCIONI</a>
+  <button class="brand" id="brandBtn" aria-expanded="false" aria-controls="mega"><svg viewBox="0 0 150 150" aria-hidden="true"><rect x="5" y="5" width="140" height="140" fill="none" stroke="#e8e8ed" stroke-width="6"/><path d="M52 36 V108 H106" fill="none" stroke="#e8e8ed" stroke-width="12"/><rect x="95" y="36" width="14" height="14" fill="#a8894f"/></svg>LUCIONI<svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <span class="sp"></span>
   <a class="l hm" href="#historia">Historia</a>
   <a class="l hm" href="#divisiones">Divisiones</a>
   <a class="l" href="#visita">Visítanos</a>
 </div></nav>
+<div class="mscrim" id="mscrim"></div>
+<div class="mega" id="mega" role="region" aria-label="Menú de Lucioni Enterprises">
+  <div class="mi">
+    <div class="col"><h4>Apps</h4><ul class="big"><li><a href="https://ysiteescrib.netlify.app" target="_blank" rel="noopener">¿Y si te escribo?</a></li></ul><p class="soon">Más mini apps en camino.</p></div>
+    <div class="col"><h4>Colección</h4><ul class="big"><li><a href="/coleccion/">El museo</a></li></ul><ul class="sm" style="margin-top:12px"><li><a href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener">Comprar entradas</a></li><li><a href="/coleccion/#visita">Cómo llegar</a></li><li><span>La Recoleta 178, Arequipa</span></li></ul></div>
+    <div class="col"><h4>Marcas en la colección</h4><div class="brands"><span>Ford</span><span>Chevrolet</span><span>Buick</span><span>Cadillac</span><span>Mercedes-Benz</span><span>Hillman</span></div><p class="soon" style="margin-top:12px">Más de 30 autos, de los años 20 a los 70.</p></div>
+    <div class="col wide"><h4>La ropa</h4><div class="clothes"><a href="/coleccion/#tienda"><img src="/coleccion/img/p-mg.jpg" alt="" loading="lazy">Polo MG Midget</a><a href="/coleccion/#tienda"><img src="/coleccion/img/p-mg-crop.jpg" alt="" loading="lazy">Crop top MG Midget</a><a href="/coleccion/#tienda"><img src="/coleccion/img/p-azulejos.jpg" alt="" loading="lazy">Polo Azulejos</a><a href="/coleccion/#tienda"><img src="/coleccion/img/p-landcruiser.jpg" alt="" loading="lazy">Polo Land Cruiser</a><a href="/coleccion/#tienda"><img src="/coleccion/img/p-ford.jpg" alt="" loading="lazy">Hoodie Ford 1929</a><a href="/coleccion/#tienda"><img src="/coleccion/img/p-belair53.jpg" alt="" loading="lazy">Hoodie Bel Air 1953</a></div><a class="all" href="/coleccion/#tienda">Ver toda la tienda ›</a></div>
+  </div>
+</div>
+
 
 <header class="hero" id="top">
   <div>
@@ -292,6 +329,16 @@ footer .sp{flex:1}
   addEventListener("resize", () => { measure(); frame(); });
   addEventListener("load", () => { measure(); frame(); });
   measure(); frame();
+})();
+</script>
+<script>
+(function(){
+  const btn=document.getElementById("brandBtn"),mega=document.getElementById("mega"),scr=document.getElementById("mscrim"),nav=document.querySelector("nav");
+  const set=(on)=>{mega.classList.toggle("on",on);scr.classList.toggle("on",on);nav.classList.toggle("open",on);btn.setAttribute("aria-expanded",on)};
+  btn.addEventListener("click",()=>set(!mega.classList.contains("on")));
+  scr.addEventListener("click",()=>set(false));
+  mega.addEventListener("click",(e)=>{if(e.target.closest("a"))set(false)});
+  addEventListener("keydown",(e)=>{if(e.key==="Escape")set(false)});
 })();
 </script>
 </body>
