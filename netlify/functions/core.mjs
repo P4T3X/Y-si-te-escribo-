@@ -183,11 +183,18 @@ export function makeApp({ store, env, fetchImpl = fetch }) {
     const d = await r.json(); return d.content.map((c) => c.text || "").join("");
   }
   async function viaGemini(system, msgs, images, max) {
-    const model = env.GEMINI_MODEL || "gemini-flash-latest";
     const contents = msgs.map((m, i) => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(i === msgs.length - 1 ? images.map((im) => ({ inline_data: { mime_type: im.type || "image/jpeg", data: im.data } })) : []), { text: m.content }] }));
-    const r = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: "POST", headers: { "x-goog-api-key": env.GEMINI_API_KEY, "content-type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: Math.max(max, 800) * 2, responseMimeType: "application/json", temperature: 0.9 } }) });
-    if (!r.ok) { console.error("Gemini", r.status, await r.text()); throw fail("gemini " + r.status, r.status); }
-    const d = await r.json(); return (d.candidates?.[0]?.content?.parts || []).map((x) => x.text || "").join("");
+    const models = [env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-lite-latest"].filter((v, i, a) => v && a.indexOf(v) === i);
+    let lastErr;
+    for (const model of models) {
+      const r = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: Math.max(max, 800) * 2, responseMimeType: "application/json", temperature: 0.9 } }) });
+      if (r.ok) { const d = await r.json(); const t = (d.candidates?.[0]?.content?.parts || []).map((x) => x.text || "").join(""); if (t) return t; lastErr = fail("gemini sin texto (" + (d.candidates?.[0]?.finishReason || d.promptFeedback?.blockReason || "?") + ")"); continue; }
+      const body = await r.text(); console.error("Gemini", model, r.status, body.slice(0, 400));
+      let msg = ""; try { msg = JSON.parse(body).error?.message || ""; } catch {}
+      lastErr = fail(`gemini ${r.status}: ${msg.slice(0, 140)}`, r.status);
+      if (r.status === 400 || r.status === 401 || r.status === 403) break; // clave mala: no sirve probar otros modelos
+    }
+    throw lastErr;
   }
   async function viaGroq(system, msgs, images, max) {
     const model = images.length ? env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct" : env.GROQ_MODEL || "llama-3.3-70b-versatile";
@@ -221,7 +228,7 @@ export function makeApp({ store, env, fetchImpl = fetch }) {
       try { return parseJSON(await fn(spec.system || BASE, msgs, images, spec.max)); }
       catch (e) { last = e; console.error("Proveedor falló:", name, e.message); }
     }
-    throw fail(last?.status === 429 ? "La IA gratis está saturada ahora, intenta en un minuto" : "La IA no respondió, intenta otra vez");
+    throw fail(last?.status === 429 ? "La IA gratis está saturada ahora, intenta en un minuto" : "La IA no respondió (" + String(last?.message || "").slice(0, 160) + ")");
   }
 
   return async function handle(req) {
