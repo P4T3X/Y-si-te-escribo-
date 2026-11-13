@@ -136,13 +136,6 @@ section{position:relative}
 .tile p{font-size:18px;line-height:1.5;color:#86868b}
 .tile .links{display:flex;gap:22px;margin-top:20px;flex-wrap:wrap}
 .tile .art{margin-top:auto;display:grid;place-items:center;padding-top:30px}
-.tile.museum .art{width:100%}
-.carpic{margin:0;width:100%;max-width:460px;position:relative;border-radius:22px;overflow:hidden;aspect-ratio:3/2;box-shadow:0 30px 60px rgba(0,0,0,.5);transform:rotate(-3deg) scale(.96);transition:transform .9s cubic-bezier(.2,.8,.2,1)}
-.carpic img{width:100%;height:100%;object-fit:cover;object-position:60% 55%;transform:scale(1.08);transition:transform 1.4s cubic-bezier(.2,.8,.2,1)}
-.carpic::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.82));pointer-events:none}
-.carpic figcaption{position:absolute;left:14px;bottom:12px;z-index:1;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#e9d7a8;font-weight:700;text-shadow:0 1px 8px rgba(0,0,0,.6)}
-.tile.museum:hover .carpic,.tile.museum.in .carpic{transform:rotate(0) scale(1)}
-.tile.museum:hover .carpic img{transform:scale(1)}
 .tile.apps .art .phone{width:150px;height:300px;border-radius:30px;background:#0e0d12;border:7px solid #1d1d1f;position:relative;overflow:hidden;box-shadow:0 30px 60px #0002;transform:rotate(-6deg);transition:transform .8s cubic-bezier(.2,.8,.2,1)}
 .tile.apps:hover .art .phone{transform:rotate(0) translateY(-6px)}
 .tile.apps .phone i{position:absolute;left:12px;right:30px;height:22px;border-radius:12px;background:#2a2733}
@@ -158,6 +151,14 @@ section{position:relative}
 
 /* Visit */
 .visit{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;margin-top:50px}
+.map{position:relative;margin-top:28px;border-radius:24px;overflow:hidden;background:#e8e8ed;box-shadow:0 2px 30px #0000000d;height:440px}
+.map iframe{width:100%;height:100%;border:0;display:block;filter:saturate(.85)}
+.mapbar{position:absolute;left:16px;right:16px;bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.86);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-radius:18px;padding:14px 14px 14px 18px;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.mapbar b{display:block;font-size:16px;color:var(--txt)}
+.mapbar span{display:block;font-size:13.5px;color:var(--mut);margin-top:2px}
+.mapbtn{flex:none;background:#0071e3;color:#fff!important;text-decoration:none;font-weight:600;font-size:14px;padding:11px 18px;border-radius:999px;transition:background .2s}
+.mapbtn:hover{background:#0077ed}
+@media(max-width:640px){.map{height:360px;border-radius:20px}.mapbar{left:10px;right:10px;bottom:10px;padding:12px 12px 12px 14px}.mapbar b{font-size:14.5px}}
 .card{background:#fff;border-radius:24px;padding:34px;box-shadow:0 2px 30px #0000000d}
 .card dt{font-size:13px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-top:18px}
 .card dt:first-child{margin-top:0}
@@ -254,7 +255,6 @@ footer .sp{flex:1}
         <h3>El museo de autos clásicos de Arequipa.</h3>
         <p>Una colección viva de vehículos de los años 20 a los 70, restaurados y listos para contarte su historia.</p>
         <div class="links"><a class="lnk" href="/coleccion/">Visitar la web</a><a class="lnk" href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener">Comprar entradas</a><a class="lnk" href="#visita">Cómo llegar</a></div>
-        <div class="art"><figure class="carpic" aria-label="Auto clásico de los años 20 de la Colección Lucioni"><img src="/coleccion/img/auto-clasico.jpg" alt="Sedán clásico de los años 20, color marrón y negro, con ruedas de rayos de madera" loading="lazy"><figcaption>De la colección · años 20</figcaption></figure></div>
       </article>
       <article class="tile apps rv d1">
         <div class="k">Lucioni Apps</div>
@@ -290,6 +290,13 @@ footer .sp{flex:1}
         <dt>Horario</dt><dd>Sábados y domingos, 10:00 a 14:00</dd>
         <dt>Entradas</dt><dd><a class="lnk" href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener" style="font-size:20px">coleccionlucioni.netlify.app</a></dd>
       </dl>
+    </div>
+    <div class="map rv d2">
+      <iframe title="Mapa de la Colección Lucioni en Arequipa" src="https://www.google.com/maps?q=Colecci%C3%B3n%20Lucioni%2C%20Calle%20La%20Recoleta%20178%2C%20Arequipa%2C%20Per%C3%BA&z=16&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      <div class="mapbar">
+        <div><b>Colección Lucioni</b><span>Calle La Recoleta 178, Arequipa</span></div>
+        <a class="mapbtn" href="https://www.google.com/maps/dir/?api=1&destination=Colecci%C3%B3n%20Lucioni%2C%20Calle%20La%20Recoleta%20178%2C%20Arequipa%2C%20Per%C3%BA" target="_blank" rel="noopener">Cómo llegar</a>
+      </div>
     </div>
   </div>
 </section>
