@@ -174,42 +174,54 @@ export function makeApp({ store, env, fetchImpl = fetch }) {
     return verify(h.replace(/^Bearer /, ""), SECRET);
   }
 
+  /* Proveedores de IA: usa el primero que tenga clave. Gemini y Groq tienen plan gratis. */
+  const fail = (m, st = 502) => Object.assign(new Error(m), { status: st });
+  async function viaAnthropic(system, msgs, images, max) {
+    const messages = msgs.map((m, i) => ({ role: m.role, content: i === msgs.length - 1 && images.length ? [...images.map((im) => ({ type: "image", source: { type: "base64", media_type: im.type || "image/jpeg", data: im.data } })), { type: "text", text: m.content }] : m.content }));
+    const r = await fetchImpl("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model: MODEL, max_tokens: max, system, messages }) });
+    if (!r.ok) { console.error("Anthropic", r.status, await r.text()); throw fail("anthropic " + r.status, r.status); }
+    const d = await r.json(); return d.content.map((c) => c.text || "").join("");
+  }
+  async function viaGemini(system, msgs, images, max) {
+    const model = env.GEMINI_MODEL || "gemini-flash-latest";
+    const contents = msgs.map((m, i) => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(i === msgs.length - 1 ? images.map((im) => ({ inline_data: { mime_type: im.type || "image/jpeg", data: im.data } })) : []), { text: m.content }] }));
+    const r = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: "POST", headers: { "x-goog-api-key": env.GEMINI_API_KEY, "content-type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: Math.max(max, 800) * 2, responseMimeType: "application/json", temperature: 0.9 } }) });
+    if (!r.ok) { console.error("Gemini", r.status, await r.text()); throw fail("gemini " + r.status, r.status); }
+    const d = await r.json(); return (d.candidates?.[0]?.content?.parts || []).map((x) => x.text || "").join("");
+  }
+  async function viaGroq(system, msgs, images, max) {
+    const model = images.length ? env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct" : env.GROQ_MODEL || "llama-3.3-70b-versatile";
+    const messages = [{ role: "system", content: system }, ...msgs.map((m, i) => ({ role: m.role, content: i === msgs.length - 1 && images.length ? [{ type: "text", text: m.content }, ...images.map((im) => ({ type: "image_url", image_url: { url: `data:${im.type || "image/jpeg"};base64,${im.data}` } }))] : m.content }))];
+    const r = await fetchImpl("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { authorization: "Bearer " + env.GROQ_API_KEY, "content-type": "application/json" }, body: JSON.stringify({ model, messages, max_tokens: max, temperature: 0.9, response_format: { type: "json_object" } }) });
+    if (!r.ok) { console.error("Groq", r.status, await r.text()); throw fail("groq " + r.status, r.status); }
+    const d = await r.json(); return d.choices?.[0]?.message?.content || "";
+  }
+  function providers() {
+    const all = { anthropic: [env.ANTHROPIC_API_KEY, viaAnthropic], gemini: [env.GEMINI_API_KEY, viaGemini], groq: [env.GROQ_API_KEY, viaGroq] };
+    const order = (env.AI_PROVIDER ? [env.AI_PROVIDER, "gemini", "groq", "anthropic"] : ["gemini", "groq", "anthropic"]).filter((v, i, a) => a.indexOf(v) === i);
+    return order.filter((n) => all[n]?.[0]).map((n) => [n, all[n][1]]);
+  }
+
   async function callAI(mode, payload) {
     const build = MODES[mode];
-    if (!build) throw Object.assign(new Error("Modo desconocido"), { status: 400 });
-    if (!env.ANTHROPIC_API_KEY) throw Object.assign(new Error("Falta configurar ANTHROPIC_API_KEY en el servidor"), { status: 500 });
+    if (!build) throw fail("Modo desconocido", 400);
+    const list = providers();
+    if (!list.length) throw fail("Falta configurar una clave de IA en el servidor (GEMINI_API_KEY, GROQ_API_KEY o ANTHROPIC_API_KEY)", 500);
     const images = (payload.images || []).slice(0, 4);
     const p = { ...payload, hasImages: images.length > 0 };
     const spec = build(p);
-    let messages;
+    let msgs;
     if (mode === "sim") {
-      messages = (p.history || []).slice(-20).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content).slice(0, 600) || "…" }));
-      if (messages[0]?.role === "assistant") messages.unshift({ role: "user", content: "(él abre el chat)" });
-      if (!messages.length || messages[messages.length - 1].role !== "user") throw Object.assign(new Error("Falta tu mensaje"), { status: 400 });
-    } else {
-      const content = images.map((im) => ({
-        type: "image",
-        source: { type: "base64", media_type: im.type || "image/jpeg", data: im.data },
-      }));
-      content.push({ type: "text", text: spec.text });
-      messages = [{ role: "user", content }];
+      msgs = (p.history || []).slice(-20).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content).slice(0, 600) || "…" }));
+      if (msgs[0]?.role === "assistant") msgs.unshift({ role: "user", content: "(él abre el chat)" });
+      if (!msgs.length || msgs[msgs.length - 1].role !== "user") throw fail("Falta tu mensaje", 400);
+    } else msgs = [{ role: "user", content: spec.text }];
+    let last;
+    for (const [name, fn] of list) {
+      try { return parseJSON(await fn(spec.system || BASE, msgs, images, spec.max)); }
+      catch (e) { last = e; console.error("Proveedor falló:", name, e.message); }
     }
-    const r = await fetchImpl("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ model: MODEL, max_tokens: spec.max, system: spec.system || BASE, messages }),
-    });
-    if (!r.ok) {
-      const e = await r.text();
-      console.error("Anthropic error", r.status, e);
-      throw Object.assign(new Error("La IA no respondió, intenta otra vez"), { status: 502 });
-    }
-    const data = await r.json();
-    return parseJSON(data.content.map((c) => c.text || "").join(""));
+    throw fail(last?.status === 429 ? "La IA gratis está saturada ahora, intenta en un minuto" : "La IA no respondió, intenta otra vez");
   }
 
   return async function handle(req) {

@@ -5,17 +5,21 @@
 - `netlify/functions/` → el servidor: cuentas con correo y contraseña, guardado de datos y la IA.
 - La API key de Anthropic **vive solo en el servidor**; nunca va dentro de la app.
 
-## 1. Consigue tu API key de Anthropic
-1. Entra a https://console.anthropic.com y crea una cuenta.
-2. Agrega saldo (Billing). Cada uso de IA cuesta centavos; con el modelo Haiku es muy barato.
-3. En "API Keys" crea una clave y cópiala (empieza con `sk-ant-`).
+## 1. Consigue una clave de IA (hay opciones GRATIS)
+La app usa la primera que encuentre, y si una falla o está saturada prueba con la siguiente. Puedes poner varias.
+
+- **Gemini (gratis, recomendado para empezar):** entra a https://aistudio.google.com/apikey con tu cuenta de Google, toca "Create API key" y cópiala. Variable: `GEMINI_API_KEY`. Lee bien las capturas. Ojo: en el plan gratis Google puede usar los datos para mejorar sus productos, y los límites diarios son bajos.
+- **Groq (gratis, sin tarjeta):** entra a https://console.groq.com, crea una cuenta, ve a "API Keys" y crea una. Variable: `GROQ_API_KEY`. Es muy rápido; ideal como respaldo de Gemini.
+- **Claude / Anthropic (de pago, la mejor calidad):** https://platform.claude.com/settings/keys. Variable: `ANTHROPIC_API_KEY`.
+
+Opcional: `AI_PROVIDER` = `gemini`, `groq` o `anthropic` para elegir cuál probar primero. `GEMINI_MODEL`, `GROQ_MODEL` y `GROQ_VISION_MODEL` cambian el modelo si alguno deja de existir.
 
 ## 2. Súbela a Netlify (gratis)
 1. Crea una cuenta en https://app.netlify.com
 2. Sube esta carpeta a un repositorio de GitHub y en Netlify elige "Add new site → Import from Git"
    (o usa la Netlify CLI: `npm i -g netlify-cli`, luego `netlify deploy --prod` dentro de la carpeta).
 3. En Netlify: **Site configuration → Environment variables**, agrega:
-   - `ANTHROPIC_API_KEY` = tu clave `sk-ant-...`
+   - Tu clave de IA: `GEMINI_API_KEY` y/o `GROQ_API_KEY` (gratis) o `ANTHROPIC_API_KEY`
    - `JWT_SECRET` = una frase larga y secreta inventada (ej. 40 letras al azar)
    - (Solo si activas la verificación) `RESEND_API_KEY` = clave de https://resend.com (gratis hasta 3.000 correos al mes). Sirve para mandar el código de verificación al correo.
    - `EMAIL_FROM` = remitente, ej. `¿Y si te escribo? <hola@tudominio.com>`. Ojo: con la cuenta gratis de Resend, sin dominio propio, solo puedes mandarte correos a ti mismo (remitente `onboarding@resend.dev`). Para mandar a cualquier usuario necesitas verificar un dominio en Resend (un dominio .com cuesta unos 10 USD al año).
