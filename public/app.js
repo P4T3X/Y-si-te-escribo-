@@ -83,6 +83,7 @@ async function ai(mode, payload) {
   const pr = DATA.profile || {};
   if (pr.voice && pr.voiceOn !== false) payload = { ...payload, voice: pr.voice };
   if (pr.hot) payload = { ...payload, hot: true };
+  if (pr.target && pr.target !== "chica") payload = { ...payload, target: pr.target };
   const d = await api("ai", "POST", { mode, payload });
   return d.result;
 }
@@ -107,13 +108,22 @@ const BADGES = [
   { id: "llamada", e: "phone", t: "Primera llamada" },
   { id: "share", e: "share", t: "Lo compartí" },
   { id: "heat", e: "fire", t: "Zona HOT" },
+  { id: "escena", e: "target", t: "Escenario superado" },
+  { id: "perfil", e: "camera2", t: "Perfil revisado" },
 ];
 function level(xp) { let i = 0; LEVELS.forEach((l, k) => { if (xp >= l[0]) i = k; }); return i; }
 function ensure() {
   DATA = Object.assign({ profile: { name: "", style: "relajado" }, xp: 0, crushes: [], favs: [], history: [], badges: [], streak: { last: "", count: 0 } }, DATA || {});
 }
+function weekId(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return t.getUTCFullYear() + "-W" + String(Math.ceil(((t - y) / 864e5 + 1) / 7)).padStart(2, "0");
+}
 function addXP(n) {
   const before = level(DATA.xp);
+  const wk = weekId(); if (!DATA.week || DATA.week.id !== wk) DATA.week = { id: wk, xp: 0 }; DATA.week.xp += n;
   DATA.xp += n; renderTop(); save();
   const after = level(DATA.xp);
   if (after > before) { hearts(innerWidth / 2, innerHeight / 2, 24); modal(`<div class="big" data-ic="party"></div><h2>¡Subiste de nivel!</h2><p class="lead">Ahora eres <b>${LEVELS[after][1]}</b>.</p>`); }
@@ -234,11 +244,21 @@ function pedirCodigo() {
   setTimeout(() => { const i = $("#hotCode"); if (!i) return; i.focus(); const ok = () => { if (i.value.trim().toUpperCase() === "HOT") { $("#modal").classList.add("hide"); setHot(true, true); save(); toast("Modo HOT activado"); go(current); } else if (i.value) { i.value = ""; i.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); toast("Código incorrecto"); } };
     i.onkeydown = (e) => { if (e.key === "Enter") ok(); }; $("#mClose").textContent = "Activar"; $("#mClose").onclick = ok; }, 50);
 }
+async function takeShared() {
+  if (!/[?&]shared=1/.test(location.search) || !("caches" in window)) return false;
+  try {
+    const c = await caches.open("yste-shared"), ks = await c.keys();
+    for (const k of ks) { const r = await c.match(k); const b = await r.blob(); SHARED_FILES.push(new File([b], "captura.jpg", { type: b.type || "image/jpeg" })); await c.delete(k); }
+    history.replaceState(null, "", "/");
+  } catch {}
+  return SHARED_FILES.length > 0;
+}
 function enterApp(isNew) {
   ensure(); touchStreak(); setHot(DATA.profile.hot);
+  takeShared().then((ok) => ok && go("reply"));
   $("#auth").classList.add("hide"); $("#landing").classList.add("hide"); $("#app").classList.remove("hide");
   renderTop(); go("home");
-  if (isNew) { hearts(innerWidth / 2, innerHeight / 3, 24); modal(`<div class="big" data-ic="face-flirty"></div><h2>¡Bienvenido, ${esc(DATA.profile.name)}!</h2><p class="lead">Gana XP usando las herramientas, mantén tu racha diaria y desbloquea logros. Empieza subiendo la captura de un chat.</p>`); }
+  if (isNew) { hearts(innerWidth / 2, innerHeight / 3, 24); setTimeout(() => toast("Tip: en Perfil elige si le hablas a chicas, chicos o sin especificar"), 4000); modal(`<div class="big" data-ic="face-flirty"></div><h2>¡Bienvenido, ${esc(DATA.profile.name)}!</h2><p class="lead">Gana XP usando las herramientas, mantén tu racha diaria y desbloquea logros. Empieza subiendo la captura de un chat.</p>`); }
 }
 async function boot() {
   if (!TOKEN) return showLanding();
@@ -271,8 +291,9 @@ async function photoFrom(file) {
   cv.getContext("2d").drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, N, N);
   return cv.toDataURL("image/jpeg", 0.82);
 }
+let SHARED_FILES = [];
 function uploader(id) {
-  const st = { imgs: [] };
+  const st = { imgs: SHARED_FILES.splice(0, 4) };
   const html = `<div class="drop" id="${id}" role="button" tabindex="0"><b>${ic("camera")} Toca para subir capturas</b><small>o arrástralas / pégalas aquí (hasta 4)</small><input type="file" accept="image/*" multiple hidden></div><div class="thumbs"></div>`;
   function mount() {
     const drop = $("#" + id), input = $("input", drop), th = drop.nextElementSibling;
@@ -284,6 +305,7 @@ function uploader(id) {
     ["dragover", "dragenter"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
     ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
     drop.addEventListener("drop", (e) => add(e.dataTransfer.files));
+    if (st.imgs.length) { draw(); toast("Captura recibida desde Compartir"); }
     st.onPaste = (e) => { const f = [...(e.clipboardData?.items || [])].filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile()); if (f.length) add(f); };
     document.onpaste = st.onPaste;
   }
@@ -369,6 +391,10 @@ const TOOLS = {
   decode: { e: "search", t: "¿Qué quiso decir?", d: "Decodifica sus mensajes raros", c: "var(--blue)", nuevo: true },
   invite: { e: "calendar", t: "Invítala", d: "Planes de cita y el mensaje para invitarla", c: "var(--pink)", nuevo: true },
   double: { e: "traffic", t: "¿Le escribo otra vez?", d: "Semáforo para no insistir de más", c: "var(--yellow)", nuevo: true },
+  escenas: { e: "target", t: "Escenarios", d: "Practica situaciones difíciles: reconectar, pedir el número, primera cita…", c: "var(--green)", nuevo: true },
+  perfil: { e: "camera2", t: "Revisa mi perfil", d: "Qué foto poner primero y una bio que funcione", c: "#ff7a3d", nuevo: true },
+  progreso: { e: "chart", t: "Mi progreso", d: "Cómo vas mejorando semana a semana", c: "var(--blue)", nuevo: true },
+  ranking: { e: "trophy", t: "Ranking semanal", d: "Compite con otros usuarios por XP", c: "var(--yellow)", nuevo: true },
   heat: { e: "fire", t: "Subir la temperatura", d: "3 niveles de coqueteo, de suave a atrevido", c: "#ff2d2d", nuevo: true, hot: true },
   chats: { e: "chat", t: "Varias a la vez", d: "Lleva el control de todas tus conversaciones", c: "var(--blue)", nuevo: true },
   ruleta: { e: "refresh", t: "Ruleta de temas", d: "Gira y revive la conversación", c: "var(--violet)", nuevo: true },
@@ -483,6 +509,91 @@ const VIEWS = {
     };
   },
 
+  escenas() {
+    const tg = DATA.profile.target || "chica", la = tg === "chico" ? "lo" : tg === "persona" ? "le" : "la", ella = tg === "chico" ? "él" : tg === "persona" ? "esa persona" : "ella";
+    const ESC = [
+      { t: "Volver a escribir tras el silencio", ic: "chat", d: `Hace 2 semanas que no hablan y quieres revivir el chat.`, ctx: `Hace dos semanas dejaron de hablar sin pelear. ${ella} se sorprende de que le escriba. Si el mensaje es natural y no reclama, retoma; si suena necesitado, responde frío.`, open: null, p: null },
+      { t: "Pedir el número en persona", ic: "phone", d: `Se conocieron hoy en una fiesta y quieres su número.`, ctx: `Se conocieron hace un rato en una fiesta de un amigo en común y ahora siguen conversando por chat de Instagram. El reto es que el usuario consiga su número o un plan concreto sin sonar intenso.`, open: "oye q buena la fiesta jaja", p: null },
+      { t: "Se quedó en silencio", ic: "face-think", d: `${ella[0].toUpperCase() + ella.slice(1)} respondió seco y la charla se muere.`, ctx: `La conversación se enfrió: llevas respondiendo cortito ("ah", "ok"). Solo te reanimas si el usuario saca un tema original o divertido.`, open: "ok", p: null },
+      { t: "Está molesta contigo", ic: "warn", d: `No respondiste en todo el día y ${ella} se resintió.`, ctx: `Estás algo molesta porque el usuario desapareció todo el día sin avisar después de quedar en hablar. Si se disculpa sincero y sin excusas largas, te calmas. Si se justifica de más o minimiza, sigues seca.`, open: "ah, ahora sí apareces", p: null },
+      { t: "Tienes otra oportunidad", ic: "refresh", d: `La primera cita fue rara y quieres una segunda.`, ctx: `Tuvieron una primera cita algo incómoda la semana pasada (silencios, nervios). No estás segura de una segunda. Si el usuario hace humor sobre eso con seguridad y propone algo mejor, aceptas.`, open: "holaa", p: null },
+      { t: "Ensayo de primera cita", ic: "calendar", d: `Llamada que simula la cita en persona en un café: de qué hablar y cómo cerrar.`, ctx: `Están en su primera cita en persona en una cafetería (simulada por llamada). Hablan cara a cara. Evalúa si el usuario hace buenas preguntas, escucha, cuenta cosas de sí mismo y al final propone una segunda salida.`, call: true, callOpen: "Hola… perdón la demora, ¿hace mucho llegaste?", open: "ya llegué al café, ¿dónde estás?", p: null },
+    ];
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("target")} Escenarios</h1><p class="lead">Practica las situaciones que más cuestan. Cada una tiene su propio reto y al final te da tu puntaje.</p>
+      <div>${ESC.map((e, i) => `<button class="crush scenbtn" data-e="${i}" style="animation-delay:${i * 0.06}s"><span class="av">${ic(e.ic)}</span><span><b>${esc(e.t)}</b><small>${esc(e.d)}</small></span>${e.call ? `<span class="pct">${ic("phone")}</span>` : ""}</button>`).join("")}</div>`;
+    wireBack();
+    $$("[data-e]", V).forEach((b) => (b.onclick = () => go("sim", ESC[b.dataset.e])));
+  },
+
+  perfil() {
+    const up = uploader("dropP");
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("camera2")} Revisa mi perfil</h1><p class="lead">Sube tus fotos o capturas de tu perfil de Tinder, Bumble o Instagram, en el orden en que aparecen. Te digo cuál poner primero, qué mejorar y te escribo una bio nueva.</p>
+      ${up.html}
+      <label for="pfBio">Tu bio actual (opcional)</label><textarea id="pfBio" rows="3" placeholder="Pega tu bio aquí"></textarea>
+      <label for="pfApp">¿Dónde la usas?</label><select id="pfApp"><option>Tinder</option><option>Bumble</option><option>Hinge</option><option>Instagram</option><option>Otra</option></select>
+      <button class="go" id="pfGo">${ic("sparkle")} Revisar mi perfil</button>${loadingHTML}`;
+    up.mount(); wireBack();
+    $("#pfGo", V).onclick = async () => {
+      const bio = $("#pfBio", V).value.trim();
+      if (!up.st.imgs.length && !bio) { $("#st", V).textContent = "Sube tus fotos o pega tu bio"; return; }
+      await withLoading($("#pfGo", V), ["Mirando tus fotos…", "Pensando como ella…", "Escribiendo tu bio…"], async () => {
+        const r = await ai("profile", { images: await up.encoded(), bio, app: $("#pfApp", V).value });
+        const P = Math.max(0, Math.min(100, Number(r.puntaje) || 0)); let dl = 0.2;
+        $("#out", V).innerHTML = `<div class="res"><div class="card score"><div class="ring" style="--p:${P}"><span>${P}</span></div><div><b>${P >= 75 ? "Perfil fuerte" : P >= 50 ? "Va bien, se puede mejorar" : "Hay que mejorarlo"}</b><p class="lead" style="margin:4px 0 0">${esc(r.resumen)}</p></div></div>
+          ${r.primera_foto ? `<div class="card tip">${ic("starF")} <b>Foto principal:</b> ${esc(r.primera_foto)}</div>` : ""}
+          ${(r.fotos || []).length ? `<div class="card read"><h3>Foto por foto</h3>${r.fotos.map((f) => `<div class="mlabel" style="margin-top:10px"><span>Foto ${esc(f.n)}</span><span>${Number(f.nota) || 0}/10</span></div><div class="meter"><div data-w="${(Number(f.nota) || 0) * 10}"></div></div><small class="lead">${esc(f.consejo)}</small>`).join("")}</div>` : ""}
+          ${r.bio_comentario ? `<div class="card tip">${ic("pencil")} <b>Tu bio:</b> ${esc(r.bio_comentario)}</div>` : ""}
+          ${(r.bios || []).length ? `<div class="sec"><h2>${ic("sparkle")} Bios nuevas</h2>${r.bios.map((b) => optCard({ msg: b }, "normal", "#ff7a3d", (dl += 0.1))).join("")}</div>` : ""}
+          ${(r.agregar || []).length ? `<div class="card tip"><h3>${ic("plus")} Te falta una foto de…</h3><ul class="list">${r.agregar.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}</div>`;
+        wireOpts(); animateMeters(); log("perfil", r.resumen); celebrate($("#pfGo", V), 12, "perfil");
+      });
+    };
+  },
+
+  progreso() {
+    const sc = DATA.scores || [];
+    const last = sc.slice(-20), w = 520, h = 160;
+    let chart = `<p class="lead">Todavía no tienes prácticas. Haz una en el Simulador o en Escenarios y aquí verás tu evolución.</p>`;
+    if (last.length) {
+      const step = last.length > 1 ? w / (last.length - 1) : 0, y = (p) => h - 10 - (p / 100) * (h - 20);
+      const pts = last.map((x, i) => `${(i * step).toFixed(1)},${y(x.p).toFixed(1)}`);
+      chart = `<svg class="spark big" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Puntajes de tus últimas prácticas"><path d="M0,${h} L${pts.join(" L")} L${(last.length - 1) * step},${h} Z" fill="url(#gp)" opacity=".35"/><defs><linearGradient id="gp" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ff4f8b"/><stop offset="1" stop-color="#ff4f8b" stop-opacity="0"/></linearGradient></defs><path d="M${pts.join(" L")}" fill="none" stroke="#ff4f8b" stroke-width="3" stroke-linejoin="round"/>${last.map((x, i) => `<circle cx="${i * step}" cy="${y(x.p)}" r="4" fill="#ffd166"/>`).join("")}</svg>`;
+    }
+    const avg = (a) => (a.length ? Math.round(a.reduce((s, x) => s + x.p, 0) / a.length) : 0);
+    const wk = 7 * 864e5, now = Date.now();
+    const thisW = sc.filter((x) => now - x.d < wk), prevW = sc.filter((x) => now - x.d >= wk && now - x.d < 2 * wk);
+    const diff = thisW.length && prevW.length ? avg(thisW) - avg(prevW) : null;
+    const best = sc.reduce((b, x) => (x.p > (b?.p || -1) ? x : b), null);
+    const uses = {}; (DATA.history || []).forEach((x) => (uses[x.tool] = (uses[x.tool] || 0) + 1));
+    const fav = Object.entries(uses).sort((a, b) => b[1] - a[1])[0];
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("chart")} Mi progreso</h1>
+      <div class="statgrid">
+        <div class="card stat"><b>${sc.length}</b><small>prácticas</small></div>
+        <div class="card stat"><b>${avg(sc)}</b><small>promedio</small></div>
+        <div class="card stat"><b>${best ? best.p : "–"}</b><small>mejor puntaje</small></div>
+        <div class="card stat"><b class="${diff > 0 ? "up" : diff < 0 ? "down" : ""}">${diff === null ? "–" : (diff > 0 ? "+" : "") + diff}</b><small>vs semana pasada</small></div>
+      </div>
+      <div class="card read"><h3>Tus últimas prácticas</h3>${chart}</div>
+      ${best ? `<div class="card tip">${ic("medal")} <b>Tu mejor práctica:</b> ${best.p}/100 con ${esc(best.n)} (${esc(best.m)}${best.e ? ", " + esc(best.e) : ""})</div>` : ""}
+      ${(DATA.tips || []).length ? `<div class="card tip"><h3>${ic("bulb")} En lo que debes trabajar</h3><ul class="list">${[...new Set(DATA.tips)].slice(0, 5).map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+      <div class="card tip">${ic("fire")} Racha actual: <b>${DATA.streak.count} día(s)</b> · XP esta semana: <b>${DATA.week && DATA.week.id === weekId() ? DATA.week.xp : 0}</b>${fav && TOOLS[fav[0]] ? ` · Herramienta favorita: <b>${TOOLS[fav[0]].t}</b>` : ""}</div>
+      <button class="go" id="prGo">${ic("game")} Hacer una práctica</button>`;
+    wireBack(); $("#prGo", V).onclick = () => go("sim");
+  },
+
+  async ranking() {
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("trophy")} Ranking semanal</h1><p class="lead">Gana XP usando la app esta semana. El ranking se reinicia cada lunes. Solo se muestra tu apodo.</p><div id="rk"><div class="loading on"><i></i><i></i><i></i><span>Cargando ranking…</span></div></div>`;
+    wireBack(); save();
+    try {
+      await new Promise((r) => setTimeout(r, 900));
+      const d = await api("ranking");
+      const medal = ["#ffd166", "#c9d1e0", "#e0995e"];
+      $("#rk", V).innerHTML = (d.top || []).length ? `<div class="card streak"><span class="fire">${ic("trophy")}</span><div><b>${d.mine ? `Vas en el puesto #${d.mine}` : "Aún no estás en el ranking"}</b><small>${d.total} jugadores esta semana</small></div></div>
+        ${d.top.map((u, i) => `<div class="rkrow ${u.me ? "me" : ""}" style="animation-delay:${i * 0.04}s"><span class="pos" style="${i < 3 ? `background:${medal[i]};color:#1a1020` : ""}">${i + 1}</span><span class="av">${ic(ICONS[u.icon] ? u.icon : "face")}</span><b>${esc(u.name)}${u.me ? " (tú)" : ""}${u.hot ? " " + ic("fire") : ""}</b><span class="xp">${u.xp} XP</span></div>`).join("")}`
+        : `<div class="empty"><span class="big">${ic("trophy")}</span>Nadie ha ganado XP esta semana todavía. ¡Sé el primero!</div>`;
+    } catch (e) { $("#rk", V).innerHTML = `<p class="status err">${esc(e.message)}</p>`; }
+  },
+
   heat(crushId) {
     if (!DATA.profile.hot) return go("home");
     const up = uploader("dropH");
@@ -574,8 +685,8 @@ const VIEWS = {
     };
   },
 
-  sim() {
-    const PERS = [
+  sim(esc0) {
+    const PERS_F = [
       { name: "Vale", av: "face-calm", tag: "Fácil", edad: 22, vibe: "tranquila y simpática, se ríe fácil pero se aburre con preguntas genéricas", estilo: "minúsculas, 'jaja', emojis suaves 😊🙈" },
       { name: "Dani", av: "face-flat", tag: "Cortante", edad: 23, vibe: "seca y cortante, odia el small talk, responde con 1 o 2 palabras; solo se abre si él es muy original o la hace reír", estilo: "'ok', 'ya', 'ah', 'normal', sin emojis, sin signos" },
       { name: "Lu", av: "face-flirty", tag: "Pícara", edad: 24, vibe: "coqueta, segura y pícara; le encanta el doble sentido suave y poner a prueba al otro con retos", estilo: "😏🔥, frases cortas con doble sentido, 'mmm', 'atrévete'" },
@@ -587,8 +698,19 @@ const VIEWS = {
       { name: "Nati", av: "face-diva", tag: "Exigente", edad: 23, vibe: "creída y exigente, estándares altos, le aburren los que la halagan mucho; respeta a quien no se deja impresionar", estilo: "'ay no', 'holaaa', alarga vocales, 💅✨" },
       { name: "Rocío", av: "face-love", tag: "Intensa", edad: 22, vibe: "romántica e intensa, se ilusiona rápido, manda muchos emojis y mensajes; sirve para practicar a no ser intenso tú también", estilo: "muchos emojis 🥰💕, varios mensajes seguidos, '¿y tú me extrañaste?'" },
     ];
-    let pers = PERS[0], hist = [], lastInt = 50, dif = "normal", mind = false, gotCita = false, wasSeen = false, busy = false;
-    V.innerHTML = `${backBtn()}<h1 class="title">${ic("game")} Simulador</h1><p class="lead">Practica con 10 chicas distintas antes de escribirle a la de verdad. Responden como una chica real: corto, a veces cortante, y te dejan en visto si te pasas.</p>
+    const PERS_M = [
+      { genero: "m", name: "Diego", av: "face-calm", tag: "Fácil", edad: 23, vibe: "tranquilo y amable, se ríe fácil, se aburre con preguntas genéricas", estilo: "minúsculas, 'jaja', pocos emojis" },
+      { genero: "m", name: "Seba", av: "face-flat", tag: "Cortante", edad: 24, vibe: "seco y de pocas palabras, solo se engancha con algo original", estilo: "'ya', 'ok', 'normal', sin emojis" },
+      { genero: "m", name: "Leo", av: "face-flirty", tag: "Pícaro", edad: 24, vibe: "coqueto y seguro, le gusta el doble sentido suave y los retos", estilo: "😏, frases cortas con picardía" },
+      { genero: "m", name: "Mateo", av: "face-shy", tag: "Tímido", edad: 21, vibe: "tímido, responde poco al inicio, se abre si se siente cómodo", estilo: "'jsjs', '...', mensajes cortitos" },
+      { genero: "m", name: "Bruno", av: "face-busy", tag: "Ocupado", edad: 26, vibe: "siempre ocupado con trabajo y gym, valora planes concretos", estilo: "'ando en el gym', 'luego hablamos', abreviaciones" },
+      { genero: "m", name: "Gael", av: "face-laugh", tag: "Gracioso", edad: 22, vibe: "gracioso y memero, ama exagerar y los chistes absurdos", estilo: "'JAJAJA', 'nooo', 💀" },
+    ];
+    const tgt = DATA.profile.target || "chica";
+    const PERS = tgt === "chico" ? PERS_M : tgt === "persona" ? [...PERS_F.slice(0, 5), ...PERS_M.slice(0, 5)] : PERS_F;
+    const escena = esc0 && esc0.ctx ? esc0 : null;
+    let pers = escena && escena.p ? PERS.find((x) => x.tag === escena.p) || PERS[0] : PERS[0], hist = [], lastInt = 50, dif = "normal", mind = false, gotCita = false, wasSeen = false, busy = false;
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("game")} ${escena ? esc(escena.t) : "Simulador"}</h1>${escena ? `<div class="card hotbanner scen">${ic(escena.ic)}<div><b>Escenario</b><small>${esc(escena.d)}</small></div></div>` : ""}<p class="lead">Practica con 10 chicas distintas antes de escribirle a la de verdad. Responden como una chica real: corto, a veces cortante, y te dejan en visto si te pasas.</p>
       <div class="personas">${PERS.map((p, i) => `<button class="persona ${i ? "" : "on"}" data-i="${i}"><span class="av">${ic(p.av)}</span><b>${p.name}</b><small>${esc(p.vibe.split(/[,(;]/)[0])}</small><span class="tg">${p.tag}</span></button>`).join("")}</div>
       <label>Dificultad</label><div class="row" id="difs"><button class="chip" data-v="fácil">Fácil</button><button class="chip on" data-v="normal">Normal</button><button class="chip" data-v="difícil">Difícil</button></div>
       <div class="simtop"><span class="av" id="simAv"></span><div><b id="simName"></b><small><span class="status-dot"></span><span id="simState">en línea</span></small></div><button class="callbtn" id="simCall">${ic("phone")} Llamar</button></div>
@@ -604,7 +726,7 @@ const VIEWS = {
     const setInt = (v) => { lastInt = v; $("#simM", V).style.width = v + "%"; $("#simLbl", V).textContent = `Interés: ${v}%`; };
     const add = (who, t) => { const m = document.createElement("div"); m.className = "msg " + who; m.textContent = t; chat.append(m); chat.scrollTop = chat.scrollHeight; return m; };
     const addMind = (t) => { const m = document.createElement("div"); m.className = "mind" + (mind ? "" : " blur"); m.innerHTML = ic("brain") + `<span>${esc(t)}</span>`; m.onclick = () => m.classList.remove("blur"); chat.append(m); chat.scrollTop = chat.scrollHeight; };
-    const opener = () => ({ "Dani": "q", "Majo": "holi, ando a full jsjs", "Ari": "HOLAAA", "Nati": "holaaa", "Rocío": "holaaa 🥰🥰", "Isa": "hola…", "Sofi": "hola 🙈", "Cami": "hola", "Lu": "hola tú 😏" }[pers.name] || "holaa");
+    const opener = () => (escena && escena.open) || ({ "Dani": "q", "Majo": "holi, ando a full jsjs", "Ari": "HOLAAA", "Nati": "holaaa", "Rocío": "holaaa 🥰🥰", "Isa": "hola…", "Sofi": "hola 🙈", "Cami": "hola", "Lu": "hola tú 😏" }[pers.name] || "holaa");
     const reset = () => {
       const o = opener(); hist = [{ role: "assistant", content: o }]; chat.innerHTML = ""; add("her", o); setInt(dif === "fácil" ? 60 : dif === "difícil" ? 35 : 50);
       gotCita = false; wasSeen = false; $("#out", V).innerHTML = ""; $("#simIn", V).disabled = false;
@@ -624,7 +746,7 @@ const VIEWS = {
       const seen = document.createElement("div"); seen.className = "seen"; seen.textContent = "Enviado"; chat.append(seen);
       $("#simState", V).textContent = "en línea";
       try {
-        const r = await ai("sim", { persona: pers, dificultad: dif, history: hist });
+        const r = await ai("sim", { persona: pers, dificultad: dif, history: hist, escenario: escena?.ctx });
         await wait(500); seen.classList.add("read"); seen.textContent = "Visto";
         const v = Math.max(0, Math.min(100, Number(r.interes) || 0));
         const msgs = (Array.isArray(r.msgs) ? r.msgs : r.msg ? [r.msg] : []).filter(Boolean).slice(0, 3);
@@ -661,17 +783,22 @@ const VIEWS = {
         ${r.mejorar?.length ? `<div class="card tip"><h3>${ic("chart")} Para mejorar</h3><ul class="list">${r.mejorar.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
         ${r.mejor_mensaje ? `<div class="card tip"><h3>${ic("medal")} Tu mejor frase</h3>"${esc(r.mejor_mensaje)}"</div>` : ""}
         ${r.peor_mensaje ? `<div class="card tip warnbox"><h3>${ic("warn")} Tu peor frase</h3>"${esc(r.peor_mensaje)}"${r.reescrito ? `<br><br><b>Mejor así:</b> "${esc(r.reescrito)}"` : ""}</div>` : ""}</div>`;
+      DATA.scores = [...(DATA.scores || []), { d: Date.now(), p, m: modo, n: pers.name, e: escena?.t || "" }].slice(-60);
+      if (r.mejorar?.length) DATA.tips = [...r.mejorar.slice(0, 2), ...(DATA.tips || [])].slice(0, 12);
+      if (escena) badge("escena");
+      save();
       $("#shareBtn", V).onclick = () => tarjeta({ score: p, titulo: r.titulo, persona: pers.name, tag: pers.tag, extra: extraTxt }).catch(() => toast("No pude crear la imagen"));
       $(".res", V).scrollIntoView({ behavior: "smooth" });
       return p;
     };
+    if (escena && escena.call) setTimeout(() => $("#simCall", V) && toast("Toca Llamar para empezar el ensayo"), 400);
     $("#simCall", V).onclick = () => {
-      abrirLlamada(pers, dif, async ({ hist: ch, cita, secs, colgo }) => {
+      abrirLlamada(pers, dif, escena, async ({ hist: ch, cita, secs, colgo }) => {
         if (ch.filter((m) => m.role === "user").length < 1) return;
         badge("llamada"); addXP(10);
         if (cita) { addXP(25); badge("cita"); dailyEvent({ type: "simCita", p: pers.name, visto: false }); }
         await withLoading($("#simEnd", V), ["Escuchando la grabación…", "Calculando tu puntaje…"], async () => {
-          const r = await ai("simScore", { persona: pers, llamada: true, history: ch });
+          const r = await ai("simScore", { persona: pers, llamada: true, history: ch, escenario: escena?.ctx });
           const extra = cita ? "consiguió cita" : colgo ? "te colgó" : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} min`;
           const p = showScore(r, "Llamada", extra);
           log("sim", `Llamada con ${pers.name}: ${p}/100`); dailyEvent({ type: "simScore", v: p });
@@ -682,7 +809,7 @@ const VIEWS = {
     $("#simEnd", V).onclick = async () => {
       if (hist.filter((m) => m.role === "user").length < 2) { $("#st", V).textContent = "Chatea un poco más antes de terminar"; return; }
       await withLoading($("#simEnd", V), ["Revisando tu chat…", "Calculando tu puntaje…"], async () => {
-        const r = await ai("simScore", { persona: pers, history: hist });
+        const r = await ai("simScore", { persona: pers, history: hist, escenario: escena?.ctx });
         const p = showScore(r, "Chat", gotCita ? "consiguió cita" : wasSeen ? "te dejó en visto" : "");
         log("sim", `Práctica con ${pers.name}: ${p}/100`); dailyEvent({ type: "simScore", v: p });
         celebrate($("#simEnd", V), 15 + Math.round(p / 5), "sim"); if (p >= 80) badge("sim80");
@@ -752,6 +879,8 @@ const VIEWS = {
       <div class="card score"><div class="ring" style="--p:${LEVELS[i + 1] ? Math.round(((DATA.xp - LEVELS[i][0]) / (LEVELS[i + 1][0] - LEVELS[i][0])) * 100) : 100}"><span>${i + 1}</span></div><div><b>${LEVELS[i][1]}</b><p class="lead" style="margin:4px 0 0">${DATA.xp} XP · racha de ${DATA.streak.count} día(s)</p></div></div>
       <div class="pfoto"><button class="avatar" id="pAv" aria-label="Cambiar foto">${avatarInner()}</button><div class="btns"><button class="btn" id="pPhoto">${ic("camera2")} ${DATA.profile.photo ? "Cambiar foto" : "Agregar foto"}</button>${DATA.profile.photo ? `<button class="btn" id="pDelPhoto">${ic("close")} Quitar</button>` : ""}<input type="file" id="pFile" accept="image/*" hidden></div></div>
       <label for="pName">Tu nombre o apodo</label><input id="pName" value="${esc(DATA.profile.name)}">
+      <label>Le hablo a…</label><div class="row" id="pTarget">${[["chica", "Chicas"], ["chico", "Chicos"], ["persona", "Sin especificar"]].map(([v, t]) => `<button class="chip ${(DATA.profile.target || "chica") === v ? "on" : ""}" data-v="${v}">${t}</button>`).join("")}</div>
+      <label>Tu ícono en el ranking</label><div class="row" id="pIcon">${["face", "face-cool", "face-flirty", "face-laugh", "fire", "bolt", "starF", "heart"].map((v) => `<button class="chip ${(DATA.profile.icon || "face") === v ? "on" : ""}" data-v="${v}" aria-label="${v}">${ic(v)}</button>`).join("")}</div>
       <div class="card voicecard"><h3 style="margin:0 0 6px;font-size:15px;font-family:Space Grotesk">${ic("voice")} Suena como tú ${DATA.profile.voice ? '<span class="on">· activado</span>' : ""}</h3><p class="lead" style="margin:0 0 8px">Pega 3 a 5 mensajes reales que hayas escrito tú. La IA copia tu forma de escribir (minúsculas, jerga, emojis) para que las respuestas no suenen a robot.</p>
         <textarea id="pVoice" rows="4" placeholder="ej: jajaja nooo pero q pasó&#10;oe yaaa vamos el sábado&#10;tmr no puede ser 😂">${esc(DATA.profile.voice || "")}</textarea>
         <button class="btn" id="pVoiceSave" style="margin-top:10px">${ic("check")} Guardar mi estilo</button></div>
@@ -765,6 +894,8 @@ const VIEWS = {
     wireStyles();
     $("#pName", V).onchange = (e) => { DATA.profile.name = e.target.value.trim().slice(0, 40); save(); renderTop(); toast("Nombre guardado"); };
     $("#pOut", V).onclick = logout;
+    $$("#pTarget .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.target = b.dataset.v; save(); toast("Listo: el simulador y las respuestas se adaptan"); go("profile"); }));
+    $$("#pIcon .chip", V).forEach((b) => (b.onclick = () => { DATA.profile.icon = b.dataset.v; save(); go("profile"); }));
     if ($("#hotOn", V)) $("#hotOn", V).onclick = pedirCodigo;
     if ($("#hotOff", V)) $("#hotOff", V).onclick = () => { setHot(false); save(); toast("Modo HOT desactivado"); go("profile"); };
     const pick = () => $("#pFile", V).click();
@@ -882,7 +1013,7 @@ function ringtone(ctxHolder) {
 }
 
 /* ---------- Llamada en el simulador ---------- */
-function abrirLlamada(pers, dif, onEnd) {
+function abrirLlamada(pers, dif, escena, onEnd) {
   // iPhone/iPad: la voz solo funciona si se "desbloquea" dentro del toque del usuario
   try { if (window.speechSynthesis && !VOZ.tts) { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch {}
   const el = document.createElement("div");
@@ -921,7 +1052,7 @@ function abrirLlamada(pers, dif, onEnd) {
     st.busy = true; line("me", txt); hist.push({ role: "user", content: txt });
     $c("#cLive").textContent = ""; $c("#cMicL").textContent = "Ella responde…";
     try {
-      const r = await ai("sim", { persona: pers, dificultad: dif, llamada: true, history: hist });
+      const r = await ai("sim", { persona: pers, dificultad: dif, llamada: true, history: hist, escenario: escena?.ctx });
       const v = Math.max(0, Math.min(100, Number(r.interes) || 0)); setInt(v);
       const said = (Array.isArray(r.msgs) ? r.msgs : [r.msg]).filter(Boolean).join(" ");
       if (said) { hist.push({ role: "assistant", content: said }); await sheSays(said); }
@@ -949,7 +1080,7 @@ function abrirLlamada(pers, dif, onEnd) {
     try { holder.ctx && holder.ctx.close(); } catch {}
     st.t0 = Date.now(); el.classList.add("live");
     st.timer = setInterval(() => { const s = Math.round((Date.now() - st.t0) / 1000); $c("#cState").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }, 1000);
-    const hola = { Dani: "¿Aló? ¿Quién habla?", Lu: "Mmm, ¿y esta llamada sorpresa?", Cami: "Aló… ¿pasó algo?", Sofi: "Ho… hola", Majo: "Aló, sí, dime rápido que estoy saliendo", Ari: "¡ALÓ! jaja ¿qué fue?", Isa: "Hola… no esperaba tu llamada", Nati: "Aló, ¿sí?", "Rocío": "¡Holaaa! ¡Qué lindo que me llames!" }[pers.name] || "¿Aló?";
+    const hola = (escena && escena.callOpen) || { Dani: "¿Aló? ¿Quién habla?", Lu: "Mmm, ¿y esta llamada sorpresa?", Cami: "Aló… ¿pasó algo?", Sofi: "Ho… hola", Majo: "Aló, sí, dime rápido que estoy saliendo", Ari: "¡ALÓ! jaja ¿qué fue?", Isa: "Hola… no esperaba tu llamada", Nati: "Aló, ¿sí?", "Rocío": "¡Holaaa! ¡Qué lindo que me llames!" }[pers.name] || "¿Aló?";
     hist.push({ role: "assistant", content: hola });
     await sheSays(hola);
   }, 3200);

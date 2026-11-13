@@ -517,3 +517,23 @@ body.hotflash::after{content:"";position:fixed;inset:0;z-index:200;pointer-event
 .turno{margin-left:auto;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:999px;padding:8px 12px;font:600 12px Inter;cursor:pointer;min-height:40px}
 .turno.me{background:var(--pink);border-color:var(--pink);color:#fff;animation:jelly .5s}
 .chatrow .btn{flex:1;min-width:100px;font-size:12px}
+
+/* Escenarios, progreso, ranking */
+.scenbtn .pct .ai{width:24px;height:24px;color:var(--green)}
+.scen{border-color:#3fd59a66;background:linear-gradient(90deg,#0f2a20,var(--card))}
+.scen .ai{color:var(--green)!important}
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 12px}
+.stat{text-align:center;animation:slideUp .5s both}
+.stat b{font:700 30px "Space Grotesk";display:block}
+.stat b.up{color:var(--green)}.stat b.down{color:#ff8fb1}
+.stat small{color:var(--mut);font-size:12px}
+.spark.big{height:160px}
+.rkrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px;animation:slideUp .45s both}
+.rkrow.me{border-color:var(--pink);box-shadow:0 0 18px #ff4f8b33}
+.rkrow .pos{width:30px;height:30px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font:700 14px "Space Grotesk";flex:none}
+.rkrow .av{width:34px;height:34px;border-radius:50%;background:var(--card2);display:grid;place-items:center;flex:none}
+.rkrow .av .ai{width:22px;height:22px;color:var(--pink)}
+.rkrow b{flex:1;font-family:"Space Grotesk";font-size:15px;display:flex;align-items:center;gap:4px}
+.rkrow b .ai{width:16px;height:16px;color:#ff6a00}
+.rkrow .xp{font:700 14px "Space Grotesk";color:var(--yellow)}
+.freebadge{display:inline-flex;align-items:center;gap:6px;background:var(--y);color:var(--wine);font:700 13px Inter;padding:8px 14px;border-radius:999px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 4px 0 #c48a00}

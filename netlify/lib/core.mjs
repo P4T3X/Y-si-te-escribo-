@@ -6,6 +6,12 @@ const enc = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const json = (d, s = 200) =>
   new Response(JSON.stringify(d), { status: s, headers: { "content-type": "application/json" } });
 const today = () => new Date().toISOString().slice(0, 10);
+export function weekId(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return t.getUTCFullYear() + "-W" + String(Math.ceil(((t - y) / 864e5 + 1) / 7)).padStart(2, "0");
+}
 
 /* ---------- Contraseñas y sesiones ---------- */
 function hashPassword(pw, salt = crypto.randomBytes(16).toString("hex")) {
@@ -50,6 +56,10 @@ MÉTODO (lo que mejor funciona al chatear, según coaches y datos de apps de cit
 8. Mejor cerrar en un punto alto que dejar morir la charla.
 9. Si responde corto, tarde o seco varias veces, dilo con honestidad: soltar también es una opción.`;
 
+function targetCtx(p) {
+  const t = p.target === "chico" ? "un chico (usa él/lo)" : p.target === "persona" ? "una persona (usa lenguaje neutro, sin asumir género)" : "";
+  return t ? `\nEl usuario le habla a ${t}. Donde el método dice "ella", aplícalo a esa persona.` : "";
+}
 function hotCtx(p) {
   return p.hot ? `\nMODO HOT ACTIVADO: el usuario quiere respuestas más atrevidas. Sube el coqueteo: más directo, más tensión, doble sentido más marcado, más seguridad y picardía. Límites que NO cambian: nada sexual explícito ni vulgar, nada sobre el cuerpo de forma grosera, y si ella no sigue el juego, se baja la intensidad.` : "";
 }
@@ -63,26 +73,26 @@ function crushCtx(c) {
 
 const MODES = {
   reply: (p) => ({
-    text: `${p.hasImages ? "Te paso capturas de un chat. Los mensajes del usuario suelen estar a la DERECHA; los de la otra persona a la IZQUIERDA.\n" : ""}${p.chat ? "Chat en texto:\n" + p.chat + "\n" : ""}${p.ctx ? "Contexto: " + p.ctx + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}
+    text: `${p.hasImages ? "Te paso capturas de un chat. Los mensajes del usuario suelen estar a la DERECHA; los de la otra persona a la IZQUIERDA.\n" : ""}${p.chat ? "Chat en texto:\n" + p.chat + "\n" : ""}${p.ctx ? "Contexto: " + p.ctx + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
 Lee el último mensaje de ella y el tono, y propone respuestas.
 JSON: {"interes":0-100,"lectura":"1-2 frases sobre cómo va","picara":[{"msg":"","por":"por qué funciona","tecnica":"nombre corto de la técnica del MÉTODO, ej. Callback"},{"msg":"","por":"","tecnica":""}],"normal":[{"msg":"","por":"","tecnica":""},{"msg":"","por":"","tecnica":""}],"seguir":[{"msg":"","por":"","tecnica":""},{"msg":"","por":"","tecnica":""}],"error":"si el usuario cometió un error en el chat (modo entrevista, respuestas secas, etc.), dilo en una frase; si no, vacío","consejo":"consejo corto"}`,
     max: 1200,
   }),
   opener: (p) => ({
-    text: `${p.hasImages ? "Te paso capturas de su perfil (fotos, bio, historias). Fíjate en detalles concretos: lugares, mascotas, gustos, estilo.\n" : ""}${p.bio ? "Lo que el usuario sabe de ella: " + p.bio + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${voiceCtx(p)}${hotCtx(p)}
+    text: `${p.hasImages ? "Te paso capturas de su perfil (fotos, bio, historias). Fíjate en detalles concretos: lugares, mascotas, gustos, estilo.\n" : ""}${p.bio ? "Lo que el usuario sabe de ella: " + p.bio + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
 Crea 6 mensajes para iniciar conversación, basados en detalles concretos (nada de "hola, ¿cómo estás?"). Mezcla tipos.
 JSON: {"detalles":["detalle que notaste", "..."],"abridores":[{"tipo":"pícaro|gracioso|curioso|directo","msg":"","por":""}]}`,
     max: 1000,
   }),
   check: (p) => ({
     text: `El usuario está a punto de mandar este mensaje: "${p.mensaje}".${p.chat ? "\nContexto del chat:\n" + p.chat : ""}${crushCtx(p.crush)}
-Evalúalo con honestidad usando el MÉTODO antes de que lo envíe.${voiceCtx(p)}${hotCtx(p)}
+Evalúalo con honestidad usando el MÉTODO antes de que lo envíe.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
 JSON: {"puntaje":0-10,"veredicto":"frase corta y graciosa","bien":["lo que funciona"],"riesgos":["lo que puede salir mal"],"mejoradas":[{"msg":"","por":""},{"msg":"","por":""}]}`,
     max: 800,
   }),
   decode: (p) => ({
     text: `Ella escribió: "${p.mensaje}".${p.chat ? "\nContexto del chat:\n" + p.chat : ""}${crushCtx(p.crush)}
-Decodifica qué pudo querer decir. Sé realista, sin crear falsas esperanzas.${voiceCtx(p)}${hotCtx(p)}
+Decodifica qué pudo querer decir. Sé realista, sin crear falsas esperanzas.${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
 JSON: {"lecturas":[{"significado":"","probabilidad":0-100}],"senales":["señal que se nota en el mensaje"],"que_hacer":"consejo corto","respuesta":{"msg":"","por":""}}`,
     max: 800,
   }),
@@ -92,23 +102,29 @@ El usuario quiere SUBIR LA TEMPERATURA de esta conversación poco a poco. Dale u
 JSON: {"temperatura":0-100,"lectura":"cómo está la tensión ahora, 1 frase","niveles":[{"nivel":"Suave","msgs":[{"msg":"","por":""},{"msg":"","por":""}]},{"nivel":"Medio","msgs":[...]},{"nivel":"Atrevido","msgs":[...]}],"subir":["señal para subir"],"bajar":["señal para bajar"]}`,
     max: 1100,
   }),
+  profile: (p) => ({
+    text: `${p.hasImages ? "Te paso capturas o fotos del perfil de citas o Instagram del usuario (fotos y/o bio), en el orden en que las subió.\n" : ""}${p.bio ? "Su bio actual: " + p.bio + "\n" : ""}${p.app ? "Plataforma: " + p.app + "\n" : ""}${voiceCtx(p)}${targetCtx(p)}
+Revisa su perfil como coach honesto y amable. Juzga solo lo que se ve (calidad de foto, luz, encuadre, sonrisa, variedad de planes, fotos grupales donde no se sabe quién es, selfies de espejo, lentes oscuros) y la bio. NO opines sobre su físico ni su cuerpo.
+JSON: {"puntaje":0-100,"resumen":"1-2 frases","primera_foto":"qué foto poner primero (por su número) y por qué","fotos":[{"n":1,"nota":0-10,"consejo":"breve"}],"bio_comentario":"qué está bien o mal de la bio","bios":["3 bios nuevas cortas en su estilo"],"agregar":["tipo de foto que le falta"]}`,
+    max: 1200,
+  }),
   invite: (p) => ({
-    text: `El usuario quiere invitar a salir a ${p.crush?.name || "una chica"}.${crushCtx(p.crush)}${p.chat ? "\nCómo va el chat:\n" + p.chat : ""}${p.ciudad ? "\nCiudad: " + p.ciudad : ""}${p.presupuesto ? "\nPresupuesto: " + p.presupuesto : ""}${voiceCtx(p)}${hotCtx(p)}
+    text: `El usuario quiere invitar a salir a ${p.crush?.name || "una chica"}.${crushCtx(p.crush)}${p.chat ? "\nCómo va el chat:\n" + p.chat : ""}${p.ciudad ? "\nCiudad: " + p.ciudad : ""}${p.presupuesto ? "\nPresupuesto: " + p.presupuesto : ""}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
 Propón 3 planes de primera cita concretos, baratos y cómodos (lugares públicos, de día o temprano), ligados a lo que a ella le gusta, y para cada uno un mensaje para invitarla con día propuesto. Incluye cuándo conviene mandarlo.
 JSON: {"listo":0-100,"comentario":"¿ya es buen momento para invitarla? 1 frase","planes":[{"titulo":"","por":"por qué a ella le gustaría","msg":"mensaje para invitarla"}],"si_dice_no":"cómo responder con buena onda si no puede"}`,
     max: 1000,
   }),
   double: (p) => ({
-    text: `Situación: ${p.quien === "yo" ? "el usuario escribió último y ella no ha respondido" : "ella escribió último"}. Tiempo desde el último mensaje: ${p.tiempo || "no indicado"}.${p.chat ? "\nÚltimos mensajes:\n" + p.chat : ""}${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}
+    text: `Situación: ${p.quien === "yo" ? "el usuario escribió último y ella no ha respondido" : "ella escribió último"}. Tiempo desde el último mensaje: ${p.tiempo || "no indicado"}.${p.chat ? "\nÚltimos mensajes:\n" + p.chat : ""}${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}${targetCtx(p)}
 ¿Debería el usuario escribirle ahora? Sé honesto: insistir demasiado resta. Si conviene escribir, propone mensajes que no suenen a reclamo (nada de "¿por qué no respondes?"), ligeros y con algo nuevo.
 JSON: {"semaforo":"verde|amarillo|rojo","veredicto":"frase corta","por":"explicación breve","esperar":"cuánto conviene esperar si no es verde","mensajes":[{"msg":"","por":""},{"msg":"","por":""}]}`,
     max: 700,
   }),
   sim: (p) => ({
-    system: `Interpretas a ${p.persona?.name || "Vale"}, una chica ficticia de ${p.persona?.edad || 22} años, en un simulador para que el usuario practique a chatear. NUNCA rompas el personaje ni digas que eres IA.
+    system: `Interpretas a ${p.persona?.name || "Vale"}, ${p.persona?.genero === "m" ? "un chico ficticio" : "una chica ficticia"} de ${p.persona?.edad || 22} años, en un simulador para que el usuario practique a chatear. NUNCA rompas el personaje ni digas que eres IA.
 Personalidad: ${p.persona?.vibe || "simpática pero no fácil de impresionar"}.
 Forma de escribir: ${p.persona?.estilo || "minúsculas, frases cortas, 'jaja', algún emoji"}.
-${p.hot ? "MODO HOT: eres más coqueta y atrevida de lo normal y te gusta el juego de tensión y doble sentido (sin nada explícito).\n" : ""}Dificultad: ${p.dificultad || "normal"} (fácil = se abre rápido; normal = hay que ganarse su interés; difícil = muy exigente, se aburre fácil).
+${p.escenario ? "ESCENARIO DE PRÁCTICA: " + p.escenario + "\nActúa según esa situación desde el inicio.\n" : ""}${p.persona?.genero === "m" ? "Eres hombre: adapta todo (pronombres, forma de hablar) a un chico.\n" : ""}${p.hot ? "MODO HOT: eres más coqueta y atrevida de lo normal y te gusta el juego de tensión y doble sentido (sin nada explícito).\n" : ""}Dificultad: ${p.dificultad || "normal"} (fácil = se abre rápido; normal = hay que ganarse su interés; difícil = muy exigente, se aburre fácil).
 ${p.llamada ? `ESTO ES UNA LLAMADA DE VOZ, no un chat. Habla como se habla por teléfono: frases cortas y naturales dichas en voz alta, con muletillas ("eh", "o sea", "a ver", "jaja"), sin emojis, sin abreviaciones, sin "jsjs". Si él se queda callado o es aburrido, lo notas ("¿aló?", "bueno…"). Si es irrespetuoso o muy pesado, cuelgas ("colgar": true). Pon "msgs" con UNA sola frase hablada.
 ` : ""}Escribe como una chica real por WhatsApp, no como un asistente:
 - Mensajes MUY cortos (1 a 8 palabras casi siempre). A veces mandas 2 o 3 mensajitos seguidos en vez de uno largo.
@@ -125,7 +141,7 @@ Responde SOLO JSON: {"msgs":["mensaje 1","mensaje 2 opcional"],"interes":0-100,"
   }),
   simScore: (p) => ({
     text: `Esta fue una práctica de ${p.llamada ? "LLAMADA de voz" : "chat"} del usuario con ${p.persona?.name || "una chica"} (${p.persona?.vibe || ""}):
-${(p.history || []).map((m) => (m.role === "user" ? "Él: " : "Ella: ") + m.content).join("\n")}
+${p.escenario ? "Escenario: " + p.escenario + "\n" : ""}${(p.history || []).map((m) => (m.role === "user" ? "Usuario: " : (p.persona?.name || "Ella") + ": ") + m.content).join("\n")}
 Evalúa al usuario como coach.
 JSON: {"puntaje":0-100,"titulo":"apodo divertido según cómo lo hizo","bien":["..."],"mejorar":["..."],"mejor_mensaje":"su mejor mensaje literal","peor_mensaje":"su peor mensaje literal","reescrito":"cómo debió escribir ese peor mensaje"}`,
     max: 700,
@@ -314,7 +330,21 @@ export function makeApp({ store, env, fetchImpl = fetch }) {
         if (raw.length > 900_000) return json({ error: "Demasiados datos guardados" }, 413);
         const { data } = JSON.parse(raw);
         await setJSON("data:" + me.id, data);
+        try {
+          const wk = weekId();
+          if (data?.week?.id === wk && data.week.xp > 0) {
+            const lb = (await getJSON("lb:" + wk)) || {};
+            lb[me.id] = { name: String(data.profile?.name || "Anónimo").slice(0, 20), xp: Math.min(100000, Number(data.week.xp) || 0), icon: String(data.profile?.icon || "face").slice(0, 20), hot: !!data.profile?.hot };
+            const keep = Object.entries(lb).sort((a, b) => b[1].xp - a[1].xp).slice(0, 300);
+            await setJSON("lb:" + wk, Object.fromEntries(keep));
+          }
+        } catch (e) { console.error("ranking", e); }
         return json({ ok: true });
+      }
+      if (route === "ranking" && method === "GET") {
+        const wk = weekId(); const lb = (await getJSON("lb:" + wk)) || {};
+        const list = Object.entries(lb).map(([id, v]) => ({ ...v, me: id === me.id })).sort((a, b) => b.xp - a.xp);
+        return json({ week: wk, top: list.slice(0, 30), mine: list.findIndex((x) => x.me) + 1, total: list.length });
       }
       if (route === "ai" && method === "POST") {
         const uk = `usage:${me.id}:${today()}`;
