@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0d12">
+<meta name="description" content="Sube la captura de tu chat y recibe respuestas pícaras, normales y para seguir la conversación.">
+<title>¿Y si te escribo?</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="floaters" aria-hidden="true"></div>
+
+<!-- Portada -->
+<section id="landing" class="screen hide">
+  <nav class="lnav" id="lnav">
+    <svg class="logo" viewBox="0 0 200 200" role="img" aria-label="¿Y si te escribo?"><use href="#face"/></svg>
+    <button class="pill hidem" data-scroll="#funciones">Funciones</button>
+    <span class="sp"></span>
+    <button class="pill" data-auth="login">Entrar</button>
+    <button class="pill fill" data-auth="register">Crear cuenta</button>
+  </nav>
+
+  <div class="stage pattern" id="stage">
+    <div class="sticky">
+      <div class="bigt"><h1 class="disp" data-i="0">Responde<br>con chispa<small>la IA que te dice qué escribirle</small></h1></div>
+      <div class="bigt"><h1 class="disp off" data-i="1">Una nueva<br>forma de<br>ligar</h1></div>
+      <div class="bigt"><h1 class="disp off" data-i="2">Otra<br>perspectiva<br>del chat</h1></div>
+      <div class="phone3d" id="phone">
+        <div class="face front"><div id="hero"></div></div>
+        <div class="face back"><svg class="logo" viewBox="0 0 200 200" aria-hidden="true"><use href="#face"/></svg><b>¿Y SI TE ESCRIBO?</b></div>
+      </div>
+      <div class="scrollhint"><i></i>Desliza</div>
+    </div>
+  </div>
+
+  <div class="ticker" aria-hidden="true"><div id="tick"></div></div>
+
+  <section class="split">
+    <div class="wine">
+      <ul class="nolist rv">
+        <li><span data-ic="camera"></span><span><b>Sube la captura</b>Lee tu chat y te da respuestas pícaras, normales y para seguir la charla.</span></li>
+        <li><span data-ic="shield"></span><span><b>Revisa antes de mandar</b>Te dice si tu mensaje suena bien o si la vas a cagar.</span></li>
+        <li><span data-ic="game"></span><span><b>Practica sin riesgo</b>Chatea con una IA que actúa como ella y recibe tu puntaje.</span></li>
+      </ul>
+      <h2 class="disp nos"><span class="rvl"><span class="y">Sin frases</span></span><span class="rvl"><span class="y">cursis.</span></span><span class="rvl"><span>Sin dejar</span></span><span class="rvl"><span>en visto.</span></span><span class="rvl"><span class="o">Sin miedo.</span></span></h2>
+    </div>
+    <div class="magp pattern" id="bubbles">
+      <div class="floatb her" data-sp=".25" style="top:12%;left:8%"><small>Ella</small>jaja y tú qué haces hoy?</div>
+      <div class="floatb me" data-sp="-.2" style="top:34%;right:6%"><small>Pícara</small>Pensando en cómo invitarte un café</div>
+      <div class="floatb her" data-sp=".15" style="top:58%;left:12%"><small>Ella</small>uy, directo eh</div>
+      <div class="floatb me" data-sp="-.3" style="top:78%;right:10%"><small>Para seguir</small>¿Eres más de café o de helado?</div>
+    </div>
+  </section>
+
+  <section class="blk yel pattern">
+    <div class="trad">
+      <div class="rv">
+        <h2 class="disp">Tu labia<br>&amp; nuestra IA</h2>
+        <p>Tú pones la personalidad; nosotros te damos ideas para que la conversación no se apague. Respuestas cortas, naturales y en tu estilo, listas para copiar y mandar.</p>
+      </div>
+      <div class="tilt rv" id="tilt">
+        <div class="top"><span class="av" data-ic="heart"></span>Ana</div>
+        <div class="b h">y qué planes para el finde?</div>
+        <div class="b m">nada fijo aún</div>
+        <div class="b h">mmm qué aburrido jaja</div>
+        <div class="sug"><b><span data-ic="sparkle"></span>Sugerencia pícara</b>Entonces sálvame del aburrimiento: ¿café el sábado?</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="feat" id="funciones">
+    <button class="ft c1 wide rv" data-auth="register"><span data-ic="camera"></span><div><h3>Responder chat</h3><p>Sube capturas y recibe 6 respuestas con un medidor de interés.</p></div></button>
+    <button class="ft c2 rv" data-auth="register"><span data-ic="rocket"></span><div><h3>Abridores</h3><p>Ideas para escribirle primero según su perfil.</p></div></button>
+    <button class="ft c3 rv" data-auth="register"><span data-ic="shield"></span><div><h3>¿La cagué?</h3><p>Nota del 0 al 10 a tu mensaje antes de enviarlo.</p></div></button>
+    <button class="ft c4 rv" data-auth="register"><span data-ic="search"></span><div><h3>¿Qué quiso decir?</h3><p>Decodifica sus mensajes raros.</p></div></button>
+    <button class="ft c5 rv" data-auth="register"><span data-ic="heart"></span><div><h3>Crushes</h3><p>Notas de cada una y su interés en el tiempo.</p></div></button>
+    <button class="ft c6 wide rv" data-auth="register"><span data-ic="game"></span><div><h3>Simulador</h3><p>Practica con cuatro personalidades distintas y sube de nivel.</p></div></button>
+  </section>
+
+  <section class="cta pattern">
+    <h2 class="disp rv"><span class="w">¿Y si</span><br><span class="w" style="animation-delay:.3s">le escribes?</span></h2>
+    <div class="row rv">
+      <button class="bigbtn" data-auth="register"><span data-ic="bolt"></span>Crear cuenta gratis</button>
+      <button class="bigbtn ghost" data-auth="login">Ya tengo cuenta</button>
+    </div>
+  </section>
+
+  <section class="foot">
+    <div class="yel"><h2 class="disp rv">Llévala en<br>tu celular</h2><p class="rv">Instálala como app, sin descargar nada de la tienda.</p>
+      <div class="steps rv"><div><span data-ic="send"></span>Abre la página en tu celular</div><div><span data-ic="plus"></span>Toca Compartir y luego “Agregar a inicio”</div><div><span data-ic="star"></span>Ábrela como cualquier app</div></div>
+    </div>
+    <div class="magp pattern" style="display:grid;place-items:center"><div class="phone3d" style="transform:rotate(-8deg);width:min(48vw,220px)"><div class="face back" style="transform:none"><svg class="logo" viewBox="0 0 200 200" aria-hidden="true"><use href="#face"/></svg><b>¿Y SI TE ESCRIBO?</b></div></div></div>
+  </section>
+  <div class="legal">¿Y si te escribo? · Úsala con respeto: un “no” es un no.</div>
+</section>
+
+<!-- Pantalla de cuenta -->
+<section id="auth" class="screen hide">
+  <div class="wrap">
+    <button class="back authback" id="authBack"></button>
+    <header class="brandhead">
+      <svg class="logo" viewBox="0 0 200 200" role="img" aria-label="Logo ¿Y si te escribo?"><use href="#face"/></svg>
+      <div class="brand"><small>¿y si te</small><b>escribo<span>?</span></b></div>
+    </header>
+    <p class="sub"><span class="tw"></span><span class="cur"></span></p>
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-tab="register" role="tab">Crear cuenta</button>
+      <button class="tab" data-tab="login" role="tab">Ingresar</button>
+    </div>
+    <form id="authForm" class="card form" novalidate>
+      <div id="nameRow">
+        <label for="aName">Tu nombre o apodo</label>
+        <input id="aName" autocomplete="nickname" placeholder="Ej: Pato">
+      </div>
+      <label for="aEmail">Correo</label>
+      <input id="aEmail" type="email" autocomplete="email" placeholder="tucorreo@gmail.com">
+      <label for="aPass">Contraseña</label>
+      <input id="aPass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      <button class="go" id="authBtn" type="submit">Crear mi cuenta 😏</button>
+      <p class="status" id="authStatus"></p>
+    </form>
+    <div id="verifyBox" class="card form hide">
+      <div class="mailhead"><span data-ic="mail"></span><h2 class="title" style="margin:0">Revisa tu correo</h2><p class="lead" style="margin:0">Te mandamos un código de 6 dígitos a <b id="vEmail"></b></p></div>
+      <div class="codein" id="codeIn"></div>
+      <button class="go" id="vBtn" type="button">Confirmar mi cuenta</button>
+      <p class="status" id="vStatus"></p>
+      <div class="row" style="justify-content:center"><button class="btn" id="vResend" type="button">Reenviar código</button><button class="btn" id="vBack" type="button">Cambiar correo</button></div>
+      <div id="vInbox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- App -->
+<section id="app" class="screen hide">
+  <div class="topbar">
+    <svg class="logo sm" viewBox="0 0 200 200" aria-hidden="true"><use href="#face"/></svg>
+    <div class="hello"><small id="lvlName">Novato</small><b id="helloName">Hola</b></div>
+    <div class="xpwrap" title="Tu nivel"><div class="xpbar"><div id="xpFill"></div></div><small id="xpTxt">0 XP</small></div>
+    <button class="avatar" id="topAv" aria-label="Mi perfil"></button>
+  </div>
+  <main class="wrap" id="view"></main>
+  <nav class="bottom" aria-label="Menú">
+    <button data-go="home" class="on"><span data-ic="home"></span>Inicio</button>
+    <button data-go="crushes"><span data-ic="heart"></span>Crushes</button>
+    <button data-go="favs"><span data-ic="starF"></span>Favoritos</button>
+    <button data-go="profile"><span data-ic="face"></span>Perfil</button>
+  </nav>
+</section>
+
+<div class="toast" id="toast"></div>
+<div class="modal hide" id="modal"><div class="card" id="modalBox"></div></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="face">
+      <rect width="200" height="200" rx="48" fill="#ff4f8b"/>
+      <path d="M36 68a28 28 0 0 1 28-28h72a28 28 0 0 1 28 28v44a28 28 0 0 1-28 28H86l-30 24v-25a26 26 0 0 1-20-25z" fill="#fff"/>
+      <path d="M66 70h22" stroke="#0e0d12" stroke-width="6" stroke-linecap="round"/>
+      <path class="brow" d="M110 72q12-14 26-4" stroke="#0e0d12" stroke-width="6" stroke-linecap="round" fill="none"/>
+      <ellipse cx="78" cy="90" rx="11" ry="12" fill="#0e0d12"/>
+      <ellipse class="eyeR" cx="124" cy="90" rx="11" ry="12" fill="#0e0d12"/>
+      <circle cx="82" cy="86" r="4" fill="#fff"/>
+      <circle class="pupR" cx="128" cy="86" r="4" fill="#fff"/>
+      <path d="M88 116q16 10 34-4" stroke="#ff4f8b" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </g>
+  </defs>
+</svg>
+
+<script src="/icons.js"></script>
+<script src="/app.js"></script>
+<script src="/hero.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "¿Y si te escribo?",
+  "short_name": "Y si te escribo",
+  "description": "Respuestas pícaras, normales y para seguir la conversación a partir de capturas de tus chats.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e0d12",
+  "theme_color": "#0e0d12",
+  "lang": "es",
+  "categories": ["lifestyle", "social"],
+  "icons": [
+    {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
