@@ -1,5 +1,5 @@
 import { getStore } from "@netlify/blobs";
-import { makeApp } from "./core.mjs";
+import { makeApp } from "../lib/core.mjs";
 
 export default async (req) => {
   const store = getStore("ysite");
