@@ -565,3 +565,16 @@ body.hotflash::after{content:"";position:fixed;inset:0;z-index:200;pointer-event
 .quick textarea{min-height:60px}
 .learn{display:flex;gap:12px;align-items:center}
 .learn .ai{width:36px;height:36px;color:var(--green)}
+
+/* Fluidez */
+.phone3d{will-change:transform;transform:translateZ(0);backface-visibility:hidden}
+.floatb,.tilt,.bigt h1{will-change:transform}
+.bigt h1{transition:opacity .45s ease,transform .6s cubic-bezier(.2,.8,.2,1)}
+.rv{transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.fl{will-change:transform}
+html{scroll-behavior:smooth}
+@media (max-width:760px){body::before{animation-duration:22s}.phone3d .front{box-shadow:0 30px 60px #0006}}
+.madeby{margin-top:14px;text-align:center;font:500 12px Inter;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);opacity:.8}
+.madeby b{color:var(--pink);font-weight:700}
+.legal .madeby{color:#c9a9b8}
+.legal .madeby b{color:#ffc93c}

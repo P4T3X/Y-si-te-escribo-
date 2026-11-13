@@ -24,8 +24,8 @@ function floater() {
   e.style.setProperty("--r", Math.random() * 80 - 40 + "deg"); e.style.animationDuration = 9 + Math.random() * 8 + "s";
   $("#floaters").append(e); setTimeout(() => e.remove(), 18000);
 }
-for (let i = 0; i < 5; i++) setTimeout(floater, i * 700);
-setInterval(floater, 1800);
+for (let i = 0; i < 4; i++) setTimeout(floater, i * 800);
+setInterval(floater, innerWidth < 700 ? 2600 : 1800);
 
 function hearts(x, y, n = 14) {
   if (reduce) return;
@@ -456,7 +456,8 @@ const VIEWS = {
       <div class="card streak"><span class="fire">${ic("fire")}</span><div><b>Racha de ${s} día${s === 1 ? "" : "s"}</b><small>${s >= 3 ? "¡Estás que ardes! No la pierdas." : "Entra cada día para mantener tu racha."}</small></div></div>
       ${DATA.profile.hot ? `<div class="card hotbanner">${ic("fire")}<div><b>Modo HOT activo</b><small>Todas las respuestas salen más atrevidas</small></div></div>` : ""}
       <div class="grid">${Object.entries(TOOLS).filter(([, t]) => !t.hot || DATA.profile.hot).map(([k, t], i) => `<button class="tool ${t.big ? "big" : ""}" data-tool="${k}" style="--c:${t.c};animation-delay:${i * 0.07}s">${t.nuevo ? '<span class="new">NUEVO</span>' : ""}<span class="ic">${ic(t.e)}</span><b>${t.t}</b><small>${t.d}</small></button>`).join("")}</div>
-      <div class="card tipday" style="animation-delay:.4s"><b>${ic("bulb")} Tip del día:</b> ${TIPS[new Date().getDate() % TIPS.length]}</div>`;
+      <div class="card tipday" style="animation-delay:.4s"><b>${ic("bulb")} Tip del día:</b> ${TIPS[new Date().getDate() % TIPS.length]}</div>
+      <p class="madeby">Made by: <b>Lucioni Enterprises</b></p>`;
     $$("[data-tool]", V).forEach((b) => (b.onclick = () => go(b.dataset.tool)));
     $("#qForm", V).onsubmit = (e) => { e.preventDefault(); const t = $("#qText", V).value.trim(); if (!t) return toast("Pega primero lo que te escribió"); go("reply", { quick: t }); };
   },
@@ -969,7 +970,7 @@ const VIEWS = {
 
 
 /* ---------- Portada ---------- */
-function showLanding() { $("#auth").classList.add("hide"); $("#landing").classList.remove("hide"); scrollTo(0, 0); onScroll(); }
+function showLanding() { $("#auth").classList.add("hide"); $("#landing").classList.remove("hide"); scrollTo(0, 0); requestAnimationFrame(() => { measure(); onScroll(); }); }
 function showAuth(mode) {
   $("#landing").classList.add("hide"); $("#auth").classList.remove("hide"); scrollTo(0, 0);
   const t = $(`.tab[data-tab="${mode}"]`); if (t) t.click();
@@ -983,28 +984,43 @@ $("#tick").innerHTML = Array(2).fill(["Respuestas pícaras", "heart", "Sin dejar
 const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.18 }) : null;
 $$(".rv, .nos").forEach((el) => (io ? io.observe(el) : el.classList.add("in")));
 const phone = $("#phone"), stage = $("#stage"), bigs = $$(".bigt h1");
-let ticking = false;
+/* Animación de la portada suavizada: medidas en caché + interpolación por frame */
+const L = { st: 0, sh: 1, vh: innerHeight, bub: [], tilt: null, cur: 0, target: 0, raf: 0, idx: -1, solid: null };
+function measure() {
+  if ($("#landing").classList.contains("hide")) return;
+  L.vh = innerHeight;
+  L.st = stage.offsetTop; L.sh = Math.max(1, stage.offsetHeight - L.vh);
+  const bp = $("#bubbles"); L.bub = bp ? $$(".floatb", bp).map((el) => ({ el, sp: parseFloat(el.dataset.sp) || 0, mid: bp.getBoundingClientRect().top + scrollY + bp.offsetHeight / 2 })) : [];
+  const t = $("#tilt"); L.tilt = t ? { el: t, mid: t.getBoundingClientRect().top + scrollY + t.offsetHeight / 2 } : null;
+}
+function frame() {
+  L.raf = 0;
+  const y = scrollY;
+  L.target = Math.min(1, Math.max(0, (y - L.st) / L.sh));
+  L.cur += (L.target - L.cur) * 0.14;
+  if (Math.abs(L.target - L.cur) < 0.0005) L.cur = L.target;
+  const p = L.cur;
+  if (!reduce) {
+    const rotY = -18 + p * 540, rotX = Math.sin(p * Math.PI * 2) * 12, rotZ = Math.sin(p * Math.PI) * -8;
+    const sc = 1 + Math.sin(p * Math.PI) * 0.1, ty = Math.sin(p * Math.PI * 3) * 12;
+    phone.style.transform = `translate3d(0,${ty.toFixed(2)}px,0) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+    const center = y + L.vh / 2;
+    L.bub.forEach((b) => { const d = Math.max(-1, Math.min(1, (b.mid - center) / L.vh)); b.el.style.transform = `translate3d(0,${(d * 70 * b.sp).toFixed(1)}px,0)`; });
+    if (L.tilt) { const k = Math.max(-0.6, Math.min(0.6, (L.tilt.mid - center) / L.vh)); L.tilt.el.style.transform = `translate3d(0,${(k * 30).toFixed(1)}px,0) rotate(${(4 + k * 8).toFixed(2)}deg)`; }
+  }
+  const idx = Math.min(2, Math.floor(L.target * 3.2));
+  if (idx !== L.idx) { L.idx = idx; bigs.forEach((h) => h.classList.toggle("off", +h.dataset.i !== idx)); }
+  const solid = y > L.st + stage.offsetHeight - 80;
+  if (solid !== L.solid) { L.solid = solid; $("#lnav").classList.toggle("solid", solid); }
+  if (L.cur !== L.target) L.raf = requestAnimationFrame(frame);
+}
 function onScroll() {
-  if (ticking || $("#landing").classList.contains("hide")) return;
-  ticking = true;
-  requestAnimationFrame(() => {
-    ticking = false;
-    const r = stage.getBoundingClientRect(), total = stage.offsetHeight - innerHeight;
-    const p = Math.min(1, Math.max(0, -r.top / total));
-    if (!reduce) {
-      const rotY = -18 + p * 540, rotX = Math.sin(p * Math.PI * 2) * 14, rotZ = Math.sin(p * Math.PI) * -10;
-      const sc = 1 + Math.sin(p * Math.PI) * 0.12;
-      phone.style.transform = `translateY(${Math.sin(p * Math.PI * 3) * 14}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${sc})`;
-    }
-    const idx = Math.min(2, Math.floor(p * 3.2));
-    bigs.forEach((h) => h.classList.toggle("off", +h.dataset.i !== idx));
-    $("#lnav").classList.toggle("solid", scrollY > stage.offsetHeight - 80);
-    $$("#bubbles .floatb").forEach((b) => { const br = b.parentElement.getBoundingClientRect(); const d = Math.max(-1, Math.min(1, (br.top + br.height / 2 - innerHeight / 2) / innerHeight)); b.style.transform = `translateY(${d * 70 * parseFloat(b.dataset.sp)}px)`; });
-    const t = $("#tilt"); if (t) { const tr = t.getBoundingClientRect(); const k = Math.max(-0.6, Math.min(0.6, (tr.top + tr.height / 2 - innerHeight / 2) / innerHeight)); t.style.transform = `rotate(${4 + k * 8}deg) translateY(${k * 30}px)`; }
-  });
+  if ($("#landing").classList.contains("hide")) return;
+  if (!L.raf) L.raf = requestAnimationFrame(frame);
 }
 addEventListener("scroll", onScroll, { passive: true });
-addEventListener("resize", onScroll);
+addEventListener("resize", () => { measure(); onScroll(); });
+addEventListener("load", () => { measure(); onScroll(); });
 
 
 /* ---------- Voz: hablar y escuchar ---------- */
