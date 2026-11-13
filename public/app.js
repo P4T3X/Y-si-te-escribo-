@@ -103,6 +103,8 @@ const BADGES = [
   { id: "photo", e: "camera2", t: "Con foto" },
   { id: "voice", e: "voice", t: "Suena a mí" },
   { id: "cita", e: "calendar", t: "Cita en el simulador" },
+  { id: "llamada", e: "phone", t: "Primera llamada" },
+  { id: "share", e: "share", t: "Lo compartí" },
 ];
 function level(xp) { let i = 0; LEVELS.forEach((l, k) => { if (xp >= l[0]) i = k; }); return i; }
 function ensure() {
@@ -348,6 +350,7 @@ const TOOLS = {
   decode: { e: "search", t: "¿Qué quiso decir?", d: "Decodifica sus mensajes raros", c: "var(--blue)", nuevo: true },
   invite: { e: "calendar", t: "Invítala", d: "Planes de cita y el mensaje para invitarla", c: "var(--pink)", nuevo: true },
   double: { e: "traffic", t: "¿Le escribo otra vez?", d: "Semáforo para no insistir de más", c: "var(--yellow)", nuevo: true },
+  ruleta: { e: "refresh", t: "Ruleta de temas", d: "Gira y revive la conversación", c: "var(--violet)", nuevo: true },
   sim: { e: "game", t: "Simulador", d: "10 chicas con personalidades distintas: cortante, pícara, tímida, sarcástica… Consigue la cita sin que te dejen en visto", c: "var(--green)", nuevo: true, big: true },
 };
 const TIPS = ["Responde con una pregunta abierta cuando sientas que la charla se apaga.", "Un buen mensaje pícaro deja algo a la imaginación.", "No respondas siempre al instante: tómate tu tiempo, pero sin hacerte el difícil.", "Si te deja en visto dos veces, suelta. La dignidad también enamora.", "Invitar a algo concreto (un café el jueves) funciona mejor que un “salgamos algún día”.", "Recuerda detalles que te contó; guárdalos en las notas de tu crush."];
@@ -458,6 +461,8 @@ const VIEWS = {
     };
   },
 
+  ruleta() { vistaRuleta(); },
+
   invite(crushId) {
     V.innerHTML = `${backBtn()}<h1 class="title">${ic("calendar")} Invítala</h1><p class="lead">El chat es para llegar a la cita. Te digo si ya es buen momento, te doy planes concretos según lo que le gusta y el mensaje exacto para invitarla.</p>
       ${crushSelect("iCrush", crushId)}
@@ -520,7 +525,7 @@ const VIEWS = {
     V.innerHTML = `${backBtn()}<h1 class="title">${ic("game")} Simulador</h1><p class="lead">Practica con 10 chicas distintas antes de escribirle a la de verdad. Responden como una chica real: corto, a veces cortante, y te dejan en visto si te pasas.</p>
       <div class="personas">${PERS.map((p, i) => `<button class="persona ${i ? "" : "on"}" data-i="${i}"><span class="av">${ic(p.av)}</span><b>${p.name}</b><small>${esc(p.vibe.split(/[,(;]/)[0])}</small><span class="tg">${p.tag}</span></button>`).join("")}</div>
       <label>Dificultad</label><div class="row" id="difs"><button class="chip" data-v="fácil">Fácil</button><button class="chip on" data-v="normal">Normal</button><button class="chip" data-v="difícil">Difícil</button></div>
-      <div class="simtop"><span class="av" id="simAv"></span><div><b id="simName"></b><small><span class="status-dot"></span><span id="simState">en línea</span></small></div></div>
+      <div class="simtop"><span class="av" id="simAv"></span><div><b id="simName"></b><small><span class="status-dot"></span><span id="simState">en línea</span></small></div><button class="callbtn" id="simCall">${ic("phone")} Llamar</button></div>
       <div class="simbar"><small id="simLbl">Interés: 50%</small><div class="meter"><div id="simM" style="width:50%"></div></div></div>
       <div class="goalbar">${ic("calendar")} <span>Reto: <b>consigue una cita</b> sin que te deje en visto</span></div>
       <button class="toggle" id="mindT">${ic("brain")}<span class="sw"></span> Leer su mente</button>
@@ -582,16 +587,37 @@ const VIEWS = {
       } catch (err) { hist.pop(); seen.remove(); toast(err.message); }
       finally { busy = false; }
     };
+    const showScore = (r, modo, extraTxt) => {
+      const p = Math.max(0, Math.min(100, Number(r.puntaje) || 0));
+      $("#out", V).innerHTML = `<div class="res"><div class="card score"><div class="ring" style="--p:${p}"><span>${p}</span></div><div><b>${esc(r.titulo)}</b><p class="lead" style="margin:4px 0 0">${modo} con ${esc(pers.name)} (${esc(pers.tag)}, ${dif})${extraTxt ? " · " + extraTxt : ""}</p></div></div>
+        <button class="go" id="shareBtn">${ic("share")} Compartir mi puntaje en historias</button>
+        ${r.bien?.length ? `<div class="card tip"><h3>${ic("check")} Lo hiciste bien</h3><ul class="list">${r.bien.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+        ${r.mejorar?.length ? `<div class="card tip"><h3>${ic("chart")} Para mejorar</h3><ul class="list">${r.mejorar.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+        ${r.mejor_mensaje ? `<div class="card tip"><h3>${ic("medal")} Tu mejor frase</h3>"${esc(r.mejor_mensaje)}"</div>` : ""}
+        ${r.peor_mensaje ? `<div class="card tip warnbox"><h3>${ic("warn")} Tu peor frase</h3>"${esc(r.peor_mensaje)}"${r.reescrito ? `<br><br><b>Mejor así:</b> "${esc(r.reescrito)}"` : ""}</div>` : ""}</div>`;
+      $("#shareBtn", V).onclick = () => tarjeta({ score: p, titulo: r.titulo, persona: pers.name, tag: pers.tag, extra: extraTxt }).catch(() => toast("No pude crear la imagen"));
+      $(".res", V).scrollIntoView({ behavior: "smooth" });
+      return p;
+    };
+    $("#simCall", V).onclick = () => {
+      abrirLlamada(pers, dif, async ({ hist: ch, cita, secs, colgo }) => {
+        if (ch.filter((m) => m.role === "user").length < 1) return;
+        badge("llamada"); addXP(10);
+        if (cita) { addXP(25); badge("cita"); dailyEvent({ type: "simCita", p: pers.name, visto: false }); }
+        await withLoading($("#simEnd", V), ["Escuchando la grabación…", "Calculando tu puntaje…"], async () => {
+          const r = await ai("simScore", { persona: pers, llamada: true, history: ch });
+          const extra = cita ? "consiguió cita" : colgo ? "te colgó" : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} min`;
+          const p = showScore(r, "Llamada", extra);
+          log("sim", `Llamada con ${pers.name}: ${p}/100`); dailyEvent({ type: "simScore", v: p });
+          if (p >= 80) badge("sim80");
+        });
+      });
+    };
     $("#simEnd", V).onclick = async () => {
       if (hist.filter((m) => m.role === "user").length < 2) { $("#st", V).textContent = "Chatea un poco más antes de terminar"; return; }
       await withLoading($("#simEnd", V), ["Revisando tu chat…", "Calculando tu puntaje…"], async () => {
         const r = await ai("simScore", { persona: pers, history: hist });
-        const p = Math.max(0, Math.min(100, Number(r.puntaje) || 0));
-        $("#out", V).innerHTML = `<div class="res"><div class="card score"><div class="ring" style="--p:${p}"><span>${p}</span></div><div><b>${esc(r.titulo)}</b><p class="lead" style="margin:4px 0 0">Práctica con ${esc(pers.name)} (${esc(pers.tag)}, ${dif})${gotCita ? " · consiguió cita" : wasSeen ? " · te dejó en visto" : ""}</p></div></div>
-          ${r.bien?.length ? `<div class="card tip"><h3>${ic("check")} Lo hiciste bien</h3><ul class="list">${r.bien.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
-          ${r.mejorar?.length ? `<div class="card tip"><h3>${ic("chart")} Para mejorar</h3><ul class="list">${r.mejorar.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
-          ${r.mejor_mensaje ? `<div class="card tip"><h3>${ic("medal")} Tu mejor mensaje</h3>"${esc(r.mejor_mensaje)}"</div>` : ""}
-          ${r.peor_mensaje ? `<div class="card tip warnbox"><h3>${ic("warn")} Tu peor mensaje</h3>"${esc(r.peor_mensaje)}"${r.reescrito ? `<br><br><b>Mejor así:</b> "${esc(r.reescrito)}"` : ""}</div>` : ""}</div>`;
+        const p = showScore(r, "Chat", gotCita ? "consiguió cita" : wasSeen ? "te dejó en visto" : "");
         log("sim", `Práctica con ${pers.name}: ${p}/100`); dailyEvent({ type: "simScore", v: p });
         celebrate($("#simEnd", V), 15 + Math.round(p / 5), "sim"); if (p >= 80) badge("sim80");
       });
@@ -721,6 +747,212 @@ function onScroll() {
 }
 addEventListener("scroll", onScroll, { passive: true });
 addEventListener("resize", onScroll);
+
+
+/* ---------- Voz: hablar y escuchar ---------- */
+const VOZ = { tts: null, dict: null, ready: false };
+(async () => {
+  try { if (window.claude && claude.use) { VOZ.tts = await claude.use("tts"); VOZ.dict = await claude.use("dictation"); } } catch {}
+  VOZ.ready = true;
+})();
+function vozEs() {
+  const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  const es = vs.filter((v) => /^es/i.test(v.lang));
+  return es.find((v) => /paulina|m[oó]nica|female|mujer|helena|lupe|sabina|isabela|luciana|marisol/i.test(v.name)) || es.find((v) => /419|MX|US|PE|AR|CO/i.test(v.lang)) || es[0] || null;
+}
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => {};
+function hablar(text, cfg = {}) {
+  if (cfg.mute) return Promise.resolve();
+  if (VOZ.tts) return VOZ.tts.speak(text, { voice: "airy", rate: 1.05 }).catch(() => {});
+  if (!window.speechSynthesis) return Promise.resolve();
+  return new Promise((res) => {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const v = vozEs(); if (v) u.voice = v; u.lang = v?.lang || "es-MX";
+      u.pitch = cfg.pitch || 1.15; u.rate = cfg.rate || 1.05;
+      u.onend = u.onerror = () => res();
+      speechSynthesis.speak(u);
+      setTimeout(res, 15000);
+    } catch { res(); }
+  });
+}
+function puedeEscuchar() { return !!(VOZ.dict || window.SpeechRecognition || window.webkitSpeechRecognition); }
+function escuchar(onPartial) {
+  // Llamar directo desde un toque del usuario
+  if (VOZ.dict) {
+    return new Promise((res, rej) => {
+      let txt = "";
+      const offP = VOZ.dict.onPartial(({ text }) => onPartial && onPartial(txt + " " + text));
+      const offF = VOZ.dict.onFinal(({ text }) => { txt = (txt + " " + text).trim(); onPartial && onPartial(txt); });
+      const offS = VOZ.dict.onState(({ state }) => { if (state === "idle") { [offP, offF, offS].forEach((f) => typeof f === "function" && f()); res(txt.trim()); } });
+      VOZ.dict.start().catch((e) => rej(e));
+      escuchar.stop = () => VOZ.dict.stop().catch(() => {});
+    });
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  return new Promise((res, rej) => {
+    try {
+      const r = new SR(); r.lang = "es-PE"; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+      let fin = "";
+      r.onresult = (e) => { let t = ""; for (const x of e.results) t += x[0].transcript; fin = t; onPartial && onPartial(t); };
+      r.onerror = (e) => (e.error === "no-speech" ? res("") : rej(e));
+      r.onend = () => res(fin.trim());
+      r.start();
+      escuchar.stop = () => { try { r.stop(); } catch {} };
+    } catch (e) { rej(e); }
+  });
+}
+function ringtone(ctxHolder) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)(); ctxHolder.ctx = ctx;
+    const beep = (t) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 440; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.15, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); o.start(t); o.stop(t + 1); };
+    const t0 = ctx.currentTime; beep(t0); beep(t0 + 1.6);
+  } catch {}
+}
+
+/* ---------- Llamada en el simulador ---------- */
+function abrirLlamada(pers, dif, onEnd) {
+  const el = document.createElement("div");
+  el.className = "callscr";
+  el.innerHTML = `<div class="cbg"></div>
+    <div class="ctop"><small id="cState">Llamando…</small><b>${esc(pers.name)}</b><span class="ctag">${esc(pers.tag)}</span></div>
+    <div class="cav" id="cAv"><i></i><i></i><i></i><span>${ic(pers.av)}</span></div>
+    <div class="cint"><small id="cIntL">Interés 50%</small><div class="meter"><div id="cIntM" style="width:50%"></div></div></div>
+    <div class="ctrans" id="cTrans"></div>
+    <div class="clive" id="cLive"></div>
+    <button class="toggle" id="cKbd" type="button" style="color:#ffd1e1">${ic("pencil")} Escribir en vez de hablar</button>
+    <form class="ctext hide" id="cTextF"><input id="cTextIn" placeholder="Escribe lo que le dirías…" aria-label="Lo que le dices"><button aria-label="Decir">${ic("send")}</button></form>
+    <div class="cbtns">
+      <button class="cb" id="cMute" aria-label="Silenciar su voz">${ic("voice")}<small>Su voz</small></button>
+      <button class="cb mic" id="cMic" aria-label="Hablar">${ic("chat")}<small id="cMicL">Toca y habla</small></button>
+      <button class="cb hang" id="cHang" aria-label="Colgar">${ic("close")}<small>Colgar</small></button>
+    </div>`;
+  document.body.append(el);
+  paintIcons(el);
+  const hist = [], st = { mute: false, busy: false, ended: false, cita: false, t0: 0, timer: 0, int: 50 };
+  const $c = (s) => el.querySelector(s);
+  const line = (who, t) => { const d = document.createElement("div"); d.className = "cl " + who; d.textContent = t; $c("#cTrans").append(d); $c("#cTrans").scrollTop = 1e6; };
+  const setInt = (v) => { st.int = v; $c("#cIntM").style.width = v + "%"; $c("#cIntL").textContent = `Interés ${v}%`; };
+  const talking = (on) => $c("#cAv").classList.toggle("talk", on);
+  if (!puedeEscuchar()) { $c("#cTextF").classList.remove("hide"); $c("#cMic").classList.add("hide"); }
+  const end = async (reason) => {
+    if (st.ended) return; st.ended = true; clearInterval(st.timer);
+    try { speechSynthesis && speechSynthesis.cancel(); VOZ.tts && VOZ.tts.stop(); } catch {}
+    $c("#cState").textContent = reason || "Llamada terminada";
+    el.classList.add("ending");
+    setTimeout(() => { el.remove(); onEnd && onEnd({ hist, cita: st.cita, secs: st.t0 ? Math.round((Date.now() - st.t0) / 1000) : 0, colgo: reason && reason.includes("colgó") }); }, 1400);
+  };
+  const sheSays = async (t) => { line("her", t); talking(true); await hablar(t, { mute: st.mute }); talking(false); };
+  const send = async (txt) => {
+    txt = (txt || "").trim(); if (!txt || st.busy || st.ended) return;
+    st.busy = true; line("me", txt); hist.push({ role: "user", content: txt });
+    $c("#cLive").textContent = ""; $c("#cMicL").textContent = "Ella responde…";
+    try {
+      const r = await ai("sim", { persona: pers, dificultad: dif, llamada: true, history: hist });
+      const v = Math.max(0, Math.min(100, Number(r.interes) || 0)); setInt(v);
+      const said = (Array.isArray(r.msgs) ? r.msgs : [r.msg]).filter(Boolean).join(" ");
+      if (said) { hist.push({ role: "assistant", content: said }); await sheSays(said); }
+      if (r.cita && !st.cita) { st.cita = true; hearts(innerWidth / 2, innerHeight / 2, 24); toast(`¡${pers.name} aceptó salir contigo!`); }
+      if (r.colgar) return end(`${pers.name} colgó`);
+    } catch (e) { hist.pop(); toast(e.message); }
+    finally { st.busy = false; if (!st.ended) $c("#cMicL").textContent = "Toca y habla"; }
+  };
+  $c("#cMic").onclick = () => {
+    if (st.busy || st.ended) return;
+    if (el.classList.contains("listening")) { escuchar.stop && escuchar.stop(); return; }
+    el.classList.add("listening"); $c("#cMicL").textContent = "Escuchando… toca para enviar";
+    const guard = setTimeout(() => escuchar.stop && escuchar.stop(), 12000);
+    escuchar((t) => ($c("#cLive").textContent = t)).finally(() => clearTimeout(guard)).then((t) => { el.classList.remove("listening"); if (t) send(t); else { $c("#cMicL").textContent = "No te escuché, toca otra vez"; } })
+      .catch(() => { el.classList.remove("listening"); $c("#cTextF").classList.remove("hide"); $c("#cMic").classList.add("hide"); toast("No pude usar el micrófono aquí. Escribe lo que dirías."); });
+  };
+  $c("#cKbd").onclick = () => { $c("#cTextF").classList.toggle("hide"); if (!$c("#cTextF").classList.contains("hide")) $c("#cTextIn").focus(); };
+  $c("#cTextF").onsubmit = (e) => { e.preventDefault(); const v = $c("#cTextIn").value; $c("#cTextIn").value = ""; send(v); };
+  $c("#cMute").onclick = () => { st.mute = !st.mute; $c("#cMute").classList.toggle("off", st.mute); if (st.mute) try { speechSynthesis.cancel(); VOZ.tts && VOZ.tts.stop(); } catch {} };
+  $c("#cHang").onclick = () => end("Colgaste");
+  // timbre y contesta
+  const holder = {}; ringtone(holder);
+  setTimeout(async () => {
+    if (st.ended) return;
+    try { holder.ctx && holder.ctx.close(); } catch {}
+    st.t0 = Date.now(); el.classList.add("live");
+    st.timer = setInterval(() => { const s = Math.round((Date.now() - st.t0) / 1000); $c("#cState").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }, 1000);
+    const hola = { Dani: "¿Aló? ¿Quién habla?", Lu: "Mmm, ¿y esta llamada sorpresa?", Cami: "Aló… ¿pasó algo?", Sofi: "Ho… hola", Majo: "Aló, sí, dime rápido que estoy saliendo", Ari: "¡ALÓ! jaja ¿qué fue?", Isa: "Hola… no esperaba tu llamada", Nati: "Aló, ¿sí?", "Rocío": "¡Holaaa! ¡Qué lindo que me llames!" }[pers.name] || "¿Aló?";
+    hist.push({ role: "assistant", content: hola });
+    await sheSays(hola);
+  }, 3200);
+}
+
+/* ---------- Tarjeta para compartir ---------- */
+async function tarjeta({ score, titulo, persona, tag, extra }) {
+  const W = 1080, H = 1920, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const x = cv.getContext("2d");
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#ff4f8b"); g.addColorStop(0.55, "#a8235f"); g.addColorStop(1, "#2b0a18");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.globalAlpha = 0.12; x.fillStyle = "#fff";
+  for (let i = 0; i < 40; i++) { const px = (i * 197) % W, py = (i * 311) % H, s = 30 + (i % 4) * 14; x.beginPath(); x.moveTo(px, py + s * 0.3); x.bezierCurveTo(px, py, px - s * 0.5, py, px - s * 0.5, py + s * 0.3); x.bezierCurveTo(px - s * 0.5, py + s * 0.6, px, py + s * 0.8, px, py + s); x.bezierCurveTo(px, py + s * 0.8, px + s * 0.5, py + s * 0.6, px + s * 0.5, py + s * 0.3); x.bezierCurveTo(px + s * 0.5, py, px, py, px, py + s * 0.3); x.fill(); }
+  x.globalAlpha = 1;
+  const face = new Image(); face.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${FACE}</svg>`);
+  await new Promise((r) => { face.onload = r; face.onerror = r; });
+  try { x.drawImage(face, W / 2 - 150, 220, 300, 300); } catch {}
+  x.textAlign = "center"; x.fillStyle = "#fff";
+  x.font = "500 54px 'Space Grotesk', Arial"; x.fillText("¿y si te", W / 2, 640);
+  x.font = "700 110px 'Space Grotesk', Arial"; x.fillText("escribo?", W / 2, 750);
+  x.beginPath(); x.arc(W / 2, 1060, 210, 0, Math.PI * 2); x.fillStyle = "#0e0d12"; x.fill();
+  x.beginPath(); x.arc(W / 2, 1060, 210, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * score) / 100); x.lineWidth = 34; x.strokeStyle = "#ffd166"; x.lineCap = "round"; x.stroke();
+  x.fillStyle = "#fff"; x.font = "700 170px 'Space Grotesk', Arial"; x.fillText(String(score), W / 2, 1120);
+  x.font = "600 40px Inter, Arial"; x.fillStyle = "#ffd166"; x.fillText("PUNTOS", W / 2, 1180);
+  x.fillStyle = "#fff"; x.font = "700 62px 'Space Grotesk', Arial";
+  const t = String(titulo || "").slice(0, 34); x.fillText(t, W / 2, 1390);
+  x.font = "500 44px Inter, Arial"; x.fillStyle = "#ffe2ec"; x.fillText(`Practiqué con ${persona} (${tag})`, W / 2, 1470);
+  if (extra) { x.fillStyle = "#ffd166"; x.font = "700 46px Inter, Arial"; x.fillText(extra, W / 2, 1545); }
+  x.fillStyle = "#fff"; x.font = "600 40px Inter, Arial"; x.fillText("¿Le ganas? Prueba el simulador", W / 2, 1720);
+  x.font = "700 44px 'Space Grotesk', Arial"; x.fillStyle = "#ffd166"; x.fillText(location.hostname.includes("netlify") ? location.hostname : "¿Y si te escribo?", W / 2, 1790);
+  const blob = await new Promise((r) => cv.toBlob(r, "image/png"));
+  const file = new File([blob], "mi-puntaje.png", { type: "image/png" });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Mi puntaje en ¿Y si te escribo?" }); badge("share"); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  const url = URL.createObjectURL(blob);
+  modal(`<h2>Tu tarjeta</h2><p class="lead">Mantén presionada la imagen para guardarla y subirla a tus historias.</p><img src="${url}" alt="Tarjeta con tu puntaje" style="width:100%;border-radius:16px;margin:8px 0">`);
+  badge("share");
+}
+
+/* ---------- Ruleta de temas ---------- */
+const TEMAS = [
+  { n: "Pícaro", c: "#ff4f8b", q: ["¿Qué es lo más atrevido que has hecho por alguien que te gustaba?", "Si tuviéramos una cita secreta, ¿a dónde me llevarías?", "Dime tu mejor cualidad… pero la que no pondrías en tu bio", "¿Eres de las que da el primer paso o de las que espera?", "Del 1 al 10, ¿qué tan peligrosa eres cuando te aburres?"] },
+  { n: "Random", c: "#a45cff", q: ["Si fueras un snack, ¿cuál serías y por qué?", "¿Qué opinas: la pizza con piña es crimen o arte?", "¿Cuál es tu teoría conspirativa favorita (en broma)?", "Si tu vida fuera serie, ¿cómo se llamaría?", "¿Qué superpoder inútil te gustaría tener?"] },
+  { n: "Profundo", c: "#4fa3ff", q: ["¿Qué te hace sentir más tú misma?", "¿Qué te gustaría hacer este año sí o sí?", "¿Qué canción te pone nostálgica?", "¿Cuál es el mejor consejo que te han dado?", "¿Qué cosa pequeña te alegra el día?"] },
+  { n: "Gracioso", c: "#ffd166", q: ["Cuéntame tu momento más vergonzoso (yo te cuento el mío)", "¿Cuál es el peor apodo que te han puesto?", "¿Qué meme te representa hoy?", "Si tu mascota hablara, ¿qué chisme contaría de ti?", "¿Cuál es la excusa más absurda que has inventado?"] },
+  { n: "Retos", c: "#3fd59a", q: ["Reto: mándame un audio diciendo tu frase favorita", "Te reto a adivinar mi comida favorita en 3 intentos", "Reto: dime 3 emojis que me describan", "El que pierda en piedra, papel o tijera invita el café", "Reto: cuéntame algo que nadie sepa de ti"] },
+  { n: "Planes", c: "#ff7a3d", q: ["¿Plan ideal de domingo: playa, cine o quedarse en casa?", "¿Qué lugar de la ciudad todavía no conoces y te mueres por ir?", "¿Café, helado o algo más loco para una primera salida?", "¿Te animas a un plan improvisado esta semana?", "¿Cuál es el mejor sitio para comer que conoces?"] },
+  { n: "Música", c: "#e83e8c", q: ["¿Qué canción no puede faltar en tu playlist?", "¿Concierto al que irías aunque sea sola?", "¿Reggaetón, rock, pop o algo que me sorprenda?", "¿Qué canción te sabes completita?", "Mándame una canción y te mando otra"] },
+  { n: "Comida", c: "#7a1840", q: ["¿Ceviche o lomo saltado? Piensa bien tu respuesta", "¿Cuál es tu antojo de medianoche?", "¿Sabes cocinar algo o eres team delivery?", "¿La comida que nunca probarías?", "Si te invito a comer, ¿qué pides sin pensar?"] },
+];
+function vistaRuleta() {
+  const N = TEMAS.length, R = 140, cx = 150, cy = 150;
+  const seg = TEMAS.map((t, i) => {
+    const a0 = (i / N) * Math.PI * 2 - Math.PI / 2, a1 = ((i + 1) / N) * Math.PI * 2 - Math.PI / 2;
+    const p = (a) => `${cx + R * Math.cos(a)},${cy + R * Math.sin(a)}`;
+    const am = (a0 + a1) / 2, tx = cx + R * 0.62 * Math.cos(am), ty = cy + R * 0.62 * Math.sin(am);
+    return `<path d="M${cx},${cy} L${p(a0)} A${R},${R} 0 0 1 ${p(a1)} Z" fill="${t.c}" stroke="#0e0d12" stroke-width="3"/><text x="${tx}" y="${ty}" fill="#fff" font-family="Space Grotesk, sans-serif" font-weight="700" font-size="15" text-anchor="middle" dominant-baseline="middle" transform="rotate(${(am * 180) / Math.PI + 90} ${tx} ${ty})">${t.n}</text>`;
+  }).join("");
+  V.innerHTML = `${backBtn()}<h1 class="title">${ic("refresh")} Ruleta de temas</h1><p class="lead">¿Se murió la conversación? Gira la ruleta y te doy un tema o pregunta para revivirla.</p>
+    <div class="wheelwrap"><div class="pointer"></div><svg class="wheel" id="wheel" viewBox="0 0 300 300" role="img" aria-label="Ruleta de temas">${seg}<circle cx="150" cy="150" r="26" fill="#0e0d12"/><circle cx="150" cy="150" r="10" fill="#ffd166"/></svg></div>
+    <button class="go" id="spin">${ic("refresh")} Girar</button><div id="out"></div>`;
+  wireBack();
+  let rot = 0, spinning = false;
+  $("#spin", V).onclick = () => {
+    if (spinning) return; spinning = true;
+    const i = Math.floor(Math.random() * N), q = TEMAS[i].q[Math.floor(Math.random() * 5)];
+    const target = 360 * 6 + (360 - (i + 0.5) * (360 / N));
+    rot = rot - (rot % 360) + target;
+    const w = $("#wheel", V); w.style.transition = reduce ? "none" : "transform 4s cubic-bezier(.15,.9,.2,1)"; w.style.transform = `rotate(${rot}deg)`;
+    setTimeout(() => {
+      spinning = false; const b = w.getBoundingClientRect(); hearts(b.left + b.width / 2, b.top + 20, 14);
+      $("#out", V).innerHTML = `<div class="res"><div class="sec"><h2><span class="dot" style="background:${TEMAS[i].c}"></span>${TEMAS[i].n}</h2>${optCard({ msg: q, por: "Úsalo tal cual o adáptalo a tu estilo" }, TEMAS[i].n === "Pícaro" ? "picara" : "seguir", TEMAS[i].c, 0.05)}</div></div>`;
+      wireOpts(); addXP(2); dailyEvent({ type: "tool", v: "ruleta" });
+    }, reduce ? 50 : 4100);
+  };
+}
 
 /* PWA */
 if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));

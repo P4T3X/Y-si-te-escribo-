@@ -54,6 +54,8 @@ const ICONS = {
   "face-love": '<circle cx="24" cy="24" r="18"/><path class="beat" d="M18 25c-3-2-4-3-4-5a2 2 0 0 1 4-1 2 2 0 0 1 4 1c0 2-1 3-4 5zM30 25c-3-2-4-3-4-5a2 2 0 0 1 4-1 2 2 0 0 1 4 1c0 2-1 3-4 5z" fill="var(--ai2,#ff4f8b)" stroke="none"/><path d="M17 31q7 6 14 0"/>',
   mail: '<rect x="5" y="11" width="38" height="27" rx="5"/><path class="flap" d="M7 14l17 13 17-13"/>',
   brain: '<path d="M18 8a6 6 0 0 0-6 6 6 6 0 0 0-4 10 6 6 0 0 0 5 9 6 6 0 0 0 11 3V10a5 5 0 0 0-6-2zM30 8a6 6 0 0 1 6 6 6 6 0 0 1 4 10 6 6 0 0 1-5 9 6 6 0 0 1-11 3"/><circle class="b1" cx="18" cy="20" r="2" fill="var(--ai2,#ffd166)" stroke="none"/><circle class="b2" cx="31" cy="27" r="2" fill="var(--ai2,#ffd166)" stroke="none"/>',
+  phone: '<path class="ring" d="M14 6h6l3 9-4 3a24 24 0 0 0 11 11l3-4 9 3v6a4 4 0 0 1-4 4C21 38 10 27 10 10a4 4 0 0 1 4-4z"/><path class="wv" d="M30 6a12 12 0 0 1 12 12M30 12a6 6 0 0 1 6 6" stroke="var(--ai2,#3fd59a)"/>',
+  share: '<path d="M24 30V6M15 14l9-9 9 9"/><path d="M10 24v14a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4V24"/>',
 };
 function ic(name, cls = "") {
   const b = ICONS[name];
