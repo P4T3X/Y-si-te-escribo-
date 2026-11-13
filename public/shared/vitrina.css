@@ -2,7 +2,7 @@
   position:relative;height:400vh;background:var(--v-bg);color:var(--v-ink)}
 .vit-sticky{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
 .vit-frame{position:absolute;inset:0;overflow:hidden;will-change:clip-path;clip-path:inset(23% 24% 11% 24% round 28px)}
-.vit-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:62% 50%;will-change:transform;transform-origin:60% 50%;filter:contrast(1.06)}
+.vit-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:55% 55%;will-change:transform;transform-origin:58% 55%;filter:saturate(1.05)}
 .vit-shade{position:absolute;inset:0;background:radial-gradient(120% 90% at 60% 40%,transparent 35%,rgba(0,0,0,.55)),linear-gradient(180deg,rgba(0,0,0,.35),transparent 30%,transparent 55%,rgba(0,0,0,.85));opacity:.35;pointer-events:none}
 .vit-eyebrow{font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--v-accent)}
 .vit h2{margin:8px 0 0;font-size:clamp(34px,6vw,84px);line-height:1;letter-spacing:-.02em}
@@ -19,13 +19,14 @@
 .vit-spot.left span{left:auto;right:22px;transform:translateX(8px)}
 .vit-spot.on span{opacity:1;transform:none}
 .vit-spot b{display:block;color:var(--v-ink);font-size:15px;margin-bottom:2px}
-.vit-specs{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.12);border-top:1px solid rgba(255,255,255,.12);opacity:0}
+.vit-specs{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.12);border-top:1px solid rgba(255,255,255,.12);opacity:0}
 .vit-specs div{background:rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:clamp(20px,4vh,40px) clamp(14px,3vw,36px)}
 .vit-specs b{display:block;font-size:clamp(34px,5vw,64px);line-height:1;letter-spacing:-.02em;color:var(--v-ink)}
 .vit-specs span{display:block;margin-top:8px;font-size:14px;color:var(--v-mute)}
 @media (max-width:760px){
-  .vit-frame img{object-position:70% 50%}
-  .vit-specs{grid-template-columns:1fr 1fr}
+  .vit-frame img{object-position:60% 50%}
+  .vit-specs{grid-template-columns:1fr 1fr 1fr}
+  .vit-specs b{font-size:26px}
   .vit-specs span{font-size:12.5px}
   .vit-spot span{max-width:170px;font-size:12.5px}
 }

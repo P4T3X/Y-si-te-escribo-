@@ -3,15 +3,15 @@
    Uso: <section class="vit" data-img="ruta.jpg"></section> + vitrina.css */
 (function () {
   const SPOTS = [
-    { u: 0.58, v: 0.56, t: "Faro redondo", d: "Cromado, con el vidrio estriado de la época." },
-    { u: 0.84, v: 0.42, t: "Parrilla del radiador", d: "El frente vertical que distingue al Model A." },
-    { u: 0.92, v: 0.84, t: "Placa de la colección", d: "Cada auto del museo lleva la suya." },
+    { u: 0.63, v: 0.5, t: "Faros cromados", d: "Grandes, redondos y pulidos a mano." },
+    { u: 0.5, v: 0.74, t: "Ruedas de rayos de madera", d: "Con llantas de banda blanca, como salían de fábrica." },
+    { u: 0.31, v: 0.57, t: "Estribo", d: "El escalón lateral para subir al auto." },
+    { u: 0.83, v: 0.73, t: "Parachoques de triple barra", d: "Cromo brillante de punta a punta." },
   ];
   const SPECS = [
-    { n: 4, l: "cilindros" },
-    { n: 40, l: "caballos de fuerza" },
-    { n: 3, l: "velocidades" },
-    { n: 1929, l: "año del modelo" },
+    { n: 4, l: "puertas" },
+    { t: "Años 20", l: "su época" },
+    { n: 30, p: "+", l: "autos más te esperan en el museo" },
   ];
   const clamp = (v) => Math.max(0, Math.min(1, v));
   const ease = (v) => 1 - Math.pow(1 - v, 3);
@@ -25,17 +25,17 @@
     ${SPOTS.map((s, i) => `<button class="vit-spot" data-i="${i}" aria-label="${s.t}"><i></i><span><b>${s.t}</b>${s.d}</span></button>`).join("")}
   </div>
   <div class="vit-copy"><div class="vit-eyebrow">${eyebrow}</div><h2>${title}</h2><p>Original, restaurado y listo para rodar.</p></div>
-  <div class="vit-specs">${SPECS.map((s) => `<div><b data-n="${s.n}">0</b><span>${s.l}</span></div>`).join("")}</div>
+  <div class="vit-specs">${SPECS.map((s) => s.n != null ? `<div><b data-n="${s.n}" data-p="${s.p || ""}">0</b><span>${s.l}</span></div>` : `<div><b>${s.t}</b><span>${s.l}</span></div>`).join("")}</div>
 </div>`;
     const $ = (s) => sec.querySelector(s);
     const frame = $(".vit-frame"), pic = $(".vit-frame img"), shade = $(".vit-shade"), intro = $(".vit-intro"), copy = $(".vit-copy"), specs = $(".vit-specs");
-    const spots = [...sec.querySelectorAll(".vit-spot")], nums = [...sec.querySelectorAll(".vit-specs b")];
+    const spots = [...sec.querySelectorAll(".vit-spot")], nums = [...sec.querySelectorAll(".vit-specs b[data-n]")];
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let top = 0, h = 1, W = 0, H = 0, cur = 0, counted = false;
     const measure = () => { top = sec.getBoundingClientRect().top + scrollY; h = Math.max(1, sec.offsetHeight - innerHeight); W = frame.clientWidth; H = frame.clientHeight; placeSpots(); };
 
     function placeSpots() {
-      const nw = pic.naturalWidth || 921, nh = pic.naturalHeight || 790;
+      const nw = pic.naturalWidth || 1280, nh = pic.naturalHeight || 848;
       const sc = Math.max(W / nw, H / nh), dw = nw * sc, dh = nh * sc;
       const op = getComputedStyle(pic).objectPosition.split(" ").map((x) => parseFloat(x) / 100);
       const ox = (W - dw) * (isNaN(op[0]) ? 0.5 : op[0]), oy = (H - dh) * (isNaN(op[1]) ? 0.5 : op[1]);
@@ -50,7 +50,7 @@
     function countUp() {
       if (counted) return; counted = true;
       nums.forEach((b) => { const to = +b.dataset.n, t0 = performance.now();
-        const tick = (t) => { const k = Math.min(1, (t - t0) / 1300); b.textContent = Math.round(to * ease(k)); if (k < 1) requestAnimationFrame(tick); };
+        const tick = (t) => { const k = Math.min(1, (t - t0) / 1300); b.textContent = (b.dataset.p || "") + Math.round(to * ease(k)); if (k < 1) requestAnimationFrame(tick); };
         requestAnimationFrame(tick); });
     }
     function render(v) {
@@ -62,7 +62,7 @@
       intro.style.opacity = (1 - clamp(v / 0.12)).toFixed(3);
       intro.style.transform = `translateY(${(-30 * clamp(v / 0.12)).toFixed(1)}px)`;
       const c = ease(clamp((v - 0.3) / 0.12));
-      copy.style.opacity = (c * (1 - clamp((v - 0.74) / 0.08))).toFixed(3);
+      copy.style.opacity = (c * (1 - clamp((v - 0.41) / 0.05))).toFixed(3);
       copy.style.transform = `translateY(${(26 * (1 - c)).toFixed(1)}px)`;
       shade.style.opacity = (0.35 + 0.5 * clamp((v - 0.3) / 0.15) + 0.15 * clamp((v - 0.74) / 0.1)).toFixed(3);
       spots.forEach((el, i) => el.classList.toggle("on", el.dataset.ok === "1" && v > 0.44 + i * 0.07 && v < 0.78));
