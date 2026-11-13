@@ -578,3 +578,6 @@ html{scroll-behavior:smooth}
 .madeby b{color:var(--pink);font-weight:700}
 .legal .madeby{color:#c9a9b8}
 .legal .madeby b{color:#ffc93c}
+
+.madeby a{text-decoration:none;border-bottom:1px solid currentColor;padding:6px 0}
+.madeby a:hover{opacity:.8}

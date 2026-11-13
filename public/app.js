@@ -457,7 +457,7 @@ const VIEWS = {
       ${DATA.profile.hot ? `<div class="card hotbanner">${ic("fire")}<div><b>Modo HOT activo</b><small>Todas las respuestas salen más atrevidas</small></div></div>` : ""}
       <div class="grid">${Object.entries(TOOLS).filter(([, t]) => !t.hot || DATA.profile.hot).map(([k, t], i) => `<button class="tool ${t.big ? "big" : ""}" data-tool="${k}" style="--c:${t.c};animation-delay:${i * 0.07}s">${t.nuevo ? '<span class="new">NUEVO</span>' : ""}<span class="ic">${ic(t.e)}</span><b>${t.t}</b><small>${t.d}</small></button>`).join("")}</div>
       <div class="card tipday" style="animation-delay:.4s"><b>${ic("bulb")} Tip del día:</b> ${TIPS[new Date().getDate() % TIPS.length]}</div>
-      <p class="madeby">Made by: <b>Lucioni Enterprises</b></p>`;
+      <p class="madeby">Made by: <a href="https://ysiteescrib.netlify.app/lucioni/" target="_blank" rel="noopener"><b>Lucioni Enterprises</b></a></p>`;
     $$("[data-tool]", V).forEach((b) => (b.onclick = () => go(b.dataset.tool)));
     $("#qForm", V).onsubmit = (e) => { e.preventDefault(); const t = $("#qText", V).value.trim(); if (!t) return toast("Pega primero lo que te escribió"); go("reply", { quick: t }); };
   },
