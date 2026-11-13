@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Colección Lucioni · Autos clásicos en Arequipa</title>
+<meta name="description" content="Museo de autos clásicos en Arequipa, Perú. Más de 30 vehículos de los años 20 a los 70. Visítanos en La Recoleta 178 y lleva la colección contigo en nuestra tienda de ropa.">
+<meta name="theme-color" content="#4a2a1d">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Pinyon+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/despiece.css">
+<style>
+:root{
+  --cafe:#4a2a1d;--cafe2:#2d1912;--cielo:#8fb9da;--cielo2:#c9dff0;--mante:#f3ecc4;--marino:#141c33;--marino2:#1d2747;
+  --naranja:#e07a2f;--rojo:#b02a2c;--sillar:#ede7dc;--sillar2:#e2d9ca;--madera:#b4622d;--tinta:#1d1511;--gris:#6f6458;
+  --serif:"DM Serif Display",Georgia,serif;--sans:"Manrope",system-ui,-apple-system,sans-serif;--script:"Pinyon Script",cursive;
+  --r:22px;--ease:cubic-bezier(.2,.8,.2,1)
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{margin:0;background:var(--sillar);color:var(--tinta);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
+img{max-width:100%;display:block}
+a{color:inherit}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.eyebrow{font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--madera)}
+.h2{font-family:var(--serif);font-weight:400;font-size:clamp(36px,5.4vw,68px);line-height:1;letter-spacing:-.01em;margin:10px 0 0}
+.lead{font-size:clamp(16px,1.6vw,19px);line-height:1.6;color:var(--gris);max-width:620px}
+.btn{display:inline-flex;align-items:center;gap:10px;border:0;border-radius:999px;padding:15px 24px;font-weight:800;font-size:15px;text-decoration:none;transition:transform .25s var(--ease),background .25s,box-shadow .25s}
+.btn:active{transform:scale(.97)}
+.btn.dark{background:var(--cafe);color:var(--mante)}
+.btn.dark:hover{background:var(--cafe2);box-shadow:0 10px 26px rgba(74,42,29,.3)}
+.btn.ghost{background:transparent;color:var(--cafe);box-shadow:inset 0 0 0 2px var(--cafe)}
+.btn.orange{background:var(--naranja);color:#fff}
+.btn.orange:hover{background:#c96a24}
+.btn.light{background:var(--mante);color:var(--cafe)}
+.grain{position:relative}
+.grain::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .33 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* Reveal */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.in{opacity:1;transform:none}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
+
+/* Nav */
+.nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .35s,box-shadow .35s,color .35s}
+.nav .in{display:flex;align-items:center;gap:22px;height:68px}
+.nav.solid{background:rgba(237,231,220,.86);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);box-shadow:0 1px 0 rgba(74,42,29,.12)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:800;letter-spacing:.04em;font-size:14px}
+.brand svg{width:40px;height:40px}
+.nav .links{display:flex;gap:22px;margin-left:auto}
+.nav .links a{text-decoration:none;font-weight:600;font-size:14.5px;opacity:.82}
+.nav .links a:hover{opacity:1}
+.cartbtn{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--cafe);color:var(--mante)}
+.cartbtn svg{width:20px;height:20px}
+.cartbtn .n{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--naranja);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.cartbtn .n.on{transform:scale(1)}
+.cartbtn.bump{animation:bump .5s}
+@keyframes bump{30%{transform:scale(1.18)}}
+.nav .tix{padding:11px 18px;font-size:14px}
+@media (max-width:860px){.nav .links{display:none}.nav .tix{margin-left:auto}}
+@media (max-width:480px){.brand span{display:none}}
+
+/* Hero */
+.hero{min-height:100svh;padding:110px 0 60px;display:flex;align-items:center;background:var(--sillar)}
+.hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,5vw,70px);align-items:center}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(54px,9vw,128px);line-height:.9;letter-spacing:-.02em;margin:14px 0 0;color:var(--cafe)}
+.hero h1 em{font-family:var(--script);font-style:normal;color:var(--rojo);font-size:.62em;display:block;margin:.12em 0 0 .08em;letter-spacing:0}
+.hero .lead{margin:22px 0 30px}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:12px}
+.arch{position:relative;aspect-ratio:4/5;border-radius:999px 999px 26px 26px;overflow:hidden;box-shadow:0 40px 90px rgba(45,25,18,.28)}
+.arch img{width:100%;height:100%;object-fit:cover;transform:scale(1.08);transition:transform 1.8s var(--ease)}
+.arch.in img{transform:scale(1)}
+.seal{position:absolute;width:132px;height:132px;left:-34px;bottom:46px;animation:spin 26s linear infinite;filter:drop-shadow(0 12px 22px rgba(0,0,0,.25))}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero .note{display:flex;gap:26px;margin-top:38px;flex-wrap:wrap}
+.hero .note div{font-size:13px;color:var(--gris)}
+.hero .note b{display:block;font-family:var(--serif);font-weight:400;font-size:30px;color:var(--cafe)}
+.hero .reveal-word{display:inline-block;overflow:hidden;vertical-align:bottom}
+.hero .reveal-word>span{display:inline-block;transform:translateY(105%);animation:up 1.1s var(--ease) forwards}
+@keyframes up{to{transform:none}}
+@media (max-width:860px){.hero .grid{grid-template-columns:1fr}.arch{max-width:420px;margin:10px auto 0;width:100%}.seal{width:104px;height:104px;left:-10px}}
+
+/* Marquee */
+.marq{background:var(--cafe);color:var(--mante);overflow:hidden;padding:18px 0;border-block:1px solid rgba(243,236,196,.15)}
+.marq .tr{display:flex;gap:46px;width:max-content;animation:mq 38s linear infinite}
+.marq span{font-family:var(--serif);font-size:clamp(22px,3vw,34px);white-space:nowrap;display:flex;align-items:center;gap:46px}
+.marq span::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--naranja)}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* Intro / historia */
+.intro{padding:clamp(80px,12vw,150px) 0;background:var(--mante)}
+.intro .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,6vw,90px);align-items:end}
+.intro .big{font-family:var(--serif);font-size:clamp(28px,3.6vw,46px);line-height:1.12;color:var(--cafe);margin:0}
+.intro .big i{color:var(--rojo)}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(74,42,29,.18);border-radius:var(--r);overflow:hidden;margin-top:clamp(50px,7vw,90px)}
+.facts div{background:var(--mante);padding:26px 22px}
+.facts b{display:block;font-family:var(--serif);font-weight:400;font-size:clamp(34px,4vw,52px);color:var(--cafe);line-height:1}
+.facts span{display:block;margin-top:8px;font-size:14px;color:var(--gris);line-height:1.4}
+@media (max-width:860px){.intro .grid{grid-template-columns:1fr}.facts{grid-template-columns:1fr 1fr}}
+
+/* Despiece en la paleta de la colección */
+.dsp{--d-bg:var(--marino);--d-ink:var(--mante);--d-mute:rgba(243,236,196,.66);--d-line:var(--mante);--d-body:#0b1020;--d-accent:var(--naranja)}
+.dsp-head h2{font-family:var(--serif);font-weight:400}
+.dsp-t{font-family:var(--serif);font-weight:400}
+
+/* Eras */
+.eras{padding:clamp(80px,12vw,150px) 0;background:var(--sillar)}
+.eras .row{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:46px}
+.era{position:relative;border-radius:var(--r);padding:28px 26px 26px;min-height:380px;display:flex;flex-direction:column;overflow:hidden;color:var(--mante);transition:transform .5s var(--ease)}
+.era:hover{transform:translateY(-6px)}
+.era .yr{font-family:var(--serif);font-size:clamp(46px,5vw,70px);line-height:1}
+.era h3{margin:auto 0 8px;font-size:20px}
+.era p{margin:0;font-size:15px;line-height:1.55;opacity:.84}
+.era svg{position:absolute;right:-30px;top:70px;width:118%;opacity:.22}
+.era.a{background:var(--marino)}.era.b{background:var(--cafe)}.era.c{background:var(--naranja)}
+.era.b .yr{color:var(--cielo)}.era.a .yr{color:var(--mante)}
+@media (max-width:860px){.eras .row{grid-template-columns:1fr}.era{min-height:300px}}
+
+/* Tienda */
+.shop{padding:clamp(80px,12vw,150px) 0;background:var(--mante)}
+.shop .top{display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:30px}
+.chip{border:0;border-radius:999px;padding:10px 16px;background:transparent;box-shadow:inset 0 0 0 1.5px rgba(74,42,29,.3);color:var(--cafe);font-weight:700;font-size:14px;transition:all .25s}
+.chip.on{background:var(--cafe);color:var(--mante);box-shadow:none}
+.grid-p{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:26px}
+.prod{background:#fff;border-radius:var(--r);overflow:hidden;cursor:pointer;transition:transform .45s var(--ease),box-shadow .45s;box-shadow:0 1px 0 rgba(74,42,29,.08)}
+.prod:hover{transform:translateY(-6px);box-shadow:0 26px 50px rgba(45,25,18,.14)}
+.prod .ph{position:relative;aspect-ratio:1;background:#eef0f0;overflow:hidden}
+.prod .ph img{width:100%;height:100%;object-fit:cover;transition:opacity .5s,transform .8s var(--ease)}
+.prod .ph img.alt{position:absolute;inset:0;opacity:0}
+.prod:hover .ph img.alt{opacity:1}
+.prod:hover .ph img{transform:scale(1.04)}
+.prod .tag{position:absolute;left:14px;top:14px;background:var(--cafe);color:var(--mante);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
+.prod .info{padding:18px 20px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.prod h3{margin:0;font-size:17px}
+.prod .sub{margin-top:4px;font-size:13.5px;color:var(--gris);display:flex;align-items:center;gap:7px}
+.dot{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.price{font-weight:800;white-space:nowrap;color:var(--cafe)}
+.price.soon{font-weight:700;font-size:13px;color:var(--madera)}
+.quick{margin:0 20px 20px;width:calc(100% - 40px);border:0;border-radius:14px;padding:13px;background:var(--sillar);color:var(--cafe);font-weight:800;transition:background .25s}
+.prod:hover .quick{background:var(--cafe);color:var(--mante)}
+@media (max-width:980px){.grid-p{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.grid-p{grid-template-columns:1fr 1fr;gap:12px}.prod .info{padding:12px 12px 14px;flex-direction:column}.prod h3{font-size:14.5px}.quick{margin:0 12px 12px;width:calc(100% - 24px);padding:11px;font-size:13px}.prod .tag{left:8px;top:8px;font-size:9.5px}}
+
+/* Lookbook */
+.look{padding:clamp(80px,12vw,150px) 0;background:var(--cafe);color:var(--mante)}
+.look .eyebrow{color:var(--cielo)}
+.look .lead{color:rgba(243,236,196,.7)}
+.mason{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:220px;gap:14px;margin-top:44px}
+.mason figure{margin:0;border-radius:18px;overflow:hidden;position:relative}
+.mason img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s var(--ease)}
+.mason figure:hover img{transform:scale(1.05)}
+.mason figcaption{position:absolute;left:12px;bottom:12px;background:rgba(29,21,17,.6);backdrop-filter:blur(8px);padding:6px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.m1{grid-row:span 2}.m2{grid-column:span 2;grid-row:span 2}.m3{grid-row:span 2}.m4{grid-column:span 2}.m5{grid-column:span 2}
+@media (max-width:860px){.mason{grid-template-columns:1fr 1fr;grid-auto-rows:180px}.m2{grid-column:span 2}.m4,.m5{grid-column:span 1}}
+
+/* Visita */
+.visit{padding:clamp(80px,12vw,150px) 0;background:var(--sillar)}
+.visit .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;margin-top:40px}
+.vcard{background:var(--marino);color:var(--mante);border-radius:var(--r);padding:clamp(26px,4vw,44px);display:flex;flex-direction:column;gap:22px}
+.vcard dt{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--cielo);font-weight:800}
+.vcard dd{margin:6px 0 0;font-family:var(--serif);font-size:clamp(24px,2.6vw,32px);line-height:1.15}
+.vcard dl{margin:0;display:grid;gap:22px}
+.vcard .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto}
+.vphoto{border-radius:var(--r);overflow:hidden;min-height:340px}
+.vphoto img{width:100%;height:100%;object-fit:cover}
+@media (max-width:860px){.visit .grid{grid-template-columns:1fr}}
+
+/* Footer */
+footer{background:var(--cafe2);color:rgba(243,236,196,.75);padding:56px 0 40px;font-size:14px}
+footer .in{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
+footer a{text-decoration:none;color:var(--mante)}
+footer .brand{color:var(--mante)}
+footer .made a b{color:var(--cielo)}
+
+/* Drawer & modal */
+.scrim{position:fixed;inset:0;background:rgba(20,12,8,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .35s;z-index:80}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--mante);z-index:90;transform:translateX(110%);visibility:hidden;transition:transform .5s var(--ease),visibility .5s;display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,.2)}
+.drawer.on{transform:none;visibility:visible}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:22px 22px 14px}
+.dh h3{margin:0;font-family:var(--serif);font-weight:400;font-size:30px;color:var(--cafe)}
+.x{width:40px;height:40px;border-radius:50%;border:0;background:rgba(74,42,29,.1);color:var(--cafe);font-size:20px;line-height:1}
+.items{flex:1;overflow:auto;padding:0 22px}
+.empty{text-align:center;color:var(--gris);padding:60px 10px}
+.empty svg{width:60px;height:60px;margin:0 auto 12px;opacity:.5}
+.it{display:grid;grid-template-columns:76px 1fr auto;gap:14px;padding:14px 0;border-bottom:1px solid rgba(74,42,29,.12);animation:dspIn .35s both}
+.it img{width:76px;height:76px;border-radius:12px;object-fit:cover;background:#eee}
+.it h4{margin:0;font-size:15px}
+.it .m{font-size:13px;color:var(--gris);margin-top:3px}
+.qty{display:inline-flex;align-items:center;gap:2px;margin-top:8px;background:#fff;border-radius:999px;padding:3px}
+.qty button{width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:var(--cafe);font-weight:800}
+.qty span{min-width:22px;text-align:center;font-weight:800;font-size:14px}
+.rm{border:0;background:none;color:var(--gris);font-size:12.5px;text-decoration:underline;align-self:start;padding:0}
+.df{padding:18px 22px 24px;border-top:1px solid rgba(74,42,29,.15);background:var(--mante)}
+.sum{display:flex;justify-content:space-between;font-weight:800;font-size:17px;color:var(--cafe);margin-bottom:6px}
+.fine{font-size:12.5px;color:var(--gris);margin:0 0 14px}
+.df .btn{width:100%;justify-content:center}
+.ck{display:grid;gap:10px;margin-top:4px}
+.ck input,.ck select,.ck textarea{width:100%;border:1.5px solid rgba(74,42,29,.2);border-radius:12px;padding:12px 14px;font:inherit;background:#fff;color:var(--tinta)}
+.ck label{font-size:12.5px;font-weight:700;color:var(--cafe)}
+.ok{background:#fff;border-radius:14px;padding:14px;font-size:13.5px;white-space:pre-wrap;line-height:1.5;max-height:200px;overflow:auto}
+
+.modal{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:20px;pointer-events:none}
+.mbox{pointer-events:auto;width:min(980px,100%);max-height:calc(100svh - 40px);overflow:auto;background:var(--mante);border-radius:26px;display:grid;grid-template-columns:1.1fr 1fr;opacity:0;transform:translateY(30px) scale(.98);transition:opacity .35s,transform .45s var(--ease);box-shadow:0 40px 100px rgba(0,0,0,.35)}
+.modal.on .mbox{opacity:1;transform:none}
+.modal:not(.on) .mbox{pointer-events:none}
+.gal{background:#eef0f0;position:relative}
+.gal .main{aspect-ratio:1;width:100%;object-fit:cover}
+.thumbs{display:flex;gap:8px;padding:10px}
+.thumbs img{width:62px;height:62px;border-radius:10px;object-fit:cover;cursor:pointer;opacity:.6;transition:opacity .2s;outline:2px solid transparent}
+.thumbs img.on{opacity:1;outline-color:var(--cafe)}
+.mi{padding:clamp(22px,3vw,36px);display:flex;flex-direction:column;gap:14px;position:relative}
+.mi .x{position:absolute;right:16px;top:16px}
+.mi h3{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3vw,40px);margin:0;color:var(--cafe);line-height:1.05;padding-right:46px}
+.mi p{margin:0;color:var(--gris);line-height:1.6}
+.mi .lbl{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--cafe)}
+.sizes{display:flex;gap:8px;flex-wrap:wrap}
+.sizes button{min-width:52px;height:46px;border-radius:12px;border:0;background:#fff;box-shadow:inset 0 0 0 1.5px rgba(74,42,29,.2);font-weight:800;color:var(--cafe);transition:all .2s}
+.sizes button.on{background:var(--cafe);color:var(--mante);box-shadow:none}
+.sizes.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.addrow{display:flex;gap:10px;align-items:center;margin-top:6px}
+.addrow .btn{flex:1;justify-content:center}
+@media (max-width:760px){.mbox{grid-template-columns:1fr;border-radius:22px 22px 0 0;align-self:end;max-height:92svh}.modal{padding:0;place-items:end center}}
+.toast{position:fixed;left:50%;top:84px;transform:translate(-50%,-30px);opacity:0;visibility:hidden;background:var(--tinta);color:var(--mante);padding:13px 18px;border-radius:999px;font-weight:700;font-size:14px;z-index:120;transition:transform .45s var(--ease),opacity .3s,visibility .3s}
+.toast.on{transform:translate(-50%,0);opacity:1;visibility:visible}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.hero .reveal-word>span{transform:none}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="arcTop" d="M 22,60 A 38,38 0 0 1 98,60"/>
+    <path id="arcBot" d="M 18,60 A 42,42 0 0 0 102,60"/>
+    <symbol id="seal" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="58" fill="#111"/>
+      <circle cx="60" cy="60" r="55" fill="none" stroke="#fff" stroke-width="1.2"/>
+      <circle cx="60" cy="60" r="31" fill="#fff"/>
+      <text font-family="Manrope,sans-serif" font-weight="800" font-size="13" letter-spacing="2.2" fill="#fff"><textPath href="#arcTop" startOffset="50%" text-anchor="middle">COLECCIÓN</textPath></text>
+      <text font-family="Manrope,sans-serif" font-weight="800" font-size="13" letter-spacing="2.6" fill="#fff" dy="10"><textPath href="#arcBot" startOffset="50%" text-anchor="middle">LUCIONI</textPath></text>
+    </symbol>
+    <symbol id="bag" viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<nav class="nav" id="nav">
+  <div class="wrap in">
+    <a class="brand" href="#top"><svg><use href="#seal"/></svg><span>COLECCIÓN LUCIONI</span></a>
+    <div class="links"><a href="#museo">El museo</a><a href="#despiece">Ford 1929</a><a href="#tienda">Tienda</a><a href="#visita">Visítanos</a></div>
+    <a class="btn dark tix" href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener">Entradas</a>
+    <button class="cartbtn" id="cartBtn" aria-label="Abrir carrito"><svg><use href="#bag"/></svg><span class="n" id="cartN">0</span></button>
+  </div>
+</nav>
+
+<header class="hero grain" id="top">
+  <div class="wrap grid">
+    <div>
+      <div class="eyebrow">Museo de autos clásicos · Arequipa</div>
+      <h1><span class="reveal-word"><span>Colección</span></span><br><span class="reveal-word"><span style="animation-delay:.12s">Lucioni</span></span><em><span class="reveal-word"><span style="animation-delay:.3s">la historia sobre ruedas</span></span></em></h1>
+      <p class="lead">Más de 30 autos de los años 20 a los 70, restaurados por la familia Lucioni Oviedo y exhibidos en una casona de sillar en el centro de Arequipa. Ahora también puedes llevarte la colección puesta.</p>
+      <div class="ctas"><a class="btn dark" href="#tienda">Ver la tienda</a><a class="btn ghost" href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener">Comprar entrada</a></div>
+      <div class="note"><div><b>+30</b>vehículos</div><div><b>20s–70s</b>cinco décadas</div><div><b>Sáb y Dom</b>10:00 a 14:00</div></div>
+    </div>
+    <div class="arch rv" id="arch">
+      <img src="img/l-espaldas.jpg" alt="Cinco personas de espaldas con la ropa de la Colección Lucioni frente a un muro de sillar" fetchpriority="high">
+      <svg class="seal"><use href="#seal"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="marq" aria-hidden="true"><div class="tr" id="marq"></div></div>
+
+<section class="intro" id="museo">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <div class="eyebrow rv">El museo</div>
+        <p class="big rv d1">Empezó como la pasión de una familia y hoy es un lugar donde los autos <i>se cuentan solos</i>.</p>
+      </div>
+      <p class="lead rv d2">Desde inicios de los 2000, la familia Lucioni Oviedo reunió y restauró autos clásicos pieza por pieza. En 2024 abrió las puertas al público en la calle La Recoleta, para que cualquiera pueda ver de cerca el cromo, la madera y los motores que marcaron una época.</p>
+    </div>
+    <div class="facts rv">
+      <div><b data-count="30" data-pre="+">0</b><span>autos restaurados en exhibición</span></div>
+      <div><b data-count="50">0</b><span>años de historia, de los 20 a los 70</span></div>
+      <div><b>2024</b><span>abre como museo en Arequipa</span></div>
+      <div><b data-count="6">0</b><span>prendas con autos de la colección</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="dsp" id="despiece" data-img="img/ford1929.jpg" data-title="Ford Model A · 1929" data-eyebrow="De la colección"></section>
+
+<section class="eras">
+  <div class="wrap">
+    <div class="eyebrow rv">La colección</div>
+    <h2 class="h2 rv d1" style="color:var(--cafe)">Cinco décadas,<br>un solo recorrido.</h2>
+    <div class="row">
+      <article class="era a rv"><div class="yr">20s–30s</div>
+        <svg viewBox="0 0 300 120" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 90 L20 70 Q22 50 50 48 L90 46 L100 20 L170 20 L180 46 L250 50 Q275 54 278 80 L280 90"/><circle cx="70" cy="92" r="20"/><circle cx="230" cy="92" r="20"/></svg>
+        <h3>Los pioneros</h3><p>Ford Model T y Model A: los autos que pusieron al mundo sobre ruedas, con motores simples y carrocerías altas.</p></article>
+      <article class="era b rv d1"><div class="yr">50s</div>
+        <svg viewBox="0 0 300 120" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 88 Q12 66 40 62 L90 58 Q120 30 160 30 L200 32 Q230 40 250 60 L285 66 Q292 72 290 88"/><circle cx="72" cy="90" r="18"/><circle cx="236" cy="90" r="18"/></svg>
+        <h3>Cromo y aletas</h3><p>Chevrolet Bel Air, Buick y Cadillac: parachoques brillantes, colores pastel y el optimismo de la posguerra.</p></article>
+      <article class="era c rv d2"><div class="yr">60s–70s</div>
+        <svg viewBox="0 0 300 120" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 86 L10 70 Q14 62 40 60 L100 56 Q130 38 170 38 L210 40 Q235 50 250 60 L292 66 L292 86"/><circle cx="70" cy="88" r="18"/><circle cx="240" cy="88" r="18"/></svg>
+        <h3>Líneas largas</h3><p>Impala, Mercedes y Hillman: carrocerías más bajas y anchas, y motores con carácter.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="shop" id="tienda">
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="eyebrow rv">Tienda oficial</div>
+        <h2 class="h2 rv d1" style="color:var(--cafe)">Lleva la colección<br>puesta.</h2>
+      </div>
+      <p class="lead rv d2" style="margin:0;max-width:420px">Polos, crop tops y hoodies con autos reales del museo. Elige tu talla, agrégalos al carrito y envíanos tu pedido.</p>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="grid-p" id="grid"></div>
+  </div>
+</section>
+
+<section class="look">
+  <div class="wrap">
+    <div class="eyebrow rv">Lookbook</div>
+    <h2 class="h2 rv d1">Hecha para usarse,<br>no para guardarse.</h2>
+    <div class="mason">
+      <figure class="m1 rv"><img src="img/l-pasarela.jpg" alt="Modelo con polo blanco de la colección en pasarela" loading="lazy"><figcaption>En pasarela</figcaption></figure>
+      <figure class="m2 rv d1"><img src="img/l-grupo.jpg" alt="Grupo con la colección completa de ropa" loading="lazy"><figcaption>La colección completa</figcaption></figure>
+      <figure class="m3 rv d2"><img src="img/l-pasarela2.jpg" alt="Modelo con polo azul marino de la colección" loading="lazy"><figcaption>Polo azul marino</figcaption></figure>
+      <figure class="m4 rv"><img src="img/l-duo.jpg" alt="Dos personas de espaldas con el polo Toyota Land Cruiser" loading="lazy" style="object-position:center 40%"><figcaption>Land Cruiser</figcaption></figure>
+      <figure class="m5 rv d1"><img src="img/h-belair53.jpg" alt="Hoodie marrón Chevrolet Bel Air 1953" loading="lazy" style="object-position:center 40%"><figcaption>Bel Air 1953</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="visit" id="visita">
+  <div class="wrap">
+    <div class="eyebrow rv">Visítanos</div>
+    <h2 class="h2 rv d1" style="color:var(--cafe)">Te esperamos en<br>La Recoleta.</h2>
+    <div class="grid">
+      <div class="vcard rv">
+        <dl>
+          <div><dt>Dirección</dt><dd>Calle La Recoleta 178,<br>Cercado de Arequipa</dd></div>
+          <div><dt>Horario</dt><dd>Sábados y domingos<br>10:00 a 14:00</dd></div>
+          <div><dt>Instagram</dt><dd><a href="https://www.instagram.com/coleccion_lucioni/" target="_blank" rel="noopener">@coleccion_lucioni</a></dd></div>
+        </dl>
+        <div class="btns"><a class="btn orange" href="https://coleccionlucioni.netlify.app" target="_blank" rel="noopener">Comprar entrada</a><a class="btn light" href="https://www.google.com/maps/search/?api=1&query=Colecci%C3%B3n%20Lucioni%2C%20La%20Recoleta%20178%2C%20Arequipa" target="_blank" rel="noopener">Cómo llegar</a></div>
+      </div>
+      <div class="vphoto rv d1"><img src="img/l-grupo.jpg" alt="Interior de sillar de la Colección Lucioni" loading="lazy" style="object-position:center 30%"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap in">
+    <a class="brand" href="#top"><svg><use href="#seal"/></svg><span>COLECCIÓN LUCIONI</span></a>
+    <span>© <span id="yr"></span> Colección Lucioni · Arequipa, Perú</span>
+    <span class="made">Parte de <a href="/lucioni/"><b>Lucioni Enterprises</b></a></span>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Carrito">
+  <div class="dh"><h3>Tu carrito</h3><button class="x" data-close aria-label="Cerrar">×</button></div>
+  <div class="items" id="items"></div>
+  <div class="df" id="df"></div>
+</aside>
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="mbox" id="mbox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== CONFIGURACIÓN DE LA TIENDA ======
+   price: pon el precio en soles (ej. 79). null = "Precio pronto".
+   sizes: tallas disponibles. whatsapp: número con código de país (ej. "51987654321"). */
+const CONFIG = { whatsapp: "", moneda: "S/" };
+const PRODUCTS = [
+  { id:"mg", name:"Polo MG Midget", cat:"Polos", color:"Crema", hex:"#f3ecc4", img:"p-mg", alt:["h-mg"], price:null, sizes:["S","M","L","XL"], tag:"Favorito",
+    desc:"Un MG Midget rojo visto desde arriba, rodeado de rosas, en la espalda. Al frente, el sello de la colección." },
+  { id:"mg-crop", name:"Crop top MG Midget", cat:"Crop tops", color:"Beige", hex:"#efdcc4", img:"p-mg-crop", alt:["l-espaldas"], price:null, sizes:["S","M","L"],
+    desc:"El mismo diseño del MG Midget en un corte corto y relajado." },
+  { id:"azulejos", name:"Polo Azulejos", cat:"Polos", color:"Blanco", hex:"#ffffff", img:"p-azulejos", alt:["h-azulejos"], price:null, sizes:["S","M","L","XL"],
+    desc:"Un Chevrolet clásico naranja sobre azulejos azules. Fresco, con mucho estilo." },
+  { id:"landcruiser", name:"Polo Toyota Land Cruiser", cat:"Polos", color:"Azul marino", hex:"#16203a", img:"p-landcruiser", alt:["h-landcruiser","l-duo"], price:null, sizes:["S","M","L","XL"], tag:"Nuevo",
+    desc:"La Land Cruiser blanca y naranja cruzando el agua, en la espalda de un polo azul marino." },
+  { id:"ford", name:"Hoodie Ford 1929", cat:"Hoodies", color:"Negro", hex:"#111111", img:"p-ford", alt:["h-ford"], price:null, sizes:["S","M","L","XL"],
+    desc:"Una foto real de nuestro Ford 1929 en blanco y negro, con su línea roja. Para los que saben de clásicos." },
+  { id:"belair", name:"Hoodie Chevrolet Bel Air 1953", cat:"Hoodies", color:"Marrón", hex:"#4a2a1d", img:"p-belair53", alt:["h-belair53"], price:null, sizes:["S","M","L","XL"],
+    desc:"El Bel Air 1953 de frente en el pecho y de espaldas atrás, en celeste sobre marrón." },
+];
+/* ======================================== */
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const img = (n) => `img/${n}.jpg`;
+const money = (v) => `${CONFIG.moneda} ${Number(v).toFixed(2).replace(/\.00$/, "")}`;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" })[c]);
+$("#yr").textContent = new Date().getFullYear();
+
+/* Nav */
+const nav = $("#nav");
+addEventListener("scroll", () => nav.classList.toggle("solid", scrollY > 30), { passive: true });
+
+/* Marquee */
+const brands = ["Ford Model A","Chevrolet Bel Air","Cadillac","Buick","Mercedes-Benz","Hillman","Impala","Ford Model T","MG Midget","Toyota Land Cruiser"];
+$("#marq").innerHTML = [...brands, ...brands].map((b) => `<span>${b}</span>`).join("");
+
+/* Reveal + counters */
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add("in"); io.unobserve(e.target);
+  $$("[data-count]", e.target).forEach(count);
+}), { threshold: 0.18, rootMargin: "0px 0px -6% 0px" });
+$$(".rv").forEach((el) => io.observe(el));
+function count(el) {
+  const to = +el.dataset.count, pre = el.dataset.pre || "", t0 = performance.now();
+  const tick = (t) => { const k = Math.min(1, (t - t0) / 1400), v = Math.round(to * (1 - Math.pow(1 - k, 3))); el.textContent = pre + v; if (k < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
+/* Tienda */
+const cats = ["Todo", ...new Set(PRODUCTS.map((p) => p.cat))];
+let filter = "Todo";
+function priceHTML(p) { return p.price == null ? `<span class="price soon">Precio pronto</span>` : `<span class="price">${money(p.price)}</span>`; }
+function renderChips() {
+  $("#chips").innerHTML = cats.map((c) => `<button class="chip ${c === filter ? "on" : ""}" data-c="${c}">${c}</button>`).join("");
+}
+function renderGrid() {
+  const list = PRODUCTS.filter((p) => filter === "Todo" || p.cat === filter);
+  $("#grid").innerHTML = list.map((p, i) => `<article class="prod rv in" style="animation:dspIn .5s ${i * 0.06}s both" data-id="${p.id}">
+    <div class="ph"><img src="${img(p.img)}" alt="${esc(p.name)}, frente y espalda" loading="lazy">${p.alt[0] ? `<img class="alt" src="${img(p.alt[0])}" alt="" loading="lazy">` : ""}${p.tag ? `<span class="tag">${p.tag}</span>` : ""}</div>
+    <div class="info"><div><h3>${esc(p.name)}</h3><div class="sub"><span class="dot" style="background:${p.hex}"></span>${p.color}</div></div>${priceHTML(p)}</div>
+    <button class="quick">Elegir talla</button></article>`).join("");
+}
+$("#chips").addEventListener("click", (e) => { const b = e.target.closest(".chip"); if (!b) return; filter = b.dataset.c; renderChips(); renderGrid(); });
+$("#grid").addEventListener("click", (e) => { const c = e.target.closest(".prod"); if (c) openProduct(c.dataset.id); });
+renderChips(); renderGrid();
+
+/* Carrito (se guarda en este navegador) */
+let cart = [];
+try { cart = JSON.parse(localStorage.getItem("cl_cart") || "[]"); } catch (e) { cart = []; }
+const saveCart = () => { try { localStorage.setItem("cl_cart", JSON.stringify(cart)); } catch (e) {} };
+const byId = (id) => PRODUCTS.find((p) => p.id === id);
+function addToCart(id, size, q) {
+  const f = cart.find((c) => c.id === id && c.size === size);
+  if (f) f.q += q; else cart.push({ id, size, q });
+  saveCart(); renderCart();
+  const b = $("#cartBtn"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
+}
+function totals() {
+  let n = 0, sum = 0, pending = false;
+  cart.forEach((c) => { const p = byId(c.id); if (!p) return; n += c.q; if (p.price == null) pending = true; else sum += p.price * c.q; });
+  return { n, sum, pending };
+}
+let checkout = false;
+function renderCart() {
+  const { n, sum, pending } = totals();
+  const badge = $("#cartN"); badge.textContent = n; badge.classList.toggle("on", n > 0);
+  if (!cart.length) {
+    checkout = false;
+    $("#items").innerHTML = `<div class="empty"><svg><use href="#bag"/></svg>Tu carrito está vacío.<br>Elige una prenda en la tienda.</div>`;
+    $("#df").innerHTML = `<button class="btn dark" data-close data-go="tienda">Ir a la tienda</button>`;
+    return;
+  }
+  $("#items").innerHTML = cart.map((c, i) => { const p = byId(c.id); if (!p) return ""; return `<div class="it">
+    <img src="${img(p.img)}" alt="">
+    <div><h4>${esc(p.name)}</h4><div class="m">Talla ${c.size} · ${p.color}</div>
+      <div class="qty"><button data-q="${i}" data-d="-1" aria-label="Quitar uno">−</button><span>${c.q}</span><button data-q="${i}" data-d="1" aria-label="Agregar uno">+</button></div></div>
+    <div style="text-align:right;display:flex;flex-direction:column;gap:8px">${p.price == null ? `<span class="price soon">Por confirmar</span>` : `<span class="price">${money(p.price * c.q)}</span>`}<button class="rm" data-rm="${i}">Quitar</button></div></div>`; }).join("");
+  const totalTxt = pending ? (sum ? `${money(sum)} + por confirmar` : "Por confirmar") : money(sum);
+  if (!checkout) {
+    $("#df").innerHTML = `<div class="sum"><span>Total</span><span>${totalTxt}</span></div>
+      <p class="fine">${pending ? "Algunos precios están por confirmar. Te escribimos con el total antes de cobrar." : "Coordinamos el pago y la entrega contigo."}</p>
+      <button class="btn dark" id="goCk">Finalizar pedido · ${n} ${n === 1 ? "prenda" : "prendas"}</button>`;
+  } else {
+    $("#df").innerHTML = `<form class="ck" id="ckForm">
+      <label>Nombre<input name="nombre" required autocomplete="name"></label>
+      <label>Celular<input name="cel" required inputmode="tel" autocomplete="tel" placeholder="9XX XXX XXX"></label>
+      <label>Entrega<select name="entrega"><option>Recojo en el museo (La Recoleta 178)</option><option>Delivery en Arequipa</option><option>Envío a provincia</option></select></label>
+      <button class="btn orange" type="submit">Enviar pedido</button>
+      <button class="btn ghost" type="button" id="backCk">Volver</button></form>`;
+  }
+}
+function orderText(f) {
+  const { sum, pending } = totals();
+  const lines = cart.map((c) => { const p = byId(c.id); return `• ${c.q} × ${p.name} (talla ${c.size}, ${p.color})${p.price != null ? " — " + money(p.price * c.q) : ""}`; });
+  return `Hola, quiero hacer un pedido en la tienda de Colección Lucioni:\n\n${lines.join("\n")}\n\nTotal: ${pending ? (sum ? money(sum) + " + por confirmar" : "por confirmar") : money(sum)}\nNombre: ${f.nombre}\nCelular: ${f.cel}\nEntrega: ${f.entrega}`;
+}
+$("#drawer").addEventListener("click", (e) => {
+  const q = e.target.closest("[data-q]"), rm = e.target.closest("[data-rm]");
+  if (q) { const c = cart[+q.dataset.q]; c.q += +q.dataset.d; if (c.q < 1) cart.splice(+q.dataset.q, 1); saveCart(); renderCart(); }
+  if (rm) { cart.splice(+rm.dataset.rm, 1); saveCart(); renderCart(); }
+  if (e.target.id === "goCk") { checkout = true; renderCart(); setTimeout(() => $("#ckForm input")?.focus(), 50); }
+  if (e.target.id === "backCk") { checkout = false; renderCart(); }
+  if (e.target.id === "copyOrder") { navigator.clipboard?.writeText($("#orderTxt").textContent).then(() => toast("Pedido copiado")); }
+  if (e.target.id === "clearCart") { cart = []; saveCart(); checkout = false; renderCart(); }
+});
+$("#drawer").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  const txt = orderText(f);
+  if (CONFIG.whatsapp) { open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(txt)}`, "_blank", "noopener"); }
+  $("#df").innerHTML = `<p class="fine" style="margin-bottom:10px"><b style="color:var(--cafe)">¡Listo!</b> ${CONFIG.whatsapp ? "Se abrió WhatsApp con tu pedido. Solo dale enviar." : "Copia tu pedido y envíalo por Instagram a @coleccion_lucioni."}</p>
+    <div class="ok" id="orderTxt">${esc(txt)}</div>
+    <div style="display:grid;gap:8px;margin-top:12px"><button class="btn dark" id="copyOrder">Copiar pedido</button>
+    ${CONFIG.whatsapp ? "" : `<a class="btn orange" href="https://ig.me/m/coleccion_lucioni" target="_blank" rel="noopener" style="justify-content:center">Abrir Instagram</a>`}
+    <button class="btn ghost" id="clearCart">Vaciar carrito</button></div>`;
+});
+
+/* Abrir / cerrar */
+const scrim = $("#scrim"), drawer = $("#drawer"), modal = $("#modal");
+function openCart() { renderCart(); drawer.classList.add("on"); scrim.classList.add("on"); document.body.style.overflow = "hidden"; }
+function closeAll() { drawer.classList.remove("on"); modal.classList.remove("on"); scrim.classList.remove("on"); document.body.style.overflow = ""; }
+$("#cartBtn").addEventListener("click", openCart);
+scrim.addEventListener("click", closeAll);
+document.addEventListener("click", (e) => { const c = e.target.closest("[data-close]"); if (!c) return; closeAll(); if (c.dataset.go) location.hash = c.dataset.go; });
+modal.addEventListener("click", (e) => { if (e.target === modal) closeAll(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+
+/* Ficha de producto */
+function openProduct(id) {
+  const p = byId(id); if (!p) return;
+  const pics = [p.img, ...p.alt];
+  let size = null, q = 1;
+  $("#mbox").innerHTML = `<div class="gal"><img class="main" id="mMain" src="${img(pics[0])}" alt="${esc(p.name)}">
+      <div class="thumbs">${pics.map((n, i) => `<img src="${img(n)}" data-i="${i}" class="${i ? "" : "on"}" alt="Vista ${i + 1}">`).join("")}</div></div>
+    <div class="mi"><button class="x" data-close aria-label="Cerrar">×</button>
+      <div class="eyebrow">${p.cat}</div><h3>${esc(p.name)}</h3>
+      <div style="display:flex;align-items:center;gap:12px">${priceHTML(p)}<span class="sub" style="display:flex;align-items:center;gap:7px;color:var(--gris);font-size:14px"><span class="dot" style="background:${p.hex}"></span>${p.color}</span></div>
+      <p>${esc(p.desc)}</p>
+      <div class="lbl">Talla</div>
+      <div class="sizes" id="mSizes">${p.sizes.map((s) => `<button data-s="${s}">${s}</button>`).join("")}</div>
+      <div class="addrow"><div class="qty" style="margin:0"><button data-mq="-1" aria-label="Menos">−</button><span id="mQ">1</span><button data-mq="1" aria-label="Más">+</button></div>
+        <button class="btn dark" id="mAdd">Agregar al carrito</button></div>
+      <p class="fine" style="margin:0">Algodón con estampado de alta duración. Coordinamos pago y entrega por mensaje.</p>
+    </div>`;
+  modal.classList.add("on"); scrim.classList.add("on"); document.body.style.overflow = "hidden";
+  $("#mbox").onclick = (e) => {
+    const t = e.target.closest(".thumbs img");
+    if (t) { $("#mMain").src = t.src; $$(".thumbs img").forEach((x) => x.classList.toggle("on", x === t)); }
+    const s = e.target.closest("[data-s]");
+    if (s) { size = s.dataset.s; $$("#mSizes button").forEach((b) => b.classList.toggle("on", b === s)); }
+    const m = e.target.closest("[data-mq]");
+    if (m) { q = Math.max(1, Math.min(20, q + +m.dataset.mq)); $("#mQ").textContent = q; }
+    if (e.target.id === "mAdd") {
+      if (!size) { const z = $("#mSizes"); z.classList.remove("shake"); void z.offsetWidth; z.classList.add("shake"); toast("Elige una talla"); return; }
+      addToCart(p.id, size, q); closeAll(); toast(`${p.name} (${size}) agregado al carrito`);
+    }
+  };
+}
+
+let tt;
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("on"), 2200); }
+renderCart();
+</script>
+<script src="/shared/despiece.js" defer></script>
+</body>
+</html>
