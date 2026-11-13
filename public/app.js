@@ -82,6 +82,7 @@ function save() {
 async function ai(mode, payload) {
   const pr = DATA.profile || {};
   if (pr.voice && pr.voiceOn !== false) payload = { ...payload, voice: pr.voice };
+  if (pr.hot) payload = { ...payload, hot: true };
   const d = await api("ai", "POST", { mode, payload });
   return d.result;
 }
@@ -105,6 +106,7 @@ const BADGES = [
   { id: "cita", e: "calendar", t: "Cita en el simulador" },
   { id: "llamada", e: "phone", t: "Primera llamada" },
   { id: "share", e: "share", t: "Lo compartí" },
+  { id: "heat", e: "fire", t: "Zona HOT" },
 ];
 function level(xp) { let i = 0; LEVELS.forEach((l, k) => { if (xp >= l[0]) i = k; }); return i; }
 function ensure() {
@@ -139,6 +141,7 @@ function renderTop() {
   $("#xpTxt").textContent = next ? `${DATA.xp}/${next} XP` : `${DATA.xp} XP · máx.`;
   $("#xpFill").style.width = next ? ((DATA.xp - cur) / (next - cur)) * 100 + "%" : "100%";
   $("#topAv").innerHTML = avatarInner(); $("#topAv").onclick = () => go("profile");
+  $(".topbar .logo").onclick = secretTap;
 }
 
 /* ---------- Cuenta ---------- */
@@ -212,11 +215,27 @@ $("#vResend").onclick = async () => {
 };
 
 function logout() {
+  document.body.classList.remove("hot");
   TOKEN = null; DATA = null; ls.set("yste_token", null); ls.set("yste_cache", null);
   $("#app").classList.add("hide"); showLanding();
 }
+function setHot(on, anim) {
+  DATA.profile.hot = !!on; document.body.classList.toggle("hot", !!on);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = on ? "#1a0405" : "#0e0d12";
+  if (anim && on) { document.body.classList.add("hotflash"); setTimeout(() => document.body.classList.remove("hotflash"), 1600); for (let i = 0; i < 4; i++) setTimeout(() => hearts(innerWidth * Math.random(), innerHeight * (0.3 + Math.random() * 0.5), 14), i * 250); }
+}
+let logoTaps = [];
+function secretTap() {
+  const now = Date.now(); logoTaps = logoTaps.filter((t) => now - t < 3000); logoTaps.push(now);
+  if (logoTaps.length >= 7) { logoTaps = []; pedirCodigo(); }
+}
+function pedirCodigo() {
+  modal(`<div class="big" data-ic="fire"></div><h2>Zona secreta</h2><p class="lead">Escribe el código especial para activar el Modo HOT.</p><input id="hotCode" placeholder="Código" autocomplete="off" style="text-align:center;font:700 22px Space Grotesk;letter-spacing:4px;margin:6px 0 4px">`);
+  setTimeout(() => { const i = $("#hotCode"); if (!i) return; i.focus(); const ok = () => { if (i.value.trim().toUpperCase() === "HOT") { $("#modal").classList.add("hide"); setHot(true, true); save(); toast("Modo HOT activado"); go(current); } else if (i.value) { i.value = ""; i.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); toast("Código incorrecto"); } };
+    i.onkeydown = (e) => { if (e.key === "Enter") ok(); }; $("#mClose").textContent = "Activar"; $("#mClose").onclick = ok; }, 50);
+}
 function enterApp(isNew) {
-  ensure(); touchStreak();
+  ensure(); touchStreak(); setHot(DATA.profile.hot);
   $("#auth").classList.add("hide"); $("#landing").classList.add("hide"); $("#app").classList.remove("hide");
   renderTop(); go("home");
   if (isNew) { hearts(innerWidth / 2, innerHeight / 3, 24); modal(`<div class="big" data-ic="face-flirty"></div><h2>¡Bienvenido, ${esc(DATA.profile.name)}!</h2><p class="lead">Gana XP usando las herramientas, mantén tu racha diaria y desbloquea logros. Empieza subiendo la captura de un chat.</p>`); }
@@ -350,6 +369,8 @@ const TOOLS = {
   decode: { e: "search", t: "¿Qué quiso decir?", d: "Decodifica sus mensajes raros", c: "var(--blue)", nuevo: true },
   invite: { e: "calendar", t: "Invítala", d: "Planes de cita y el mensaje para invitarla", c: "var(--pink)", nuevo: true },
   double: { e: "traffic", t: "¿Le escribo otra vez?", d: "Semáforo para no insistir de más", c: "var(--yellow)", nuevo: true },
+  heat: { e: "fire", t: "Subir la temperatura", d: "3 niveles de coqueteo, de suave a atrevido", c: "#ff2d2d", nuevo: true, hot: true },
+  chats: { e: "chat", t: "Varias a la vez", d: "Lleva el control de todas tus conversaciones", c: "var(--blue)", nuevo: true },
   ruleta: { e: "refresh", t: "Ruleta de temas", d: "Gira y revive la conversación", c: "var(--violet)", nuevo: true },
   sim: { e: "game", t: "Simulador", d: "10 chicas con personalidades distintas: cortante, pícara, tímida, sarcástica… Consigue la cita sin que te dejen en visto", c: "var(--green)", nuevo: true, big: true },
 };
@@ -361,7 +382,8 @@ const VIEWS = {
     V.innerHTML = `
       ${(() => { const r = retoHoy(), done = DATA.daily && DATA.daily.date === new Date().toISOString().slice(0, 10) && DATA.daily.done; return `<div class="card daily ${done ? "done" : ""}">${ic(done ? "check" : r.ic)}<div><small>Reto del día</small><b>${esc(r.t)}</b></div><span class="xp">${done ? "Hecho" : "+30 XP"}</span></div>`; })()}
       <div class="card streak"><span class="fire">${ic("fire")}</span><div><b>Racha de ${s} día${s === 1 ? "" : "s"}</b><small>${s >= 3 ? "¡Estás que ardes! No la pierdas." : "Entra cada día para mantener tu racha."}</small></div></div>
-      <div class="grid">${Object.entries(TOOLS).map(([k, t], i) => `<button class="tool ${t.big ? "big" : ""}" data-tool="${k}" style="--c:${t.c};animation-delay:${i * 0.07}s">${t.nuevo ? '<span class="new">NUEVO</span>' : ""}<span class="ic">${ic(t.e)}</span><b>${t.t}</b><small>${t.d}</small></button>`).join("")}</div>
+      ${DATA.profile.hot ? `<div class="card hotbanner">${ic("fire")}<div><b>Modo HOT activo</b><small>Todas las respuestas salen más atrevidas</small></div></div>` : ""}
+      <div class="grid">${Object.entries(TOOLS).filter(([, t]) => !t.hot || DATA.profile.hot).map(([k, t], i) => `<button class="tool ${t.big ? "big" : ""}" data-tool="${k}" style="--c:${t.c};animation-delay:${i * 0.07}s">${t.nuevo ? '<span class="new">NUEVO</span>' : ""}<span class="ic">${ic(t.e)}</span><b>${t.t}</b><small>${t.d}</small></button>`).join("")}</div>
       <div class="card tipday" style="animation-delay:.4s"><b>${ic("bulb")} Tip del día:</b> ${TIPS[new Date().getDate() % TIPS.length]}</div>`;
     $$("[data-tool]", V).forEach((b) => (b.onclick = () => go(b.dataset.tool)));
   },
@@ -388,7 +410,7 @@ const VIEWS = {
         $("#out", V).innerHTML = `<div class="res">${meterHTML(lvl, r.lectura)}${cats.map(([k, t, c]) => `<div class="sec"><h2>${t}</h2>${(r[k] || []).map((o) => optCard(o, k, c, (dl += 0.12), o.tecnica)).join("")}</div>`).join("")}${r.error ? `<div class="card tip warnbox">${ic("warn")} <b>Ojo:</b> ${esc(r.error)}</div>` : ""}<div class="card tip">${ic("bulb")} ${esc(r.consejo)}</div><button class="go alt" id="rAgain">${ic("refresh")} Otras opciones</button></div>`;
         wireOpts(); animateMeters(); $("#rAgain", V).onclick = run;
         const c = getCrush(cid);
-        if (c) { c.log.push({ date: Date.now(), interes: lvl, lectura: r.lectura }); c.log = c.log.slice(-30); }
+        if (c) { c.log.push({ date: Date.now(), interes: lvl, lectura: r.lectura }); c.log = c.log.slice(-30); c.turno = "yo"; c.lastAt = Date.now(); }
         log("reply", r.lectura); celebrate($("#rGo", V), 10, "first");
         $(".res", V).scrollIntoView({ behavior: "smooth" });
       });
@@ -459,6 +481,50 @@ const VIEWS = {
         wireOpts(); animateMeters(); log("decode", mensaje); celebrate($("#dGo", V), 8, "decode");
       });
     };
+  },
+
+  heat(crushId) {
+    if (!DATA.profile.hot) return go("home");
+    const up = uploader("dropH");
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("fire")} Subir la temperatura</h1><p class="lead">Sube la captura o pega el chat y te doy una escalera de coqueteo: suave, medio y atrevido. Sube de nivel solo si ella sigue el juego.</p>
+      ${up.html}
+      <label for="hText">O pega el chat</label><textarea id="hText" rows="3"></textarea>
+      ${crushSelect("hCrush", crushId)}
+      <button class="go" id="hGo">${ic("fire")} Calentar la conversación</button>${loadingHTML}`;
+    up.mount(); wireBack();
+    $("#hGo", V).onclick = async () => {
+      const chat = $("#hText", V).value.trim();
+      if (!up.st.imgs.length && !chat) { $("#st", V).textContent = "Sube una captura o pega el chat"; return; }
+      await withLoading($("#hGo", V), ["Midiendo la temperatura…", "Subiendo el fuego…", "Eligiendo las palabras…"], async () => {
+        const r = await ai("heat", { images: await up.encoded(), chat, crush: crushPayload($("#hCrush", V).value) });
+        const T = Math.max(0, Math.min(100, Number(r.temperatura) || 0));
+        const chili = ["", "var(--yellow)", "#ff7a3d", "#ff2d2d"];
+        let dl = 0.1;
+        $("#out", V).innerHTML = `<div class="res"><div class="card read"><h3>Temperatura actual</h3><div class="mlabel"><span>${T < 35 ? "Fría" : T < 65 ? "Tibia" : "Caliente"}</span><span>${T}°</span></div><div class="meter thermo"><div data-w="${T}"></div></div><div>${esc(r.lectura)}</div></div>
+          ${(r.niveles || []).map((n, k) => `<div class="sec"><h2>${ic("fire").repeat(k + 1)} ${esc(n.nivel)}</h2>${(n.msgs || []).map((o) => optCard(o, "picara", chili[k + 1] || "#ff2d2d", (dl += 0.1))).join("")}</div>`).join("")}
+          ${r.subir?.length ? `<div class="card tip"><h3>${ic("check")} Sube de nivel si…</h3><ul class="list">${r.subir.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+          ${r.bajar?.length ? `<div class="card tip warnbox"><h3>${ic("warn")} Baja la intensidad si…</h3><ul class="list">${r.bajar.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}</div>`;
+        wireOpts(); animateMeters(); log("heat", r.lectura); celebrate($("#hGo", V), 10, "heat");
+      });
+    };
+  },
+
+  chats() {
+    const now = Date.now();
+    const ago = (t) => { if (!t) return "sin registro"; const h = (now - t) / 36e5; return h < 1 ? "hace " + Math.max(1, Math.round(h * 60)) + " min" : h < 24 ? "hace " + Math.round(h) + " h" : "hace " + Math.round(h / 24) + " d"; };
+    const list = [...DATA.crushes].sort((a, b) => (a.turno === "yo" ? 0 : 1) - (b.turno === "yo" ? 0 : 1) || (a.lastAt || 0) - (b.lastAt || 0));
+    const debo = list.filter((c) => c.turno === "yo").length;
+    V.innerHTML = `${backBtn()}<h1 class="title">${ic("chat")} Varias a la vez</h1><p class="lead">Si estás soltero y hablas con varias, aquí ves de un vistazo a quién le debes respuesta, cómo va el interés de cada una y qué hacer después.</p>
+      <div class="card streak"><span class="fire">${ic(debo ? "warn" : "check")}</span><div><b>${debo ? `Le debes respuesta a ${debo}` : "Estás al día"}</b><small>${list.length} conversaciones guardadas</small></div></div>
+      <div id="cBoard">${list.length ? list.map((c, i) => { const last = c.log[c.log.length - 1]; return `<div class="card chatrow" style="animation-delay:${i * 0.05}s"><div class="crtop"><span class="av">${ic(c.emoji)}</span><div><b>${esc(c.name)}</b><small>${last ? "Interés " + last.interes + "% · " : ""}${ago(c.lastAt)}</small></div><button class="turno ${c.turno === "yo" ? "me" : ""}" data-t="${c.id}">${c.turno === "yo" ? "Te toca a ti" : c.turno === "ella" ? "Le toca a ella" : "Marcar turno"}</button></div>
+        <div class="row"><button class="btn" data-r="${c.id}">${ic("camera")} Responder</button><button class="btn" data-s="${c.id}">${ic("traffic")} ¿Le escribo?</button><button class="btn" data-i="${c.id}">${ic("calendar")} Invitar</button></div></div>`; }).join("") : `<div class="empty"><span class="big">${ic("heart")}</span>Agrega a las personas con las que hablas en Crushes y aquí aparecerán.</div>`}</div>
+      <button class="go" id="cAdd">${ic("plus")} Agregar a alguien</button>`;
+    wireBack();
+    $$("[data-t]", V).forEach((b) => (b.onclick = () => { const c = getCrush(b.dataset.t); c.turno = c.turno === "yo" ? "ella" : "yo"; c.lastAt = Date.now(); save(); go("chats"); }));
+    $$("[data-r]", V).forEach((b) => (b.onclick = () => go("reply", b.dataset.r)));
+    $$("[data-s]", V).forEach((b) => (b.onclick = () => go("double")));
+    $$("[data-i]", V).forEach((b) => (b.onclick = () => go("invite", b.dataset.i)));
+    $("#cAdd", V).onclick = () => go("crushEdit");
   },
 
   ruleta() { vistaRuleta(); },
@@ -693,10 +759,14 @@ const VIEWS = {
       <h3 style="margin:22px 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)">Logros (${DATA.badges.length}/${BADGES.length})</h3>
       <div class="badges">${BADGES.map((b) => `<div class="badge ${DATA.badges.includes(b.id) ? "got" : ""}"><span>${ic(b.e)}</span>${b.t}</div>`).join("")}</div>
       ${DATA.history.length ? `<h3 style="margin:22px 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)">Actividad reciente</h3><div class="card"><ul class="list">${DATA.history.slice(0, 8).map((h) => `<li>${TOOLS[h.tool] ? ic(TOOLS[h.tool].e) : ""} ${esc(h.summary)}</li>`).join("")}</ul></div>` : ""}
+      <div class="card voicecard ${DATA.profile.hot ? "hotcard" : ""}"><h3 style="margin:0 0 6px;font-size:15px;font-family:Space Grotesk">${ic("fire")} ${DATA.profile.hot ? "Modo HOT activo" : "Código secreto"}</h3>
+        ${DATA.profile.hot ? `<p class="lead" style="margin:0 0 8px">Las respuestas y el simulador están en modo atrevido.</p><button class="btn" id="hotOff">${ic("snow")} Desactivar Modo HOT</button>` : `<p class="lead" style="margin:0 0 8px">¿Tienes un código especial? Escríbelo aquí.</p><button class="btn" id="hotOn">${ic("bolt")} Ingresar código</button>`}</div>
       <button class="go alt" id="pOut">${ic("logout")} Cerrar sesión</button>`;
     wireStyles();
     $("#pName", V).onchange = (e) => { DATA.profile.name = e.target.value.trim().slice(0, 40); save(); renderTop(); toast("Nombre guardado"); };
     $("#pOut", V).onclick = logout;
+    if ($("#hotOn", V)) $("#hotOn", V).onclick = pedirCodigo;
+    if ($("#hotOff", V)) $("#hotOff", V).onclick = () => { setHot(false); save(); toast("Modo HOT desactivado"); go("profile"); };
     const pick = () => $("#pFile", V).click();
     $("#pAv", V).onclick = pick; $("#pPhoto", V).onclick = pick;
     $("#pFile", V).onchange = async (e) => {

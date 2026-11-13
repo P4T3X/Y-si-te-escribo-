@@ -50,6 +50,9 @@ MÉTODO (lo que mejor funciona al chatear, según coaches y datos de apps de cit
 8. Mejor cerrar en un punto alto que dejar morir la charla.
 9. Si responde corto, tarde o seco varias veces, dilo con honestidad: soltar también es una opción.`;
 
+function hotCtx(p) {
+  return p.hot ? `\nMODO HOT ACTIVADO: el usuario quiere respuestas más atrevidas. Sube el coqueteo: más directo, más tensión, doble sentido más marcado, más seguridad y picardía. Límites que NO cambian: nada sexual explícito ni vulgar, nada sobre el cuerpo de forma grosera, y si ella no sigue el juego, se baja la intensidad.` : "";
+}
 function voiceCtx(p) {
   return p.voice ? `\nIMPORTANTE: escribe como el propio usuario para que suene a él. Ejemplos reales de cómo escribe: """${String(p.voice).slice(0, 800)}""". Copia su forma (mayúsculas/minúsculas, jerga, abreviaturas, emojis, largo), no su contenido.` : "";
 }
@@ -60,37 +63,43 @@ function crushCtx(c) {
 
 const MODES = {
   reply: (p) => ({
-    text: `${p.hasImages ? "Te paso capturas de un chat. Los mensajes del usuario suelen estar a la DERECHA; los de la otra persona a la IZQUIERDA.\n" : ""}${p.chat ? "Chat en texto:\n" + p.chat + "\n" : ""}${p.ctx ? "Contexto: " + p.ctx + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${crushCtx(p.crush)}${voiceCtx(p)}
+    text: `${p.hasImages ? "Te paso capturas de un chat. Los mensajes del usuario suelen estar a la DERECHA; los de la otra persona a la IZQUIERDA.\n" : ""}${p.chat ? "Chat en texto:\n" + p.chat + "\n" : ""}${p.ctx ? "Contexto: " + p.ctx + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}
 Lee el último mensaje de ella y el tono, y propone respuestas.
 JSON: {"interes":0-100,"lectura":"1-2 frases sobre cómo va","picara":[{"msg":"","por":"por qué funciona","tecnica":"nombre corto de la técnica del MÉTODO, ej. Callback"},{"msg":"","por":"","tecnica":""}],"normal":[{"msg":"","por":"","tecnica":""},{"msg":"","por":"","tecnica":""}],"seguir":[{"msg":"","por":"","tecnica":""},{"msg":"","por":"","tecnica":""}],"error":"si el usuario cometió un error en el chat (modo entrevista, respuestas secas, etc.), dilo en una frase; si no, vacío","consejo":"consejo corto"}`,
     max: 1200,
   }),
   opener: (p) => ({
-    text: `${p.hasImages ? "Te paso capturas de su perfil (fotos, bio, historias). Fíjate en detalles concretos: lugares, mascotas, gustos, estilo.\n" : ""}${p.bio ? "Lo que el usuario sabe de ella: " + p.bio + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${voiceCtx(p)}
+    text: `${p.hasImages ? "Te paso capturas de su perfil (fotos, bio, historias). Fíjate en detalles concretos: lugares, mascotas, gustos, estilo.\n" : ""}${p.bio ? "Lo que el usuario sabe de ella: " + p.bio + "\n" : ""}Estilo del usuario: ${p.style || "relajado"}.${voiceCtx(p)}${hotCtx(p)}
 Crea 6 mensajes para iniciar conversación, basados en detalles concretos (nada de "hola, ¿cómo estás?"). Mezcla tipos.
 JSON: {"detalles":["detalle que notaste", "..."],"abridores":[{"tipo":"pícaro|gracioso|curioso|directo","msg":"","por":""}]}`,
     max: 1000,
   }),
   check: (p) => ({
     text: `El usuario está a punto de mandar este mensaje: "${p.mensaje}".${p.chat ? "\nContexto del chat:\n" + p.chat : ""}${crushCtx(p.crush)}
-Evalúalo con honestidad usando el MÉTODO antes de que lo envíe.${voiceCtx(p)}
+Evalúalo con honestidad usando el MÉTODO antes de que lo envíe.${voiceCtx(p)}${hotCtx(p)}
 JSON: {"puntaje":0-10,"veredicto":"frase corta y graciosa","bien":["lo que funciona"],"riesgos":["lo que puede salir mal"],"mejoradas":[{"msg":"","por":""},{"msg":"","por":""}]}`,
     max: 800,
   }),
   decode: (p) => ({
     text: `Ella escribió: "${p.mensaje}".${p.chat ? "\nContexto del chat:\n" + p.chat : ""}${crushCtx(p.crush)}
-Decodifica qué pudo querer decir. Sé realista, sin crear falsas esperanzas.${voiceCtx(p)}
+Decodifica qué pudo querer decir. Sé realista, sin crear falsas esperanzas.${voiceCtx(p)}${hotCtx(p)}
 JSON: {"lecturas":[{"significado":"","probabilidad":0-100}],"senales":["señal que se nota en el mensaje"],"que_hacer":"consejo corto","respuesta":{"msg":"","por":""}}`,
     max: 800,
   }),
+  heat: (p) => ({
+    text: `${p.hasImages ? "Te paso capturas del chat. Los mensajes del usuario suelen estar a la DERECHA.\n" : ""}${p.chat ? "Chat:\n" + p.chat + "\n" : ""}${crushCtx(p.crush)}${voiceCtx(p)}
+El usuario quiere SUBIR LA TEMPERATURA de esta conversación poco a poco. Dale una escalera de 3 niveles de coqueteo (suave, medio, atrevido), 2 mensajes por nivel, todos en su estilo. El nivel atrevido es pícaro y con tensión, pero nunca sexual explícito ni vulgar. Dile también qué señales de ella indican que puede subir de nivel y cuáles que debe bajar.
+JSON: {"temperatura":0-100,"lectura":"cómo está la tensión ahora, 1 frase","niveles":[{"nivel":"Suave","msgs":[{"msg":"","por":""},{"msg":"","por":""}]},{"nivel":"Medio","msgs":[...]},{"nivel":"Atrevido","msgs":[...]}],"subir":["señal para subir"],"bajar":["señal para bajar"]}`,
+    max: 1100,
+  }),
   invite: (p) => ({
-    text: `El usuario quiere invitar a salir a ${p.crush?.name || "una chica"}.${crushCtx(p.crush)}${p.chat ? "\nCómo va el chat:\n" + p.chat : ""}${p.ciudad ? "\nCiudad: " + p.ciudad : ""}${p.presupuesto ? "\nPresupuesto: " + p.presupuesto : ""}${voiceCtx(p)}
+    text: `El usuario quiere invitar a salir a ${p.crush?.name || "una chica"}.${crushCtx(p.crush)}${p.chat ? "\nCómo va el chat:\n" + p.chat : ""}${p.ciudad ? "\nCiudad: " + p.ciudad : ""}${p.presupuesto ? "\nPresupuesto: " + p.presupuesto : ""}${voiceCtx(p)}${hotCtx(p)}
 Propón 3 planes de primera cita concretos, baratos y cómodos (lugares públicos, de día o temprano), ligados a lo que a ella le gusta, y para cada uno un mensaje para invitarla con día propuesto. Incluye cuándo conviene mandarlo.
 JSON: {"listo":0-100,"comentario":"¿ya es buen momento para invitarla? 1 frase","planes":[{"titulo":"","por":"por qué a ella le gustaría","msg":"mensaje para invitarla"}],"si_dice_no":"cómo responder con buena onda si no puede"}`,
     max: 1000,
   }),
   double: (p) => ({
-    text: `Situación: ${p.quien === "yo" ? "el usuario escribió último y ella no ha respondido" : "ella escribió último"}. Tiempo desde el último mensaje: ${p.tiempo || "no indicado"}.${p.chat ? "\nÚltimos mensajes:\n" + p.chat : ""}${crushCtx(p.crush)}${voiceCtx(p)}
+    text: `Situación: ${p.quien === "yo" ? "el usuario escribió último y ella no ha respondido" : "ella escribió último"}. Tiempo desde el último mensaje: ${p.tiempo || "no indicado"}.${p.chat ? "\nÚltimos mensajes:\n" + p.chat : ""}${crushCtx(p.crush)}${voiceCtx(p)}${hotCtx(p)}
 ¿Debería el usuario escribirle ahora? Sé honesto: insistir demasiado resta. Si conviene escribir, propone mensajes que no suenen a reclamo (nada de "¿por qué no respondes?"), ligeros y con algo nuevo.
 JSON: {"semaforo":"verde|amarillo|rojo","veredicto":"frase corta","por":"explicación breve","esperar":"cuánto conviene esperar si no es verde","mensajes":[{"msg":"","por":""},{"msg":"","por":""}]}`,
     max: 700,
@@ -99,7 +108,7 @@ JSON: {"semaforo":"verde|amarillo|rojo","veredicto":"frase corta","por":"explica
     system: `Interpretas a ${p.persona?.name || "Vale"}, una chica ficticia de ${p.persona?.edad || 22} años, en un simulador para que el usuario practique a chatear. NUNCA rompas el personaje ni digas que eres IA.
 Personalidad: ${p.persona?.vibe || "simpática pero no fácil de impresionar"}.
 Forma de escribir: ${p.persona?.estilo || "minúsculas, frases cortas, 'jaja', algún emoji"}.
-Dificultad: ${p.dificultad || "normal"} (fácil = se abre rápido; normal = hay que ganarse su interés; difícil = muy exigente, se aburre fácil).
+${p.hot ? "MODO HOT: eres más coqueta y atrevida de lo normal y te gusta el juego de tensión y doble sentido (sin nada explícito).\n" : ""}Dificultad: ${p.dificultad || "normal"} (fácil = se abre rápido; normal = hay que ganarse su interés; difícil = muy exigente, se aburre fácil).
 ${p.llamada ? `ESTO ES UNA LLAMADA DE VOZ, no un chat. Habla como se habla por teléfono: frases cortas y naturales dichas en voz alta, con muletillas ("eh", "o sea", "a ver", "jaja"), sin emojis, sin abreviaciones, sin "jsjs". Si él se queda callado o es aburrido, lo notas ("¿aló?", "bueno…"). Si es irrespetuoso o muy pesado, cuelgas ("colgar": true). Pon "msgs" con UNA sola frase hablada.
 ` : ""}Escribe como una chica real por WhatsApp, no como un asistente:
 - Mensajes MUY cortos (1 a 8 palabras casi siempre). A veces mandas 2 o 3 mensajitos seguidos en vez de uno largo.
