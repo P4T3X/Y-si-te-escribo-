@@ -187,7 +187,10 @@ export function makeApp({ store, env, fetchImpl = fetch }) {
     const models = [env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-lite-latest"].filter((v, i, a) => v && a.indexOf(v) === i);
     let lastErr;
     for (const model of models) {
-      const r = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: Math.max(max, 800) * 2, responseMimeType: "application/json", temperature: 0.9 } }) });
+      const payload = JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: Math.max(max, 800) * 2, responseMimeType: "application/json", temperature: 0.9 } });
+      const base = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      let r = await fetchImpl(base, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY }, body: payload });
+      if (r.status === 401 || r.status === 403) r = await fetchImpl(base + "?key=" + encodeURIComponent(env.GEMINI_API_KEY), { method: "POST", headers: { "content-type": "application/json" }, body: payload });
       if (r.ok) { const d = await r.json(); const t = (d.candidates?.[0]?.content?.parts || []).map((x) => x.text || "").join(""); if (t) return t; lastErr = fail("gemini sin texto (" + (d.candidates?.[0]?.finishReason || d.promptFeedback?.blockReason || "?") + ")"); continue; }
       const body = await r.text(); console.error("Gemini", model, r.status, body.slice(0, 400));
       let msg = ""; try { msg = JSON.parse(body).error?.message || ""; } catch {}
