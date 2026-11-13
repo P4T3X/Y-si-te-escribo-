@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#4a2a1d">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Pinyon+Script&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared/despiece.css">
+<link rel="stylesheet" href="/shared/vitrina.css">
 <style>
 :root{
   --cafe:#4a2a1d;--cafe2:#2d1912;--cielo:#8fb9da;--cielo2:#c9dff0;--mante:#f3ecc4;--marino:#141c33;--marino2:#1d2747;
@@ -99,11 +99,12 @@ button{font:inherit;cursor:pointer}
 .facts span{display:block;margin-top:8px;font-size:14px;color:var(--gris);line-height:1.4}
 @media (max-width:860px){.intro .grid{grid-template-columns:1fr}.facts{grid-template-columns:1fr 1fr}}
 
-/* Despiece en la paleta de la colección */
-.dsp{--d-bg:var(--marino);--d-ink:var(--mante);--d-mute:rgba(243,236,196,.66);--d-line:var(--mante);--d-body:#0b1020;--d-accent:var(--naranja)}
-.dsp-head h2{font-family:var(--serif);font-weight:400}
-.dsp-t{font-family:var(--serif);font-weight:400}
+/* Vitrina en la paleta de la colección */
+.vit{--v-bg:var(--marino);--v-ink:var(--mante);--v-mute:rgba(243,236,196,.72);--v-accent:var(--naranja)}
+.vit h2{font-family:var(--serif);font-weight:400}
+.vit-specs b{font-family:var(--serif);font-weight:400}
 
+@keyframes dspIn{from{opacity:0;transform:translateY(6px)}}
 /* Eras */
 .eras{padding:clamp(80px,12vw,150px) 0;background:var(--sillar)}
 .eras .row{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:46px}
@@ -291,7 +292,7 @@ footer .made a b{color:var(--cielo)}
   </div>
 </section>
 
-<section class="dsp" id="despiece" data-img="img/ford1929.jpg" data-title="Ford Model A · 1929" data-eyebrow="De la colección"></section>
+<section class="vit" id="despiece" data-img="img/ford1929.jpg" data-title="Ford Model A · 1929" data-eyebrow="De la colección"></section>
 
 <section class="eras">
   <div class="wrap">
@@ -558,6 +559,6 @@ let tt;
 function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("on"), 2200); }
 renderCart();
 </script>
-<script src="/shared/despiece.js" defer></script>
+<script src="/shared/vitrina.js" defer></script>
 </body>
 </html>
