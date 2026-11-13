@@ -488,3 +488,5 @@ nav.bottom button .ai{width:24px;height:24px}
 .wheelwrap{position:relative;width:min(320px,86vw);margin:10px auto 0}
 .wheel{width:100%;display:block;filter:drop-shadow(0 16px 30px #0008)}
 .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:28px solid #fff;z-index:2;filter:drop-shadow(0 3px 4px #0006)}
+
+.cl.sys{align-self:center;background:#ffd16622;color:#ffe3a3;font-size:12px;text-align:center}

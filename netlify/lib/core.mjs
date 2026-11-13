@@ -185,20 +185,30 @@ export function makeApp({ store, env, fetchImpl = fetch }) {
   }
   async function viaGemini(system, msgs, images, max) {
     const contents = msgs.map((m, i) => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(i === msgs.length - 1 ? images.map((im) => ({ inline_data: { mime_type: im.type || "image/jpeg", data: im.data } })) : []), { text: m.content }] }));
-    const models = [env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-lite-latest"].filter((v, i, a) => v && a.indexOf(v) === i);
+    // Para chats y llamadas (rápido) primero el modelo "lite"; para analizar capturas, el normal.
+    const quick = !images.length && msgs.length > 1;
+    const base3 = ["gemini-3.8-flash", "gemini-flash-latest"], lite = ["gemini-flash-lite-latest", "gemini-3.8-flash-lite"];
+    const models = [env.GEMINI_MODEL, ...(quick ? [...lite, ...base3] : [...base3, ...lite])].filter((v, i, a) => v && a.indexOf(v) === i);
+    const t0 = Date.now();
     let lastErr;
     for (const model of models) {
       const payload = JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: Math.max(max, 800) * 2, responseMimeType: "application/json", temperature: 0.9 } });
       const base = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-      let r = await fetchImpl(base, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY }, body: payload });
-      if (r.status === 401 || r.status === 403) r = await fetchImpl(base + "?key=" + encodeURIComponent(env.GEMINI_API_KEY), { method: "POST", headers: { "content-type": "application/json" }, body: payload });
+      const left = 24000 - (Date.now() - t0);
+      if (left < 3000) break;
+      const go = async (url, headers) => { const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), Math.min(left, quick ? 9000 : 15000)); try { return await fetchImpl(url, { method: "POST", headers, body: payload, signal: ac.signal }); } finally { clearTimeout(tm); } };
+      let r;
+      try {
+        r = await go(base, { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY });
+        if (r.status === 401 || r.status === 403) r = await go(base + "?key=" + encodeURIComponent(env.GEMINI_API_KEY), { "content-type": "application/json" });
+      } catch (e) { console.error("Gemini", model, "tardó demasiado"); lastErr = fail("gemini tardó demasiado", 504); continue; }
       if (r.ok) { const d = await r.json(); const t = (d.candidates?.[0]?.content?.parts || []).map((x) => x.text || "").join(""); if (t) return t; lastErr = fail("gemini sin texto (" + (d.candidates?.[0]?.finishReason || d.promptFeedback?.blockReason || "?") + ")"); continue; }
       const body = await r.text(); console.error("Gemini", model, r.status, body.slice(0, 400));
       let msg = ""; try { msg = JSON.parse(body).error?.message || ""; } catch {}
       lastErr = fail(`gemini ${r.status}: ${msg.slice(0, 140)}`, r.status);
-      if (r.status === 400 || r.status === 401 || r.status === 403) break; // clave mala: no sirve probar otros modelos
+      if (r.status === 401 || r.status === 403) break; // clave mala: no sirve probar otros modelos
     }
-    throw lastErr;
+    throw lastErr || fail("gemini sin respuesta");
   }
   async function viaGroq(system, msgs, images, max) {
     const model = images.length ? env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct" : env.GROQ_MODEL || "llama-3.3-70b-versatile";

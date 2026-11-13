@@ -813,6 +813,8 @@ function ringtone(ctxHolder) {
 
 /* ---------- Llamada en el simulador ---------- */
 function abrirLlamada(pers, dif, onEnd) {
+  // iPhone/iPad: la voz solo funciona si se "desbloquea" dentro del toque del usuario
+  try { if (window.speechSynthesis && !VOZ.tts) { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch {}
   const el = document.createElement("div");
   el.className = "callscr";
   el.innerHTML = `<div class="cbg"></div>
@@ -855,7 +857,7 @@ function abrirLlamada(pers, dif, onEnd) {
       if (said) { hist.push({ role: "assistant", content: said }); await sheSays(said); }
       if (r.cita && !st.cita) { st.cita = true; hearts(innerWidth / 2, innerHeight / 2, 24); toast(`¡${pers.name} aceptó salir contigo!`); }
       if (r.colgar) return end(`${pers.name} colgó`);
-    } catch (e) { hist.pop(); toast(e.message); }
+    } catch (e) { hist.pop(); line("sys", "No se escuchó bien (" + e.message + "). Repite lo que dijiste."); }
     finally { st.busy = false; if (!st.ended) $c("#cMicL").textContent = "Toca y habla"; }
   };
   $c("#cMic").onclick = () => {
