@@ -77,7 +77,7 @@ async function btRun(){const out=$('#btOut');if(!MKT)return;const R=BT.rows.filt
       if(BT.reb&&d.getUTCFullYear()!==lastY){rows.forEach(r=>sh[r.t]=v*(r.w/tw)/at(r.t,t));lastY=d.getUTCFullYear();}
       prevV=v;curve.push(v);cc.push(contrib);peak=Math.max(peak,nav);mdd=Math.min(mdd,nav/peak-1);});
     const yrs=(dates.at(-1)-dates[0])/(365.25*864e5),cagr=Math.pow(nav,1/yrs)-1;return {curve,cc,contrib,final:curve.at(-1),cagr,mdd,yrs,nav};};
-  const A=sim(R),B=sim([{t:'SPY',w:1}]);
+  const L=window.LBT,z={pct:0,fixed:0,slip:0},A=L?L.legacy(L.run({assets:R.map(r=>({t:r.t,w:r.w})),init:BT.init,monthly:BT.mon,reb:BT.reb?'annual':'none',costs:z},D,dates)):sim(R),B=L?L.legacy(L.run({assets:[{t:'SPY',w:100}],init:BT.init,monthly:BT.mon,reb:'none',costs:z},D,dates)):sim([{t:'SPY',w:1}]);
   const rets=[];for(let k=1;k<A.curve.length;k++){const a=A.curve[k]-(A.cc[k]-A.cc[k-1]),b=A.curve[k-1];rets.push(a/b-1);}const vol=sd(rets)*Math.sqrt(52),sh=(A.cagr-.04)/vol;
   const W=Math.max(320,Math.min(1100,out.clientWidth||700)),Hc=270,p={l:58,r:96,t:14,b:26},all=[...A.curve,...B.curve,...A.cc],mx=Math.max(...all),mn=Math.min(...all)*.95,X=k=>p.l+k/(dates.length-1)*(W-p.l-p.r),Y=v=>p.t+(mx-v)/((mx-mn)||1)*(Hc-p.t-p.b);
   const path=a=>a.map((v,k)=>(k?'L':'M')+X(k).toFixed(1)+' '+Y(v).toFixed(1)).join('');let g='';

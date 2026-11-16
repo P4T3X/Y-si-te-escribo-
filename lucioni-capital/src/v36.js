@@ -1,5 +1,5 @@
 /* ===================== V36: Economía global (Fase 4) — FMI, BIS, Tesoro de EE.UU., OCDE, Reserva Federal y FRED ===================== */
-{
+(()=>{
 const {J30,lines30,cls30,C30}=window.L30;
 const MAC=MKT?MKT.replace(/market$/,'macro'):null;
 const FLAG=id=>id==='EA'?'🇪🇺':String.fromCodePoint(...[...id].map(c=>127397+c.charCodeAt(0)));
@@ -179,4 +179,4 @@ async function toolMacro(step,text){if(!MAC)throw new Error('Disponible en la ve
   return `<div class="cp32c"><h4>${FLAG(id)} ${esc(nameOf(id))}</h4><div class="cp32k">${kp('Inflación '+(g('inf')?.y||''),fv('inf',g('inf')?.v))}${kp('PIB real '+(g('gdp')?.y||''),fv('gdp',g('gdp')?.v))}${kp('Desempleo',fv('unemp',g('unemp')?.v))}${kp('Deuda pública',fv('debt',g('debt')?.v))}${b?kp('Tasa del banco central',nf(b.rate,2)+'%'):''}</div><button class="btn" onclick="EC36.open('sum','${id}')">Abrir Economía global</button></div>`;}).join('');
  return {cards,S,ctx:`Datos macroeconómicos oficiales de ${ids.map(nameOf).join(', ')}. Distingue entre datos observados y estimaciones del FMI.`,noResearch:true};}
 if(window.CP32){CP32.INTENTS.unshift([/(inflaci[oó]n|\bpib\b|desempleo|tasa de (inter[eé]s|referencia)|banco central|reserva federal|\bfed\b|\bbce\b|econom[ií]a (de|del|global|mundial)|recesi[oó]n|curva de rendimiento|deuda p[uú]blica)/i,(step,t)=>toolMacro(step,t),false,'datos macro oficiales']);}
-}
+})();

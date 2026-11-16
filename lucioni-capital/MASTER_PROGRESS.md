@@ -302,6 +302,28 @@ Auditoría previa: ya existían el Copilot (v32) con herramientas por intención
 ### Desplegado
 `dpl_D6XTam4isScXwU2Djx7dbu1oPUGd`.
 
+## Entrega 8 — Complete Financial Platform, Fase 6: Strategy Lab (16 nov 2026)
+
+Auditoría previa: existían el Backtest de cartera (v23: 5 años de cierres semanales reales, aportes mensuales, rebalanceo anual, comparación con el S&P 500; la simulación estaba escrita dentro del botón, sin costos ni señales), el riesgo de cartera (volatilidad, beta y correlación con `stats30`, `corr30` y `beta30`) y los indicadores técnicos `LCH` (v35). Se extrajo un **motor único `LBT`** y el Backtest clásico ahora corre sobre él: no hay motores paralelos.
+
+### Hecho
+- **Motor `LBT`** (puro, probado aparte): activos con pesos, inversión inicial y aportes mensuales; rebalanceo sin, mensual, trimestral, anual o por banda de tolerancia; reglas de entrada y salida combinables (todas o alguna) con medias móviles, cruces de medias, RSI, momentum y caída desde el máximo; costos (comisión %, deslizamiento % y comisión fija por operación); rendimiento opcional del efectivo. Métricas: valor final, aportado, CAGR por tiempo, volatilidad, Sharpe, Sortino, caída máxima y su duración, rendimiento por año, beta y correlación con el índice de comparación, costos pagados, número de operaciones, rotación y tiempo invertido.
+- **Sin sesgo de anticipación**: la señal de la semana t usa solo cierres hasta t−1 y se ejecuta al cierre de t. Los indicadores sin datos suficientes (calentamiento) nunca dan señal.
+- **Sesgo de supervivencia y limitaciones documentados en cada backtest**: período real, fuente (Nasdaq, cierres semanales, solo precio, sin dividendos), costos y total pagado, regla de ejecución, rebalanceo, que se eligen activos que existen hoy, y que no incluye impuestos ni tipo de cambio. El índice de comparación usa los mismos aportes y costos.
+- **Vista Strategy Lab** (`lab`): editor con plantillas (60/40, Todo el mundo, Tendencia de 40 semanas, Momentum 6 meses, Comprar en caídas por RSI, Mi cartera real), resultados con evolución, caídas, rendimiento por año, últimas operaciones, matriz de correlación entre activos (Correlation Lab) y supuestos; descarga CSV (curva + supuestos) e informe PDF.
+- **Guardar, versiones y comparación**: hasta 20 estrategias con 15 versiones cada una, sincronizadas con la cuenta (clave `slab` del estado); comparar dos versiones (qué parámetros cambiaron y sus resultados) y comparar hasta 4 estrategias en el mismo período.
+- Accesos: Lucioni Pro → Analysis y botón "Abrir en Strategy Lab" en el Backtest clásico.
+
+### Problemas encontrados y corregidos
+- **Señales falsas durante el calentamiento**: en JavaScript `precio > null` es verdadero, así que una regla "precio sobre su media de 40 semanas" compraba en la semana 1. Ahora una condición sin datos nunca se cumple; hay una prueba para esto.
+- **Funciones que se volvían globales**: el código de la app no corre en modo estricto, por lo que una `function` declarada dentro de un bloque `{ }` se vuelve global. Los módulos v36 (Economía global) y v37 (Intelligence Network), ya desplegados, declaraban nombres genéricos (`render`, `hist`, `run`, `wire`…) que podían pisar funciones de otros módulos, como el buscador del menú o el pintado de la lista de empresas. Se encerró cada módulo (v36, v37 y v38) en su propia función y se agregó una prueba que verifica que la navegación, la lista de empresas y el buscador del menú siguen intactos.
+
+### Pruebas
+`test/ui-lab.test.cjs` (27 correctas): motor contra valores conocidos (comprar y mantener exacto, CAGR, costos, aportes, sin anticipación, calentamiento, rebalanceo anual y por banda, caída máxima, activo sin historial), editor, plantillas, métricas, supuestos, versiones, matriz de correlación, CSV, PDF, comparación de versiones y de estrategias, Backtest clásico sobre `LBT`, funciones globales intactas y móvil. La batería completa pasa.
+
+### Desplegado
+`dpl_EtEBPg49XeBbnG3qfoDsovGBoogy`.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |

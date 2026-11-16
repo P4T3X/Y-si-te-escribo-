@@ -1,5 +1,5 @@
 /* ===================== V37: Lucioni Intelligence Network (Fase 5) — orquestación única sobre el Copilot ===================== */
-{
+(()=>{
 const IN=AUTH?AUTH.replace(/account$/,'intel'):null;
 const tokI=()=>{try{return localStorage.getItem('lc_tok')||'';}catch(e){return '';}};
 async function iapi(action,b={}){let r;try{r=await fetch(IN,{method:'POST',headers:{'content-type':'application/json',...(tokI()?{authorization:'Bearer '+tokI()}:{})},body:JSON.stringify({action,...b})});}catch(e){throw {code:'network',message:'Sin conexión. Revisa tu internet.'};}
@@ -87,4 +87,4 @@ const Q='Analiza mi situación financiera completa y ayúdame a identificar qué
 {const a=$('#cp32a');if(a&&!$('#in37a')){const b=document.createElement('button');b.id='in37a';b.className='pill in37pill';b.innerHTML=`${ic('target','',false)} Informe financiero completo`;b.onclick=()=>ask(Q);a.querySelector('span')?.after(b);const p=document.createElement('button');p.className='pill';p.id='in37pp';p.innerHTML=`${ic('stop','',false)} Permisos de IA`;p.onclick=permSheet;b.after(p);}}
 {const g=[...document.querySelectorAll('#pro30 .pg30')].find(x=>/Intelligence/.test(x.textContent));if(g&&!$('#in37pro')){const b=document.createElement('button');b.className='pt30';b.id='in37pro';b.innerHTML=`${ic('target','',false)}<span><b>Intelligence Network</b><small>Informe de tu situación completa: finanzas, deudas, patrimonio, inversiones, inmuebles, jubilación, metas y economía</small></span>${ic('right','',false)}`;b.onclick=()=>{setView('chat');setTimeout(()=>ask(Q),300);};g.querySelector('h3').after(b);}}
 window.IN37={INTEL_RE,report,permSheet,LAST,Q};
-}
+})();
