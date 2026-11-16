@@ -74,6 +74,37 @@ Para regenerar los paquetes JS (`src/core-bundle.js`, `src/media-bundle.js`, `sr
 ### Fase 10 · Lanzamiento — pendiente
 Necesita decisiones y cuentas del dueño (lista abajo).
 
+## Entrega 2 — Professional Expansion, Fase A (16 nov 2026)
+
+Despliegue: `dpl_DJ1SpsbtY8F8sHVr36vL2rMaJyPC`. Pruebas: 41/41 servidor, 41/41 Fase A (`test/ui-pro.test.cjs`), 27/27 plataforma, chat con fuentes, video y rendimiento sin regresiones.
+
+### Auditoría previa: qué ya existía y cómo se integró (sin duplicar)
+| Pedido | Ya existía | Decisión |
+|---|---|---|
+| AI Copilot | Asesor con fuentes (v28) | Se amplió: mismo chat, ahora con acciones y permiso de datos |
+| Watchtower | Alertas de precio en Mesa del inversor (TRD.alerts) | Se reutilizan los mismos datos; Watchtower añade 8 tipos nuevos y la Mesa los muestra |
+| Screener | Mesa → Screener | Se enlaza desde Lucioni Pro (Fase B: ampliar filtros) |
+| Insider | Ficha (directivos, institucionales) y Mesa (13F, Congreso) | Se enlaza; Fase C: Form 4 de la SEC con fechas de operación |
+| Risk Lab | Riesgo de la cartera real (v18) y pruebas de estrés del simulador | El cálculo nuevo del Copilot (beta, Sharpe, aporte al riesgo) es la base de Risk Lab (Fase B) |
+| Valuation Studio | DCF en la ficha (v18) | Se enlaza; Fase B: DDM, comparables y sensibilidad |
+| Journal Pro | Diario de inversión | Fase D |
+| Arena | Lucio Bot y retos | Fase D |
+
+### Hecho
+- **Lucioni Pro**: página con las herramientas agrupadas en Markets, Research, Analysis, Intelligence, Practice y Reports; solo enlaza funciones que existen. También en el menú del logo y en Inicio.
+- **Lucioni Terminal**: 13 índices del mundo (S&P 500, Nasdaq 100, Dow, Russell 2000, Reino Unido, Alemania, Francia, Japón, Hong Kong, emergentes, Brasil, México, Perú) seguidos con ETFs y rotulados como tales; comparación base 100 a 1 año; mapa de calor de las 80 mayores empresas por sector; sectores ponderados por capitalización; líderes (suben, bajan, más negociadas por volumen en dólares, más grandes); calendario de resultados; materias primas; 8 divisas del BCE con historial de 90 días y el sol del BCRP. Fuente, hora y posible retraso visibles. Se actualiza cada 90 s mientras está abierto.
+- **Deep Research**: informe de cualquier empresa con datos de Nasdaq, SEC (XBRL, 8-K/10-Q/10-K), noticias y 5 años de precios. Ingresos, márgenes, beneficios trimestrales, deuda, flujo de caja, valoración (P/E y P/S de 12 meses, P/B, EV, EV/EBIT, rendimiento del flujo libre), rendimiento y riesgo a 5 años, directivos e institucionales. Con Premium, la IA redacta los 10 apartados cualitativos y el **Lucioni Verdict** (favorable, desfavorable, incertidumbres), citando las fuentes y marcando lo que es "conocimiento general"; sin recomendación de compra o venta. **Exportar PDF** con portada, tablas, fuentes, metodología y advertencias (impresión del navegador → "Guardar como PDF").
+- **AI Copilot**: 5 acciones (analizar mi cartera, comparar empresas, por qué se movió el mercado, simular una inversión, exposición sectorial). Pide permiso antes de leer la cartera. El análisis calcula volatilidad, caída máxima, beta frente al S&P 500, Sharpe (con BIL como tasa libre de riesgo real), posiciones equivalentes, aporte de cada activo al riesgo y el par más correlacionado. La simulación usa Monte Carlo calibrado con 5 años reales del S&P 500. Desde cada empresa se puede abrir Deep Research.
+- **Watchtower**: alertas de precio, movimiento diario, máximos y mínimos de 52 semanas, resultados próximos, noticias nuevas, aumento de volatilidad, variación de la cartera, concentración sectorial (con los activos que explican el cambio) y dólar/sol. Cada alerta avisa como máximo una vez al día, con un tope diario configurable (3/5/10), historial y "Explicar con IA". Notificaciones del navegador opcionales. El límite de alertas por plan (Free 5, Premium 50) lo aplica el servidor.
+- Servidor: tipos de cambio de todas las divisas del BCE y su historial de 90 días; límite anti-abuso de pruebas más justo para redes compartidas (10 por hora por IP).
+
+### Pendiente (Fases B, C y D)
+- **Fase B**: Risk Lab como página propia (pruebas de estrés configurables, comparación de carteras), Valuation Studio (DDM, comparables, sensibilidad), Screener ampliado (ROE, ROIC, márgenes, filtros guardados), Lucioni Macro.
+- **Fase C**: Fund Manager con Portfolio Score explicado, Lucioni Dividend, Insider con SEC Form 4, Lucioni Reports (cartera, riesgo, macro, progreso).
+- **Fase D**: Arena con ligas y ranking ajustado al riesgo, Journal Pro, Global Watch con varias listas.
+- **Calendario económico y Macro**: necesitan una fuente con licencia y clave, por ejemplo FRED (gratuita, requiere `FRED_API_KEY`), Trading Economics o el Banco Mundial.
+- Alertas cuando la app está cerrada: necesitan correo configurado o notificaciones push con un servicio en segundo plano.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |

@@ -34,7 +34,7 @@ const pub = u => ({ email: u.email, name: u.name, risk: u.risk, cur: u.cur, goal
   prefs: { notif: u.prefs?.notif !== false, analytics: u.prefs?.analytics !== false }, sub: entitlements(u) });
 /* una prueba por persona: se registra el correo normalizado (sin alias +etiqueta ni puntos en Gmail) aunque la cuenta se borre */
 const trialKey = email => { let [a, d] = String(email).toLowerCase().split('@'); a = a.split('+')[0]; if (/^(gmail|googlemail)\.com$/.test(d)) { a = a.replace(/\./g, ''); d = 'gmail.com'; } return crypto.createHash('sha256').update('lc-trial:' + a + '@' + d).digest('hex').slice(0, 40); };
-function limited(key, max = 6) { const now = Date.now(), l = (attempts.get(key) || []).filter(t => now - t < 10 * 60_000); if (l.length >= max) return true; l.push(now); attempts.set(key, l); return false; }
+function limited(key, max = 6, win = 10 * 60_000) { const now = Date.now(), l = (attempts.get(key) || []).filter(t => now - t < win); if (l.length >= max) return true; l.push(now); attempts.set(key, l); return false; }
 async function body(req) { if (req.body && typeof req.body === 'object') return req.body; const c = []; for await (const x of req) c.push(x); try { return JSON.parse(Buffer.concat(c).toString() || '{}'); } catch { return {}; } }
 const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const newCode = () => { const b = crypto.randomBytes(15); let o = ''; for (let i = 0; i < 15; i++) o += ALPH[b[i] % 32]; return o.match(/.{5}/g).join('-'); };
@@ -152,7 +152,9 @@ export default async function handler(req, res) {
     if (a === 'save') {
       if (b.profile) { u.name = clean(b.profile.name, 40) || u.name; if (['conservador', 'moderado', 'agresivo'].includes(b.profile.risk)) u.risk = b.profile.risk; u.cur = pick(b.profile.cur, CURS, u.cur || 'USD'); u.goal = clean(b.profile.goal, 60); if (b.profile.lang) u.lang = pick(b.profile.lang, LANGS, 'es'); if (b.profile.level) u.level = pick(b.profile.level, LEVELS, 'principiante'); if (b.profile.country != null) u.country = clean(b.profile.country, 2).toUpperCase(); if (b.profile.tz != null) u.tz = clean(b.profile.tz, 60); if (b.profile.prefs) u.prefs = { notif: b.profile.prefs.notif !== false, analytics: b.profile.prefs.analytics !== false }; await writeJSON(`users/${uid}/profile.json`, u); }
       if (b.state && Array.isArray(b.state.pfs) && b.state.pfs.length > entitlements(u).limits.portfolios) return err(res, 403, 'premium_required', `Tu plan permite ${entitlements(u).limits.portfolios} cartera(s). Activa Premium para tener más.`);
-      if (b.state) { const s = JSON.stringify(b.state); if (s.length > MAX_STATE) return err(res, 413, 'too_big', 'Tus datos superan el límite.'); const at = Date.now(); await writeJSON(`users/${uid}/state.json`, { state: b.state, updatedAt: at }); return send(res, 200, { ok: true, updatedAt: at, profile: pub(u) }); }
+      let trimmed = 0; const al = b.state?.trd?.alerts, lim = entitlements(u).limits.alerts;
+      if (Array.isArray(al) && al.length > lim) { trimmed = al.length - lim; b.state.trd.alerts = al.slice(0, lim); } // Watchtower: el servidor aplica el límite del plan
+      if (b.state) { const s = JSON.stringify(b.state); if (s.length > MAX_STATE) return err(res, 413, 'too_big', 'Tus datos superan el límite.'); const at = Date.now(); await writeJSON(`users/${uid}/state.json`, { state: b.state, updatedAt: at }); return send(res, 200, { ok: true, updatedAt: at, profile: pub(u), ...(trimmed ? { trimmed: { alerts: trimmed } } : {}) }); }
       return send(res, 200, { ok: true, profile: pub(u) });
     }
     if (a === 'password') {
@@ -178,7 +180,7 @@ export default async function handler(req, res) {
       if (e.plan === 'premium') return err(res, 409, 'already', 'Ya tienes Premium activo.');
       const tk = `trials/${trialKey(u.email)}.json`;
       if (u.sub?.trialUsed || await readJSON(tk)) return err(res, 409, 'trial_used', 'La prueba gratuita ya se usó con este correo.');
-      if (limited('trial:' + ip, 3)) return err(res, 429, 'rate', 'Demasiados intentos. Espera unos minutos.');
+      if (limited('trial:' + ip, 10, 3600_000)) return err(res, 429, 'rate', 'Demasiados intentos. Espera unos minutos.');
       const now = Date.now(); u.sub = { ...(u.sub || {}), status: 'trialing', source: 'trial', trialStart: now, trialEnd: now + TRIAL_DAYS * 864e5, trialUsed: true };
       await writeJSON(`users/${uid}/profile.json`, u); await writeJSON(tk, { at: now }); await audit(uid, 'trial_started', { end: u.sub.trialEnd });
       return send(res, 200, { ok: true, profile: pub(u) });

@@ -23,6 +23,7 @@ r = await getj('/api/academy?track=advanced&lesson=a1', tok); ok(r.s === 402 && 
 r = await getj('/api/academy?track=advanced&lesson=a1'); ok(r.s === 401, 'sin sesión no hay ruta Advanced');
 r = await post('/api/ai', { input: 'hola', mode: 'deep' }, tok); ok(r.s === 402, 'investigación profunda bloqueada en Free');
 r = await acc('save', { state: { pfs: [{}, {}] } }, tok); ok(r.s === 403 && r.d.code === 'premium_required', 'Free no puede guardar más carteras que su límite');
+r = await acc('save', { state: { trd: { alerts: Array.from({ length: 8 }, (_, i) => ({ id: i, type: 'news', s: 'AAPL' })) } } }, tok); ok(r.s === 200 && r.d.trimmed && r.d.trimmed.alerts === 3, 'Watchtower: el servidor recorta las alertas al límite Free (5)');
 const forged = tok.split('.')[0] + '.AAAA'; r = await acc('trial', {}, forged); ok(r.s === 401, 'un token manipulado no da acceso');
 
 console.log('3. Cuota diaria de IA');

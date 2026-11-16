@@ -227,6 +227,19 @@ async function hist5(sym) {
   }
   return { s: sym, pts: [] };
 }
+/* ---------- historial de 90 días del BCE, convertido a base USD ---------- */
+async function fxHist() {
+  const c = cache.get('fxhist'); if (c && Date.now() - c.t < 6 * 3600_000) return c.v;
+  const r = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml', { headers: { 'user-agent': 'LucioniCapital/1.0' } });
+  if (!r.ok) throw new Error('ecb ' + r.status);
+  const x = await r.text(), days = [];
+  for (const m of x.matchAll(/<Cube time=['"](\d{4}-\d{2}-\d{2})['"]>([\s\S]*?)<\/Cube>/g)) { const R = {}; for (const k of m[2].matchAll(/currency=['"]([A-Z]{3})['"]\s+rate=['"]([\d.]+)['"]/g)) R[k[1]] = parseFloat(k[2]); if (R.USD) days.push([m[1], R]); }
+  days.sort((a, b) => a[0] < b[0] ? -1 : 1);
+  const cur = ['EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'CNY', 'MXN', 'BRL', 'INR', 'AUD'];
+  const series = Object.fromEntries(cur.map(k => [k, days.map(([d, R]) => [Date.parse(d), k === 'EUR' ? 1 / R.USD : R[k] ? R[k] / R.USD : null]).filter(p => p[1] != null)]));
+  const v = { at: Date.now(), base: 'USD', src: 'Banco Central Europeo · tipos de referencia (90 días)', series };
+  cache.set('fxhist', { t: Date.now(), v }); return v;
+}
 /* ---------- tipos de cambio de referencia: BCE (EUR, GBP, USD) + BCRP (PEN). Sin tasas inventadas. ---------- */
 async function fxAll() {
   const c = cache.get('fxall'); if (c && Date.now() - c.t < 3 * 3600_000) return c.v;
@@ -237,7 +250,7 @@ async function fxAll() {
   if (ecb.status === 'fulfilled') {
     const x = ecb.value, R = {}; for (const m of x.matchAll(/currency=['"]([A-Z]{3})['"]\s+rate=['"]([\d.]+)['"]/g)) R[m[1]] = parseFloat(m[2]);
     const d = (x.match(/time=['"](\d{4}-\d{2}-\d{2})['"]/) || [])[1];
-    if (R.USD) { rates.EUR = 1 / R.USD; if (R.GBP) rates.GBP = R.GBP / R.USD; src.EUR = src.GBP = 'Banco Central Europeo · tipos de referencia'; dates.EUR = dates.GBP = d || null; }
+    if (R.USD) { rates.EUR = 1 / R.USD; for (const [k, v] of Object.entries(R)) if (k !== 'USD') { rates[k] = v / R.USD; src[k] = 'Banco Central Europeo · tipos de referencia'; dates[k] = d || null; } src.EUR = 'Banco Central Europeo · tipos de referencia'; dates.EUR = d || null; }
   }
   if (pen.status === 'fulfilled' && pen.value.last) { rates.PEN = +pen.value.last[1]; src.PEN = pen.value.src; dates.PEN = new Date(pen.value.last[0]).toISOString().slice(0, 10); }
   const v = { at: Date.now(), base: 'USD', rates, src, dates };
@@ -264,6 +277,7 @@ export default async function handler(req, res) {
     if (q.get('h1y')) { const sy = q.get('h1y'); if (!/^[A-Za-z.\-]{1,10}$/.test(sy)) return send(res, 400, { code: 'bad_symbol' }); const d = await hist1y(sy.toUpperCase()); return send(res, 200, d, d.pts.length ? 21600 : 60); }
     if (q.get('h5')) { const sy = q.get('h5'); if (!/^[A-Za-z.\-]{1,10}$/.test(sy)) return send(res, 400, { code: 'bad_symbol' }); const d = await hist5(sy.toUpperCase()); return send(res, 200, d, d.pts.length ? 43200 : 60); }
     if (q.get('fx')) return send(res, 200, await fxAll(), 3600);
+    if (q.get('fxhist')) return send(res, 200, await fxHist(), 21600);
     if (q.get('fxpen')) return send(res, 200, await fxPen(), 10800);
     if (q.get('quotes')) { const L = q.get('quotes').toUpperCase().split(',').map(x => x.trim()).filter(x => /^[A-Z.\-]{1,10}$/.test(x)).slice(0, 16); return send(res, 200, await quotes([...new Set(L)]), 30); }
     if (q.get('ideas')) { const d = await ideas(); return send(res, 200, { at: d.at, total: d.total, rows: d.rows }, d.rows.length >= 55 ? 1800 : 30); }

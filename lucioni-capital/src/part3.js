@@ -2840,3 +2840,399 @@ if(WEB&&'serviceWorker' in navigator&&location.protocol==='https:'){addEventList
 (async()=>{if(member()&&tok()){await planLoad();dailyLesson();}
  if(store.get('notif',true)&&CHAL.d!==day29()&&member())setTimeout(()=>toast('Tu reto de hoy está listo en Lucioni Daily',{icon:ic('target'),action:{label:'Ver',fn:()=>{setView('inicio');setTimeout(()=>$('#d29chal')?.scrollIntoView({behavior:RM29()?'auto':'smooth',block:'center'}),300);}}}),2600);})();
 }
+
+/* ===================== V30: servicios compartidos, Lucioni Pro (categorías) y Lucioni Terminal ===================== */
+{
+const WEB30=!!window.LC_API;
+/* caché de sesión para no repetir consultas (los datos ya traen su propia caché en el servidor) */
+const C30=new Map();
+async function J30(u,ttl=60000,ms=12000){const h=C30.get(u);if(h&&Date.now()-h.t<ttl)return h.v;const c=new AbortController(),tm=setTimeout(()=>c.abort(),ms);
+  try{const r=await fetch(u,{signal:c.signal});const d=await r.json().catch(()=>null);if(!r.ok||!d)throw (d||{code:'http'});C30.set(u,{t:Date.now(),v:d});return d;}finally{clearTimeout(tm);}}
+async function pool30(items,n,fn){const out=new Array(items.length);let i=0;await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(i<items.length){const k=i++;try{out[k]=await fn(items[k],k);}catch(e){out[k]=null;}}}));return out;}
+const big30=v=>{if(v==null||!isFinite(v))return '—';const a=Math.abs(v),s=v<0?'-':'';return a>=1e12?s+'$'+(a/1e12).toFixed(2)+' bill.':a>=1e9?s+'$'+(a/1e9).toFixed(1)+' mil M':a>=1e6?s+'$'+(a/1e6).toFixed(1)+' M':s+'$'+Math.round(a).toLocaleString('en-US');};
+const pc30=(v,d=1)=>v==null||!isFinite(v)?'—':(v>=0?'+':'')+v.toFixed(d)+'%';
+const cls30=v=>v==null?'':v>=0?'up':'dn';
+const hhmm=t=>new Date(t).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+/* estadística de series: rendimientos, volatilidad anual, caída máxima */
+function stats30(pts){if(!pts||pts.length<6)return null;const c=pts.map(p=>p[1]),r=[];for(let i=1;i<c.length;i++)r.push(c[i]/c[i-1]-1);
+  const yrs=(pts.at(-1)[0]-pts[0][0])/(365.25*864e5)||1,per=(c.length-1)/yrs,m=r.reduce((a,b)=>a+b,0)/r.length,sd=Math.sqrt(r.reduce((a,b)=>a+(b-m)**2,0)/Math.max(1,r.length-1));
+  let pk=c[0],dd=0;c.forEach(v=>{pk=Math.max(pk,v);dd=Math.min(dd,v/pk-1);});
+  const dn=Math.sqrt(r.filter(x=>x<0).reduce((a,b)=>a+b*b,0)/Math.max(1,r.length));
+  return {ret:c.at(-1)/c[0]-1,cagr:Math.pow(c.at(-1)/c[0],1/yrs)-1,vol:sd*Math.sqrt(per),dvol:dn*Math.sqrt(per),mdd:dd,per,r,yrs};}
+/* alinea varias series semanales por fecha (para correlación y beta) */
+function align30(series){const keys=series.map(s=>new Map(s.map(p=>[Math.round(p[0]/(7*864e5)),p[1]])));const common=[...keys[0].keys()].filter(k=>keys.every(m=>m.has(k))).sort((a,b)=>a-b);return keys.map(m=>common.map(k=>m.get(k)));}
+const rets30=c=>c.slice(1).map((v,i)=>v/c[i]-1);
+function corr30(a,b){const n=Math.min(a.length,b.length);if(n<5)return null;const ma=a.reduce((x,y)=>x+y,0)/n,mb=b.reduce((x,y)=>x+y,0)/n;let sab=0,sa=0,sb=0;for(let i=0;i<n;i++){sab+=(a[i]-ma)*(b[i]-mb);sa+=(a[i]-ma)**2;sb+=(b[i]-mb)**2;}return sab/Math.sqrt(sa*sb||1);}
+function beta30(a,m){const n=Math.min(a.length,m.length);if(n<5)return null;const ma=a.reduce((x,y)=>x+y,0)/n,mm=m.reduce((x,y)=>x+y,0)/n;let c=0,v=0;for(let i=0;i<n;i++){c+=(a[i]-ma)*(m[i]-mm);v+=(m[i]-mm)**2;}return c/(v||1);}
+/* gráfico de líneas SVG (varias series) */
+function lines30(series,{w=640,h=220,norm=false,labels=true,fmt=v=>v.toFixed(0)}={}){const S=series.filter(s=>s.pts&&s.pts.length>1);if(!S.length)return '';
+  const data=S.map(s=>({...s,pts:norm?s.pts.map(p=>[p[0],p[1]/s.pts[0][1]*100]):s.pts}));const xs=data.flatMap(s=>s.pts.map(p=>p[0])),ys=data.flatMap(s=>s.pts.map(p=>p[1]));
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),pd={l:8,r:labels?52:8,t:10,b:20};const X=x=>pd.l+(x-x0)/((x1-x0)||1)*(w-pd.l-pd.r),Y=y=>pd.t+(1-(y-y0)/((y1-y0)||1))*(h-pd.t-pd.b);
+  const grid=[0,.5,1].map(f=>{const v=y0+(y1-y0)*f;return `<line class="g30" x1="${pd.l}" x2="${w-pd.r}" y1="${Y(v)}" y2="${Y(v)}"/>${labels?`<text class="t30" x="${w-pd.r+6}" y="${Y(v)+4}">${fmt(v)}</text>`:''}`;}).join('');
+  return `<svg class="l30" viewBox="0 0 ${w} ${h}" role="img" aria-label="Gráfico">${grid}${data.map((s,i)=>`<path class="ln30" pathLength="1" style="stroke:${s.color||COLORS[i%COLORS.length]};animation-delay:${i*90}ms" d="${s.pts.map((p,j)=>(j?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join('')}"/>`).join('')}<text class="t30" x="${pd.l}" y="${h-4}">${new Date(x0).toLocaleDateString('es-PE',{month:'short',year:'2-digit'})}</text><text class="t30" x="${w-pd.r}" y="${h-4}" text-anchor="end">${new Date(x1).toLocaleDateString('es-PE',{month:'short',year:'2-digit'})}</text></svg>`;}
+/* mapa de árbol (squarified) para el mapa de calor */
+function treemap30(items,W,H){const out=[];const tot=items.reduce((a,b)=>a+b.v,0)||1;const scale=W*H/tot;const it=items.map(x=>({...x,_a:x.v*scale})).sort((a,b)=>b._a-a._a);
+  let x=0,y=0,w=W,h=H,row=[];const worst=(r,s)=>{const sum=r.reduce((a,b)=>a+b._a,0),mx=Math.max(...r.map(z=>z._a)),mn=Math.min(...r.map(z=>z._a));return Math.max(s*s*mx/(sum*sum),sum*sum/(s*s*mn));};
+  const lay=r=>{const sum=r.reduce((a,b)=>a+b._a,0);if(w>=h){const cw=sum/h;let yy=y;r.forEach(z=>{const ch=z._a/cw;out.push({...z,x,y:yy,w:cw,h:ch});yy+=ch;});x+=cw;w-=cw;}else{const rh=sum/w;let xx=x;r.forEach(z=>{const cw=z._a/rh;out.push({...z,x:xx,y,w:cw,h:rh});xx+=cw;});y+=rh;h-=rh;}};
+  for(const z of it){const s=Math.min(w,h);if(!row.length||worst([...row,z],s)<=worst(row,s))row.push(z);else{lay(row);row=[z];}}if(row.length)lay(row);return out;}
+window.L30={J30,pool30,big30,pc30,cls30,stats30,align30,rets30,corr30,beta30,lines30,treemap30,C30};
+
+/* ---------- registro de vistas nuevas ---------- */
+function mkView(v,id,title,html){VIEWS[v]=[id];V2ID[v]=id;ID2V[id]=v;VTITLE[v]=title;const s=document.createElement('section');s.className='sec vhide p30';s.id=id;s.dataset.sec=v;s.innerHTML=html;
+  const b=document.createElement('div');b.className='backbar';b.innerHTML=`<button class="backb" aria-label="Volver">${ic('right','',false)}<span>Lucioni Pro</span></button><span class="crumb">${title}</span>`;s.prepend(b);b.querySelector('button').onclick=()=>setView(v==='pro'?'inicio':'pro');
+  const anchor=document.getElementById('deudas')||document.querySelector('footer.foot');anchor.parentNode.insertBefore(s,anchor);return s;}
+window.mkView30=mkView;
+
+/* ---------- Lucioni Pro: herramientas agrupadas por categoría (solo herramientas que existen) ---------- */
+const PRO=[['Markets','Mercados',[['terminal','alcista','Lucioni Terminal','Índices del mundo, mapa de calor, sectores, resultados, materias primas y divisas',()=>setView('terminal')],['stocks','accion','Empresas en vivo','+600 empresas con ficha, gráficos y fundamentales',()=>setView('stocks')],['ideas','target','Ideas de inversión','Acciones que destacan hoy según analistas y valuación',()=>setView('ideas')]]],
+ ['Research','Investigación',[['research','search','Deep Research','Informe completo de una empresa con fuentes y Lucioni Verdict',()=>setView('research')],['screen','etf','Screener','Filtros por valuación, crecimiento y dividendos (Mesa del inversor)',()=>{setView('desk');setTimeout(()=>deskGo('screen'),200);}],['insider','news','Insider e institucionales','13F de grandes inversores y operaciones del Congreso (Mesa del inversor)',()=>{setView('desk');setTimeout(()=>deskGo('copy'),200);}]]],
+ ['Analysis','Análisis',[['risk','volatilidad','Riesgo de cartera','Volatilidad, beta, correlación y pruebas de estrés de tu cartera real',()=>{setView('port');}],['dcf','calc','Valoración DCF','Flujo de caja descontado desde la ficha de cada empresa',()=>setView('stocks')],['bt','compuesto','Backtest','5 años de datos reales para cualquier cartera',()=>{setView('tools');setTimeout(()=>window.tool&&tool('bt'),250);}]]],
+ ['Intelligence','Inteligencia',[['chat','chat','AI Copilot','Analiza tu cartera, compara empresas y simula escenarios con fuentes',()=>setView('chat')],['watch','bell','Watchtower','Alertas de precio, máximos, resultados, noticias, volatilidad y cartera',()=>setView('watch')]]],
+ ['Practice','Práctica',[['play','buy','Simulador','$10,000 virtuales, órdenes límite y stop',()=>setView('play')],['diary','book','Diario de inversión','Anota tu tesis y revisa tus decisiones',()=>{setView('play');setTimeout(()=>$('#diary')?.scrollIntoView({behavior:RM?'auto':'smooth',block:'center'}),450);}],['goals','target','Metas','Probabilidad real de lograr cada objetivo',()=>setView('goals')]]],
+ ['Reports','Informes',[['report','film','Informe de empresa en PDF','Desde Deep Research: portada, tablas, fuentes y metodología',()=>setView('research')]]]];
+const pro=mkView('pro','pro','Lucioni Pro',`<div class="sh"><div><h2>Lucioni <em>Pro</em></h2><p>Las herramientas profesionales de la plataforma, ordenadas por lo que quieres hacer. Todas usan datos reales y muestran su fuente.</p></div></div><div class="pro30" id="pro30"></div>`);
+pro.querySelector('.backb span').textContent='Inicio';
+$('#pro30').innerHTML=PRO.map(([en,es,its],g)=>`<div class="pg30" style="--i:${g}"><h3><span>${en}</span><small>${es}</small></h3>${its.map(([k,i,t,d],j)=>`<button class="pt30" data-g="${g}" data-j="${j}">${ic(i,'',false)}<span><b>${t}</b><small>${d}</small></span>${ic('right','',false)}</button>`).join('')}</div>`).join('');
+$$('#pro30 .pt30').forEach(b=>b.onclick=()=>PRO[+b.dataset.g][2][+b.dataset.j][4]());
+/* acceso desde el menú del logo y el inicio */
+{const cols=$('#menu .mcols');if(cols){const col=document.createElement('div');col.className='mcol';col.innerHTML=`<h4>Lucioni Pro</h4>`+[['alcista','Terminal','Índices, mapa de calor y sectores','terminal'],['search','Deep Research','Informe completo de una empresa','research'],['bell','Watchtower','Tus alertas inteligentes','watch'],['chat','AI Copilot','Analiza, compara y simula','chat'],['star','Todas las herramientas Pro','Por categoría','pro']].map(([i,t,d,v])=>`<button class="mi2" role="menuitem" data-v30="${v}">${ic(i,'',false)}<span>${t}<small>${d}</small></span></button>`).join('');cols.prepend(col);col.querySelectorAll('[data-v30]').forEach(b=>b.onclick=()=>{closeMenu();setTimeout(()=>setView(b.dataset.v30),80);});}}
+{const hub=$('#hub .hubg');if(hub){const t=document.createElement('button');t.className='htile wide dk';t.dataset.v='pro';t.innerHTML=`<span class="hwtxt"><span class="hk">Lucioni Pro · herramientas profesionales</span><h3>Terminal, Deep Research, Watchtower y Copilot</h3><p>Mercados del mundo, informes completos de empresas con fuentes, alertas inteligentes y un asistente que usa tus datos con tu permiso.</p></span><span class="hv"><span class="hgo">Abrir <i data-i="right" data-l="0"></i></span><i data-i="alcista" data-l="0"></i></span>`;hub.prepend(t);hydrate&&hydrate(t);t.onclick=()=>setView('pro');}}
+
+/* ---------- Lucioni Terminal ---------- */
+const IDX=[['SPY','S&P 500','EE. UU.'],['QQQ','Nasdaq 100','EE. UU.'],['DIA','Dow Jones','EE. UU.'],['IWM','Russell 2000','EE. UU.'],['EWU','Reino Unido (≈ FTSE 100)','Europa'],['EWG','Alemania (≈ DAX)','Europa'],['EWQ','Francia (≈ CAC 40)','Europa'],['EWJ','Japón (≈ Nikkei 225)','Asia'],['EWH','Hong Kong (≈ Hang Seng)','Asia'],['EEM','Emergentes','Global'],['EWZ','Brasil','Latam'],['EWW','México','Latam'],['EPU','Perú','Latam']];
+const CMD=[['GLD','Oro'],['SLV','Plata'],['USO','Petróleo WTI'],['UNG','Gas natural'],['CPER','Cobre'],['DBA','Agrícolas']];
+const FXL=[['EUR','Euro'],['GBP','Libra esterlina'],['JPY','Yen japonés'],['CHF','Franco suizo'],['CAD','Dólar canadiense'],['CNY','Yuan chino'],['MXN','Peso mexicano'],['BRL','Real brasileño']];
+const term=mkView('terminal','terminal','Terminal',`<div class="sh"><div><h2>Lucioni <em>Terminal</em></h2><p>Mercados del mundo en una pantalla: índices, mapa de calor, sectores, líderes del día, resultados, materias primas y divisas.</p></div></div>
+ <div class="tm30bar"><span class="mclock" id="tmClock"></span><span class="tm30src" id="tmSrc">Cotizaciones: Nasdaq, pueden tener hasta 15 min de retraso · Divisas: BCE y BCRP</span><button class="btn" id="tmRef">${ic('clock','',false)} Actualizar</button></div>
+ <div class="tm30g">
+  <div class="panel tm30idx"><div class="ph30"><h3>Índices del mundo</h3><small>Seguidos mediante ETFs que cotizan en EE. UU. (precio en USD, no puntos del índice)</small></div><div class="tw30" id="tmIdx"></div></div>
+  <div class="panel tm30cmp"><div class="ph30"><h3>Comparación de índices · 1 año</h3><small>Base 100 · toca un índice para añadirlo o quitarlo</small></div><div id="tmCmpL" class="lg30"></div><div id="tmCmp"></div></div>
+  <div class="panel tm30heat"><div class="ph30"><h3>Mapa de calor</h3><small id="tmHeatN">Las 80 mayores empresas de EE. UU. por capitalización · color = variación del día</small></div><div class="hm30" id="tmHeat"></div></div>
+  <div class="panel tm30sec"><div class="ph30"><h3>Sectores hoy</h3><small>Variación ponderada por capitalización</small></div><div id="tmSec"></div></div>
+  <div class="panel tm30mov"><div class="ph30"><h3>Líderes del día</h3><small>Empresas de más de US$2.000 millones</small></div><div class="tb30" role="tablist" id="tmMovT"><button class="on" data-m="up">Suben</button><button data-m="dn">Bajan</button><button data-m="act">Más negociadas</button><button data-m="cap">Más grandes</button></div><div id="tmMov"></div></div>
+  <div class="panel tm30earn"><div class="ph30"><h3>Calendario de resultados</h3><small>Próximos días hábiles · Nasdaq</small></div><div id="tmEarn"></div></div>
+  <div class="panel tm30cmd"><div class="ph30"><h3>Materias primas</h3><small>ETFs que siguen cada materia prima</small></div><div class="tw30" id="tmCmd"></div></div>
+  <div class="panel tm30fx"><div class="ph30"><h3>Divisas frente al dólar</h3><small id="tmFxS">Tipos de referencia del BCE · 90 días</small></div><div class="tw30" id="tmFx"></div></div>
+ </div>`);
+let TM={q:{},h:{},sel:store.get('tmSel',['SPY','EWG','EWJ','EEM']),mov:'up',at:0};
+const spk30=(pts,up)=>{if(!pts||pts.length<4)return '<svg class="sp30" viewBox="0 0 80 22"></svg>';const c=pts.slice(-26).map(p=>p[1]),mn=Math.min(...c),mx=Math.max(...c);return `<svg class="sp30 ${up?'up':'dn'}" viewBox="0 0 80 22" preserveAspectRatio="none"><path pathLength="1" d="${c.map((v,i)=>(i?'L':'M')+(i/(c.length-1)*80).toFixed(1)+' '+(20-(v-mn)/((mx-mn)||1)*18).toFixed(1)).join('')}"/></svg>`;};
+function tmIdx(){const el=$('#tmIdx');if(!el)return;el.innerHTML=`<table class="t30"><thead><tr><th>Índice</th><th>ETF</th><th class="r">Precio</th><th class="r">Día</th><th class="r hm">1 año</th><th class="r hm">Volatilidad</th><th class="hm"></th></tr></thead><tbody>${IDX.map(([s,n,rg],i)=>{const q=TM.q[s]||{},st=stats30(TM.h[s]);return `<tr class="${TM.sel.includes(s)?'sel':''}" data-s="${s}" style="--i:${i}" tabindex="0"><td><b>${esc(n)}</b><small>${rg}</small></td><td class="mono">${s}</td><td class="r mono">${q.p!=null?usd2(q.p):'<span class="sk30"></span>'}</td><td class="r mono ${cls30(q.pc)}">${pc30(q.pc,2)}</td><td class="r mono hm ${cls30(st&&st.ret)}">${st?pc30(st.ret*100):'—'}</td><td class="r mono hm">${st?(st.vol*100).toFixed(0)+'%':'—'}</td><td class="hm">${spk30(TM.h[s],st&&st.ret>=0)}</td></tr>`;}).join('')}</tbody></table>`;
+ el.querySelectorAll('tr[data-s]').forEach(r=>{const tg=()=>{const s=r.dataset.s;TM.sel=TM.sel.includes(s)?TM.sel.filter(x=>x!==s):[...TM.sel,s].slice(-5);store.set('tmSel',TM.sel);tmIdx();tmCmp();};r.onclick=tg;r.onkeydown=e=>{if(e.key==='Enter')tg();};});}
+function tmCmp(){const el=$('#tmCmp');if(!el)return;const S=TM.sel.filter(s=>TM.h[s]&&TM.h[s].length).map((s,i)=>({pts:TM.h[s],color:COLORS[i%COLORS.length],s}));
+ $('#tmCmpL').innerHTML=S.map(x=>`<span><i style="background:${x.color}"></i>${esc((IDX.find(r=>r[0]===x.s)||[x.s,x.s])[1])} <b class="${cls30(stats30(x.pts)?.ret)}">${pc30(stats30(x.pts)?.ret*100)}</b></span>`).join('');
+ el.innerHTML=S.length?lines30(S,{norm:true,fmt:v=>v.toFixed(0)}):`<p class="note">Cargando historial…</p>`;}
+function tmHeat(){const el=$('#tmHeat');if(!el)return;if(!CO.length){el.innerHTML='<p class="note">Cargando empresas…</p>';return;}
+ const top=[...CO].filter(r=>r.m).sort((a,b)=>b.m-a.m).slice(0,80);const W=el.clientWidth||900,H=Math.max(320,Math.min(520,W*.5));
+ const secs={};top.forEach(r=>{(secs[r.sec||'Otros']=secs[r.sec||'Otros']||[]).push(r);});
+ const sb=treemap30(Object.entries(secs).map(([k,a])=>({k,v:a.reduce((x,y)=>x+y.m,0),a})),W,H);
+ const col=v=>{const a=Math.min(1,Math.abs(v||0)/3);return `color-mix(in oklab, var(${(v||0)>=0?'--up':'--down'}) ${Math.round(18+a*62)}%, var(--well))`;};
+ el.style.height=H+'px';el.innerHTML=sb.map(b=>`<div class="hs30" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px"><span class="hsl">${esc(SECES[b.k]||b.k)}</span>${treemap30(b.a.map(r=>({...r,v:r.m})),b.w,b.h).map(t=>`<button class="ht30" data-s="${t.s}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px;background:${col(t.pc)}" title="${esc(t.n)} · ${pc30(t.pc,2)} · ${big30(t.m)}">${t.w>44&&t.h>26?`<b>${t.s}</b>${t.h>40?`<small>${pc30(t.pc,1)}</small>`:''}`:''}</button>`).join('')}</div>`).join('');
+ el.querySelectorAll('.ht30').forEach(b=>b.onclick=()=>{if(member()){setView('stocks');setTimeout(()=>coOpen(b.dataset.s),250);}else openAccount();});
+ $('#tmHeatN').textContent=`Las 80 mayores empresas de EE. UU. por capitalización · color = variación del día · ${coAt?'datos de las '+hhmm(coAt):''}`;}
+function tmSec(){const el=$('#tmSec');if(!el||!CO.length)return;const g={};CO.forEach(r=>{if(!r.m||r.pc==null)return;const k=r.sec||'Otros';g[k]=g[k]||{m:0,w:0,n:0};g[k].m+=r.m;g[k].w+=r.m*r.pc;g[k].n++;});
+ const rows=Object.entries(g).map(([k,v])=>({k,pc:v.w/v.m,n:v.n,m:v.m})).filter(r=>r.n>=3).sort((a,b)=>b.pc-a.pc);const mx=Math.max(.5,...rows.map(r=>Math.abs(r.pc)));
+ el.innerHTML=`<div class="sb30">${rows.map((r,i)=>`<div style="--i:${i}"><span>${esc(SECES[r.k]||r.k)} <small>${r.n}</small></span><span class="bar30"><i class="${cls30(r.pc)}" style="--w:${(Math.abs(r.pc)/mx*50).toFixed(1)}%;${r.pc<0?'right:50%':'left:50%'}"></i></span><b class="mono ${cls30(r.pc)}">${pc30(r.pc,2)}</b></div>`).join('')}</div>`;}
+function tmMov(){const el=$('#tmMov');if(!el||!CO.length)return;let L=CO.filter(r=>r.m>=2e9&&r.pc!=null);const m=TM.mov;
+ L=m==='up'?L.sort((a,b)=>b.pc-a.pc):m==='dn'?L.sort((a,b)=>a.pc-b.pc):m==='act'?L.filter(r=>r.v).sort((a,b)=>b.v*b.p-a.v*a.p):L.sort((a,b)=>b.m-a.m);
+ el.innerHTML=`<table class="t30"><thead><tr><th>Empresa</th><th class="r">Precio</th><th class="r">Día</th><th class="r hm">${m==='act'?'Volumen (US$)':'Capitalización'}</th></tr></thead><tbody>${L.slice(0,10).map((r,i)=>`<tr data-s="${r.s}" style="--i:${i}" tabindex="0"><td><span class="nm30">${coLogo(r.s)}<span><b>${r.s}</b><small>${esc(r.n)}</small></span></span></td><td class="r mono">${usd2(r.p)}</td><td class="r mono ${cls30(r.pc)}">${pc30(r.pc,2)}</td><td class="r mono hm">${m==='act'?big30(r.v*r.p):big30(r.m)}</td></tr>`).join('')}</tbody></table>`;
+ el.querySelectorAll('tr[data-s]').forEach(r=>r.onclick=()=>{if(member()){setView('stocks');setTimeout(()=>coOpen(r.dataset.s),250);}else openAccount();});}
+async function tmEarn(){const el=$('#tmEarn');if(!el||!MKT)return;const ds=[];let k=0;while(ds.length<4&&k<10){const d=new Date(Date.now()+k*864e5);const w=d.getDay();if(w>0&&w<6)ds.push(d.toISOString().slice(0,10));k++;}
+ const R=await pool30(ds,2,d=>J30(`${MKT}?earnings=${d}`,600000));
+ el.innerHTML=ds.map((d,i)=>{const rows=(R[i]&&R[i].rows||[]).slice(0,6);return `<div class="ed30"><h4>${new Date(d+'T12:00').toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'short'})}</h4>${rows.length?rows.map(r=>`<div class="er30"><span class="nm30">${coLogo(r.s)}<span><b>${esc(r.s)}</b><small>${esc(r.n||'')}</small></span></span><span class="mono">${r.e?'BPA est. '+esc(r.e):''}${r.t==='time-pre-market'?' · antes de la apertura':r.t==='time-after-hours'?' · después del cierre':''}</span></div>`).join(''):'<p class="note">Sin reportes de empresas grandes este día.</p>'}</div>`;}).join('');}
+function tmCmdR(){const el=$('#tmCmd');if(!el)return;el.innerHTML=`<table class="t30"><tbody>${CMD.map(([s,n],i)=>{const q=TM.q[s]||{},st=stats30(TM.h[s]);return `<tr style="--i:${i}"><td><b>${n}</b><small>${s}</small></td><td class="r mono">${q.p!=null?usd2(q.p):'—'}</td><td class="r mono ${cls30(q.pc)}">${pc30(q.pc,2)}</td><td class="r mono hm ${cls30(st&&st.ret)}">${st?pc30(st.ret*100)+' 1a':''}</td></tr>`;}).join('')}</tbody></table>`;}
+async function tmFx(){const el=$('#tmFx');if(!el||!MKT)return;let F=null,H=null;try{[F,H]=await Promise.all([J30(`${MKT}?fx=1`,3600000),J30(`${MKT}?fxhist=1`,3600000).catch(()=>null)]);}catch(e){el.innerHTML='<p class="note">Sin datos de divisas ahora.</p>';return;}
+ const rows=FXL.filter(([c])=>F.rates[c]).map(([c,n])=>{const s=H&&H.series[c]||[];const ch=s.length>1?(s.at(-1)[1]/s[0][1]-1)*100:null;return `<tr><td><b>USD/${c}</b><small>${n}</small></td><td class="r mono">${F.rates[c].toFixed(c==='JPY'?2:4)}</td><td class="r mono hm ${cls30(ch==null?null:-ch)}">${ch==null?'—':pc30(ch,1)+' 90d'}</td><td class="hm">${spk30(s,ch!=null&&ch<=0)}</td></tr>`;});
+ if(F.rates.PEN)rows.push(`<tr><td><b>USD/PEN</b><small>Sol peruano · BCRP</small></td><td class="r mono">${F.rates.PEN.toFixed(3)}</td><td class="r mono hm">${esc(F.dates.PEN||'')}</td><td class="hm"></td></tr>`);
+ el.innerHTML=`<table class="t30"><tbody>${rows.join('')}</tbody></table>`;$('#tmFxS').textContent=`Tipos de referencia del BCE al ${F.dates.GBP||F.dates.EUR||'—'} · sol: BCRP · verde = el dólar se debilita`;}
+async function tmLoad(force){if(!MKT){$('#tmIdx').innerHTML='<p class="note">Disponible en la versión web.</p>';return;}
+ if(!force&&Date.now()-TM.at<60000){tmAll();return;}TM.at=Date.now();
+ if(!CO.length)coLoad();
+ const syms=[...IDX.map(r=>r[0]),...CMD.map(r=>r[0])];
+ const qs=await pool30([syms.slice(0,16),syms.slice(16)].filter(a=>a.length),2,a=>J30(`${MKT}?quotes=${a.join(',')}`,force?0:60000));qs.forEach(d=>{if(d&&d.q)Object.assign(TM.q,d.q);});
+ $('#tmSrc').textContent=`Cotizaciones: Nasdaq, pueden tener hasta 15 min de retraso · actualizado ${hhmm(Date.now())} · Divisas: BCE y BCRP`;
+ tmAll();tmEarn();tmFx();
+ await pool30(syms,3,async s=>{if(TM.h[s])return;const d=await J30(`${MKT}?h1y=${s}`,6*3600000);TM.h[s]=d.pts||[];if(VIEW==='terminal'){tmIdx();tmCmdR();tmCmp();}});}
+function tmAll(){tmIdx();tmCmp();tmCmdR();tmHeat();tmSec();tmMov();try{$('#tmClock').innerHTML=clockHTML();}catch(e){}}
+$('#tmRef').onclick=()=>tmLoad(true);
+$$('#tmMovT button').forEach(b=>b.onclick=()=>{$$('#tmMovT button').forEach(x=>x.classList.toggle('on',x===b));TM.mov=b.dataset.m;tmMov();});
+/* cuando llega la lista de empresas, se rehace lo que depende de ella */
+if(typeof coRender==='function'){const _cr30=coRender;coRender=function(){_cr30.apply(this,arguments);if(VIEW==='terminal'){tmHeat();tmSec();tmMov();}};}
+let tmRes=0;addEventListener('resize',()=>{clearTimeout(tmRes);tmRes=setTimeout(()=>{if(VIEW==='terminal')tmHeat();},200);});
+setInterval(()=>{if(VIEW==='terminal'&&document.visibilityState==='visible')tmLoad(true);},90000);
+const _sv30=setView;setView=function(v,o){_sv30(v,o);if(v==='terminal')tmLoad();};
+{const v=ID2V[location.hash.slice(1)];if(['terminal','pro'].includes(v))setTimeout(()=>setView(v,{noHash:true}),0);}
+}
+
+/* ===================== V31: Lucioni Deep Research — informe completo de una empresa con fuentes, Lucioni Verdict y PDF ===================== */
+{
+const {J30,pool30,big30,pc30,cls30,stats30,lines30}=window.L30;
+const rs=mkView30('research','research','Deep Research',`<div class="sh"><div><h2>Deep <em>Research</em></h2><p>Escribe una empresa o su ticker. Reunimos sus estados financieros, reportes a la SEC, noticias y 5 años de precios, y armamos un informe con cada dato enlazado a su fuente.</p></div></div>
+ <div class="panel rs30f"><label for="rsQ" class="l">Empresa o ticker</label><div class="rs30in"><input class="f" id="rsQ" list="rsList" placeholder="Ej.: Apple, MSFT, Credicorp" autocomplete="off"><datalist id="rsList"></datalist><button class="btn pri" id="rsGo">Investigar ${ic('right','',false)}</button></div>
+ <div class="rs30sug">${['AAPL','MSFT','NVDA','KO','BAP','SCCO'].map(s=>`<button class="pill" data-s="${s}">${s}</button>`).join('')}</div><p class="note" id="rsMsg"></p></div>
+ <div id="rsSteps"></div><div id="rsReport"></div>`);
+const toN=v=>{if(v==null)return null;const n=parseFloat(String(v).replace(/[$,%\s]/g,''));return isFinite(n)?n:null;};
+const K=v=>v==null?null:v*1000; // Nasdaq publica los estados en miles de dólares
+const row=(t,k,i=0)=>{const r=t&&t.rows&&t.rows[k];return r&&r[i]!=null?K(r[i]):null;};
+let RS=null;
+function resolveSym(q){q=q.trim();if(!q)return null;const up=q.toUpperCase().replace(/^\$/,'');if(/^[A-Z.\-]{1,6}$/.test(up)&&(CO.find(r=>r.s===up)||!CO.length))return up;
+ const n=q.toLowerCase();const hit=CO.find(r=>r.n.toLowerCase()===n)||CO.find(r=>r.n.toLowerCase().startsWith(n))||CO.find(r=>r.n.toLowerCase().includes(n));return hit?hit.s:(/^[A-Z.\-]{1,6}$/.test(up)?up:null);}
+function stepUI(st){$('#rsSteps').innerHTML=`<div class="panel rs30st">${st.map(([t,s])=>`<div class="${s}"><span>${s==='ok'?ic('check','',false):s==='err'?'—':'<span class="spin30"></span>'}</span>${t}</div>`).join('')}</div>`;}
+async function research(sym){if(!MKT){$('#rsMsg').textContent='Deep Research funciona en la versión web.';return;}
+ const S=[];const add=o=>{o.n=S.length+1;S.push(o);return o.n;};
+ const steps=[['Cotización y estadísticas · Nasdaq','w'],['Estados financieros anuales · Nasdaq','w'],['Reportes trimestrales XBRL · SEC EDGAR','w'],['Reportes 8-K, 10-Q y 10-K · SEC EDGAR','w'],['Noticias recientes','w'],['Precios de 5 años','w']];stepUI(steps);$('#rsReport').innerHTML='';
+ const done=(i,ok)=>{steps[i][1]=ok?'ok':'err';stepUI(steps);};
+ const tasks=[J30(`${MKT}?symbol=${sym}&range=1d`,60000),J30(`${MKT}?fund=${sym}`,3600000),SEC?J30(`${SEC}?xbrl=${sym}`,21600000):Promise.reject(),SEC?J30(`${SEC}?k8=${sym}`,1800000):Promise.reject(),J30(`${MKT}?news=${sym}`,600000),J30(`${MKT}?h5=${sym}`,21600000)];
+ const R=await Promise.all(tasks.map((p,i)=>p.then(v=>{done(i,true);return v;},()=>{done(i,false);return null;})));
+ const [det,fund,xb,k8,nw,h5]=R;
+ if(!det||(!det.p&&!det.n)){$('#rsSteps').innerHTML='';$('#rsMsg').textContent=`No encontramos datos de mercado para ${sym}. Revisa el ticker.`;return;}
+ const st=det.stats||{},co=CO.find(r=>r.s===sym)||{},fin=fund&&fund.fin||{};
+ const D={sym,n:(det.n||co.n||sym).replace(/\s+(Common Stock|Class [A-C].*|Ordinary Shares.*|American Depositary.*)$/i,''),ex:det.ex,p:det.p,pc:det.pc,sec:(st.Sector&&st.Sector.v)||co.sec||'',ind:(st.Industry&&st.Industry.v)||co.ind||'',
+  m:toN(st.MarketCap&&st.MarketCap.v)||co.m||null,tgt:toN(st.OneYrTarget&&st.OneYrTarget.v),yld:toN(st.Yield&&st.Yield.v),div:toN(st.AnnualizedDividend&&st.AnnualizedDividend.v),hl:String(st.FiftTwoWeekHighLow&&st.FiftTwoWeekHighLow.v||'').split('/').map(toN),fin,xb:xb&&xb.rows||[],k8:k8&&k8.filings||[],news:(nw&&nw.rows||[]).slice(0,6),h5:h5&&h5.pts||[],sur:fund&&fund.sur||[],ins:fund&&fund.ins,inst:fund&&fund.inst,cik:xb&&xb.cik||k8&&k8.cik,at:Date.now()};
+ /* cálculos con el último ejercicio fiscal y, si hay 4 trimestres XBRL, los últimos 12 meses */
+ const inc=fin.inc,bal=fin.bal,cf=fin.cf;const fy=inc&&inc.per&&inc.per[0];
+ const rev=row(inc,'Total Revenue'),gp=row(inc,'Gross Profit'),op=row(inc,'Operating Income'),ni=row(inc,'Net Income');
+ const cash=(row(bal,'Cash and Cash Equivalents')||0)+(row(bal,'Short-Term Investments')||0),debt=(row(bal,'Short-Term Debt / Current Portion of Long-Term Debt')||0)+(row(bal,'Long-Term Debt')||0),eq=row(bal,'Total Equity'),ta=row(bal,'Total Assets');
+ const ocf=row(cf,'Net Cash Flow-Operating'),capex=row(cf,'Capital Expenditures'),fcf=ocf!=null&&capex!=null?ocf+capex:null;
+ const q4=D.xb.slice(0,4),ttm=q4.length===4&&q4.every(r=>r.revenue&&r.net!=null)?{rev:q4.reduce((a,r)=>a+r.revenue,0),ni:q4.reduce((a,r)=>a+r.net,0),op:q4.every(r=>r.op!=null)?q4.reduce((a,r)=>a+r.op,0):null,end:q4[0].end}:null;
+ const ev=D.m!=null?D.m+debt-cash:null,RN=ttm?ttm.ni:ni,RR=ttm?ttm.rev:rev,RO=ttm&&ttm.op!=null?ttm.op:op;
+ D.v={fy,ttm,rev,gp,op,ni,cash,debt,eq,ta,ocf,capex,fcf,ev,pe:D.m&&RN>0?D.m/RN:null,ps:D.m&&RR?D.m/RR:null,pb:D.m&&eq>0?D.m/eq:null,evebit:ev&&RO>0?ev/RO:null,fcfy:D.m&&fcf!=null?fcf/D.m:null,de:eq>0?debt/eq:null,gm:rev?gp/rev:null,om:rev?op/rev:null,nm:rev?ni/rev:null,roe:eq>0&&ni!=null?ni/eq:null,cagr:null};
+ const revs=inc&&inc.rows&&inc.rows['Total Revenue']||[];if(revs.length>=3&&revs.at(-1)>0)D.v.cagr=Math.pow(revs[0]/revs.at(-1),1/(revs.length-1))-1;
+ D.px=stats30(D.h5);
+ /* fuentes numeradas */
+ D.src={};
+ D.src.q=add({kind:'Mercado',title:`${D.n} (${sym}) · cotización y estadísticas`,url:`https://www.nasdaq.com/market-activity/stocks/${sym.toLowerCase()}`,snip:`Precio ${D.p} USD (${pc30(D.pc,2)} hoy); capitalización ${big30(D.m)}; objetivo de analistas a 1 año ${D.tgt!=null?D.tgt+' USD':'—'}; rango 52 semanas ${D.hl.join(' / ')}; rendimiento por dividendo ${D.yld!=null?D.yld+'%':'—'}.`});
+ if(inc&&inc.per&&inc.per.length)D.src.f=add({kind:'Estados financieros',title:`${D.n}: estados financieros anuales`,url:`https://www.nasdaq.com/market-activity/stocks/${sym.toLowerCase()}/financials`,snip:`Ejercicios ${inc.per.join(', ')}. Ingresos ${revs.map(x=>big30(K(x))).join(', ')}; utilidad neta ${(inc.rows['Net Income']||[]).map(x=>big30(K(x))).join(', ')}; margen operativo ${pc30(D.v.om*100)}; deuda total ${big30(debt)}; caja e inversiones ${big30(cash)}; flujo operativo ${big30(ocf)}; capex ${big30(capex)}; flujo libre ${big30(fcf)}.`});
+ if(D.xb.length)D.src.x=add({kind:'SEC',title:`${D.n}: datos XBRL trimestrales (SEC EDGAR)`,url:D.cik?`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${D.cik}&type=10-Q`:'https://www.sec.gov/edgar/search/',snip:D.xb.slice(0,6).map(r=>`${r.label}: ingresos ${big30(r.revenue)}${r.revYoy!=null?` (${pc30(r.revYoy)} interanual)`:''}, utilidad ${big30(r.net)}, margen neto ${r.nm!=null?r.nm+'%':'—'}`).join('; ')+'.'});
+ if(D.h5.length&&D.px)D.src.h=add({kind:'Mercado',title:`${sym}: precios semanales de 5 años`,url:`https://www.nasdaq.com/market-activity/stocks/${sym.toLowerCase()}/historical`,snip:`Rendimiento ${pc30(D.px.ret*100)} en ${D.px.yrs.toFixed(1)} años (anual compuesto ${pc30(D.px.cagr*100)}), volatilidad anual ${(D.px.vol*100).toFixed(0)}%, caída máxima ${(D.px.mdd*100).toFixed(0)}%.`});
+ if(D.ins||D.inst)D.src.i=add({kind:'Mercado',title:`${sym}: operaciones de directivos y tenencia institucional`,url:`https://www.nasdaq.com/market-activity/stocks/${sym.toLowerCase()}/insider-activity`,snip:`Directivos 12 meses: ${D.ins?`${D.ins.b12||0} compras y ${D.ins.s12||0} ventas`:'—'}. Institucionales: ${D.inst?`${D.inst.pct}% de las acciones, ${D.inst.holders} tenedores`:'—'}.`});
+ D.k8.slice(0,4).forEach(f=>add({kind:'SEC',title:`Formulario ${f.form} del ${f.date}`,url:f.url,snip:f.items&&f.items.length?f.items.map(i=>i.t||i.c).join(', '):f.desc||''}));
+ D.news.forEach(a=>add({kind:'Noticia',title:a.t,url:a.u,snip:`${a.p||'Nasdaq'} · ${a.a||''}`}));
+ D.S=S;RS=D;renderReport(D);setTimeout(()=>{$('#rsSteps').innerHTML='';},600);
+ const prem=!!(ACC&&ACC.sub&&ACC.sub.plan==='premium');
+ if(prem&&sample)aiNarrative(D);else $('#rsAI').innerHTML=lockedAI();
+ try{if(window.LCtrack)LCtrack('ai_analysis_completed');}catch(e){}}
+const lockedAI=()=>`<div class="rs30lock"><h3>Análisis cualitativo y Lucioni Verdict</h3><p>Con Premium, la IA redacta el modelo de negocio, ventajas competitivas, competidores, riesgos, oportunidades, escenarios y el Lucioni Verdict, citando las fuentes de este informe. Los datos de arriba son gratis.</p><button class="btn pri" onclick="${member()?'premSheet()':'openAccount()'}">${member()?'Probar Premium 7 días gratis':'Crear cuenta gratis'}</button></div>`;
+async function aiNarrative(D){const el=$('#rsAI');el.innerHTML=`<div class="rs30wait"><span class="typing"><span></span><span></span><span></span></span> Lucioni Intelligence está redactando el análisis con ${D.S.length} fuentes…</div>`;
+ const prompt=`Eres el analista de Lucioni Deep Research. Hoy es ${new Date().toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'})}. Redacta en español un análisis de ${D.n} (${D.sym}) para un informe de investigación.
+Reglas: usa las FUENTES numeradas para toda cifra, fecha o hecho y cita con [n]. Para descripciones generales del negocio o de la industria que no estén en las fuentes puedes usar conocimiento general, pero márcalas con "(conocimiento general)". No inventes cifras. No digas si conviene comprar o vender ni predigas el precio. Las perspectivas son escenarios hipotéticos, no pronósticos.
+Responde SOLO con JSON válido con estas claves (textos breves, 1 a 3 frases cada uno; listas de 2 a 4 elementos):
+{"resumen":"","modelo":"","ingresos":"","ventajas":[""],"situacion":"","competidores":[""],"riesgos":[""],"oportunidades":[""],"noticias":"","escenarios":{"pesimista":"","base":"","optimista":""},"verdict":{"favorables":[""],"desfavorables":[""],"incertidumbres":[""]}}
+
+FUENTES:
+${D.S.map(o=>`[${o.n}] ${o.kind} — ${o.title}: ${o.snip}`).join('\n')}`;
+ try{const r=await fetch(LC_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({input:[{role:'user',content:prompt}],mode:'deep'})});const d=await r.json().catch(()=>({}));if(!r.ok)throw d;
+  let t=String(d.text||'').trim().replace(/^```(json)?/i,'').replace(/```$/,'').trim();const a=t.indexOf('{'),b=t.lastIndexOf('}');const J=JSON.parse(t.slice(a,b+1));D.ai=J;el.innerHTML=aiHTML(D);}
+ catch(e){el.innerHTML=e&&(e.code==='premium_required'||e.code==='quota')?`<div class="rs30lock"><p>${esc(e.message)}</p><button class="btn pri" onclick="premSheet()">Ver planes</button></div>`:`<div class="rs30lock"><p>No se pudo generar el análisis con IA ahora. Los datos del informe siguen siendo válidos. Intenta de nuevo en un momento.</p><button class="btn" id="rsRetry">Reintentar</button></div>`;$('#rsRetry')?.addEventListener('click',()=>aiNarrative(D));}}
+const tx=(s,D)=>window.LC28?LC28.text28(String(s||''),D.S):esc(s||'');
+const li=(a,D)=>`<ul>${(a||[]).filter(Boolean).map(x=>`<li>${tx(x,D)}</li>`).join('')}</ul>`;
+function aiHTML(D){const J=D.ai;return `
+ <section class="rs30s"><h3><span>1</span>Resumen de la empresa</h3><p>${tx(J.resumen,D)}</p></section>
+ <section class="rs30s"><h3><span>2</span>Modelo de negocio</h3><p>${tx(J.modelo,D)}</p></section>
+ <section class="rs30s"><h3><span>3</span>Fuentes de ingresos</h3><p>${tx(J.ingresos,D)}</p></section>
+ <section class="rs30s"><h3><span>4</span>Ventajas competitivas</h3>${li(J.ventajas,D)}</section>
+ <section class="rs30s"><h3><span>5</span>Situación financiera</h3><p>${tx(J.situacion,D)}</p></section>
+ <section class="rs30s"><h3><span>12</span>Competidores</h3>${li(J.competidores,D)}</section>
+ <div class="rs30two"><section class="rs30s"><h3><span>13</span>Riesgos</h3>${li(J.riesgos,D)}</section><section class="rs30s"><h3><span>14</span>Oportunidades</h3>${li(J.oportunidades,D)}</section></div>
+ <section class="rs30s"><h3><span>15</span>Noticias relevantes</h3><p>${tx(J.noticias,D)}</p></section>
+ <section class="rs30s"><h3><span>16</span>Perspectivas y escenarios <small>hipotéticos, no pronósticos</small></h3><div class="rs30sc">${['pesimista','base','optimista'].map(k=>`<div class="${k}"><b>${k[0].toUpperCase()+k.slice(1)}</b><p>${tx(J.escenarios&&J.escenarios[k],D)}</p></div>`).join('')}</div></section>
+ <section class="rs30v"><h3>Lucioni Verdict</h3><p class="rs30vn">Resume lo favorable, lo desfavorable y lo incierto. No es una recomendación de compra o venta.</p><div class="rs30vg"><div class="fav"><h4>Favorable</h4>${li(J.verdict&&J.verdict.favorables,D)}</div><div class="unf"><h4>Desfavorable</h4>${li(J.verdict&&J.verdict.desfavorables,D)}</div><div class="unc"><h4>Incertidumbres</h4>${li(J.verdict&&J.verdict.incertidumbres,D)}</div></div></section>`;}
+function bars31(per,a,b,la,lb){const n=Math.min(per.length,a.length);if(!n)return '';const idx=[...Array(n).keys()].reverse();const mx=Math.max(...idx.flatMap(i=>[Math.abs(a[i]||0),Math.abs(b&&b[i]||0)]))||1;
+ return `<div class="br31" role="img" aria-label="${la}${lb?' y '+lb:''} por año">${idx.map((i,k)=>`<div class="bc31" style="--i:${k}"><div class="bb31"><i class="a" style="--h:${(Math.max(0,a[i]||0)/mx*100).toFixed(1)}%" title="${la}: ${big30(K(a[i]))}"></i>${b?`<i class="b" style="--h:${(Math.max(0,b[i]||0)/mx*100).toFixed(1)}%" title="${lb}: ${big30(K(b[i]))}"></i>`:''}</div><small>${String(per[i]).slice(-4)}</small><span class="mono">${big30(K(a[i]))}</span></div>`).join('')}</div><div class="lg30"><span><i style="background:var(--em)"></i>${la}</span>${lb?`<span><i style="background:var(--gold)"></i>${lb}</span>`:''}</div>`;}
+const cite=(n)=>n?`<a class="c28ci" href="${esc(RS.S[n-1].url)}" target="_blank" rel="noopener" title="${esc(RS.S[n-1].title)}">${n}</a>`:'';
+function kv(l,v,n,hint){return `<div class="kv31"><small>${l}${hint?` <i title="${esc(hint)}">ⓘ</i>`:''}</small><b class="mono">${v}</b>${n?cite(n):''}</div>`;}
+function renderReport(D){const v=D.v,f=D.fin,inc=f.inc,s=D.src,xq=D.xb.slice(0,8).reverse();const up=D.tgt&&D.p?D.tgt/D.p-1:null;
+ $('#rsReport').innerHTML=`<article class="rs30r" id="rsDoc">
+ <header class="rs30cv"><div class="rs30brand"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="4" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2.5"/><text x="32" y="45" text-anchor="middle" font-family="Georgia,serif" font-size="38" fill="currentColor">L</text><line x1="22" y1="52" x2="42" y2="52" stroke="var(--em)" stroke-width="2.5"/></svg><span>LUCIONI CAPITAL · DEEP RESEARCH</span></div>
+  <div class="rs30ttl">${coLogo(D.sym,true)}<div><h2>${esc(D.n)}</h2><p>${[D.sym,D.ex,SECES[D.sec]||D.sec,D.ind].filter(Boolean).map(esc).join(' · ')}</p></div></div>
+  <div class="rs30px"><div><small>Precio</small><b class="mono">${usd2(D.p)}</b><span class="mono ${cls30(D.pc)}">${pc30(D.pc,2)} hoy</span></div><div><small>Capitalización</small><b class="mono">${big30(D.m)}</b></div><div><small>Objetivo de analistas</small><b class="mono">${D.tgt?usd2(D.tgt):'—'}</b>${up!=null?`<span class="mono ${cls30(up)}">${pc30(up*100)} vs precio</span>`:''}</div><div><small>Informe</small><b>${new Date(D.at).toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'})}</b><span>${new Date(D.at).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}</span></div></div>
+  <div class="rs30act"><button class="btn pri" id="rsPdf">${ic('film','',false)} Exportar PDF</button><button class="btn" id="rsAsk">${ic('chat','',false)} Preguntar al Copilot</button><button class="btn" id="rsFicha">Abrir ficha ${ic('right','',false)}</button></div></header>
+ <div id="rsAI"></div>
+ <section class="rs30s"><h3><span>6</span>Ingresos históricos ${cite(s.f)}</h3>${inc&&inc.per&&inc.per.length?bars31(inc.per,inc.rows['Total Revenue']||[],inc.rows['Net Income']||[],'Ingresos','Utilidad neta'):'<p class="note">Sin estados financieros disponibles para esta empresa.</p>'}${v.cagr!=null?`<p class="note">Crecimiento anual compuesto de los ingresos en el período: <b>${pc30(v.cagr*100)}</b>.</p>`:''}</section>
+ <section class="rs30s"><h3><span>7</span>Márgenes ${cite(s.x||s.f)}</h3>${xq.length>2?lines30([{pts:xq.filter(r=>r.gm!=null).map(r=>[Date.parse(r.end),r.gm]),color:'var(--em)'},{pts:xq.filter(r=>r.om!=null).map(r=>[Date.parse(r.end),r.om]),color:'var(--gold)'},{pts:xq.filter(r=>r.nm!=null).map(r=>[Date.parse(r.end),r.nm]),color:'var(--ink2)'}],{h:190,fmt:x=>x.toFixed(0)+'%'})+`<div class="lg30"><span><i style="background:var(--em)"></i>Bruto</span><span><i style="background:var(--gold)"></i>Operativo</span><span><i style="background:var(--ink2)"></i>Neto</span></div>`:''}
+  <div class="kg31">${kv('Margen bruto (FY)',v.gm!=null?pc30(v.gm*100):'—',s.f)}${kv('Margen operativo (FY)',v.om!=null?pc30(v.om*100):'—',s.f)}${kv('Margen neto (FY)',v.nm!=null?pc30(v.nm*100):'—',s.f)}${kv('ROE (FY)',v.roe!=null?pc30(v.roe*100):'—',s.f,'Utilidad neta / patrimonio')}</div></section>
+ <section class="rs30s"><h3><span>8</span>Beneficios por trimestre ${cite(s.x)}</h3>${xq.length?`<div class="tsc31"><table class="t30"><thead><tr><th>Trimestre</th><th class="r">Ingresos</th><th class="r">Interanual</th><th class="r">Utilidad neta</th><th class="r">BPA</th><th class="r">Margen neto</th></tr></thead><tbody>${xq.slice().reverse().map(r=>`<tr><td>${esc(r.label)}${r.derived?' <small>(calculado)</small>':''}</td><td class="r mono">${big30(r.revenue)}</td><td class="r mono ${cls30(r.revYoy)}">${pc30(r.revYoy)}</td><td class="r mono">${big30(r.net)}</td><td class="r mono">${r.eps!=null?r.eps:'—'}</td><td class="r mono">${r.nm!=null?r.nm+'%':'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">La SEC no tiene datos XBRL trimestrales para este ticker (por ejemplo, empresas extranjeras que reportan con 20-F).</p>'}
+  ${D.sur.length?`<p class="note">Sorpresa de resultados (BPA real vs estimado) en los últimos trimestres: ${D.sur.slice(-4).map(r=>`${esc(r.q)} ${pc30(r.sp)}`).join(' · ')}</p>`:''}</section>
+ <div class="rs30two"><section class="rs30s"><h3><span>9</span>Deuda ${cite(s.f)}</h3><div class="kg31">${kv('Deuda total',big30(v.debt),s.f)}${kv('Caja e inversiones c/p',big30(v.cash),s.f)}${kv('Deuda neta',big30(v.debt-v.cash),s.f)}${kv('Deuda / patrimonio',v.de!=null?v.de.toFixed(2)+'x':'—',s.f)}</div></section>
+ <section class="rs30s"><h3><span>10</span>Flujo de caja ${cite(s.f)}</h3><div class="kg31">${kv('Flujo operativo',big30(v.ocf),s.f)}${kv('Inversión (capex)',big30(v.capex),s.f)}${kv('Flujo de caja libre',big30(v.fcf),s.f,'Flujo operativo + capex (el capex es negativo)')}${kv('Rendimiento del flujo libre',v.fcfy!=null?pc30(v.fcfy*100):'—',s.q,'Flujo libre / capitalización')}</div></section></div>
+ <section class="rs30s"><h3><span>11</span>Valoración ${cite(s.q)}</h3><div class="kg31">${kv(`P/E ${v.ttm?'(12 meses)':'(FY)'}`,v.pe!=null?v.pe.toFixed(1)+'x':'—',v.ttm?s.x:s.f,'Capitalización / utilidad neta')}${kv(`P/S ${v.ttm?'(12 meses)':'(FY)'}`,v.ps!=null?v.ps.toFixed(1)+'x':'—',v.ttm?s.x:s.f,'Capitalización / ingresos')}${kv('P/B (FY)',v.pb!=null?v.pb.toFixed(1)+'x':'—',s.f,'Capitalización / patrimonio')}${kv('Valor de empresa (EV)',big30(v.ev),s.f,'Capitalización + deuda − caja')}${kv('EV / EBIT',v.evebit!=null?v.evebit.toFixed(1)+'x':'—',s.f,'Se usa EBIT porque la fuente no publica depreciación por separado')}${kv('Dividendo anual',D.div!=null?usd2(D.div)+(D.yld!=null?' · '+D.yld+'%':''):'—',s.q)}</div>
+  <p class="note">Los múltiplos son fotografías del precio de hoy frente a resultados pasados. Para estimar un valor propio usa la valoración DCF en la ficha de la empresa.</p></section>
+ ${D.h5.length?`<section class="rs30s"><h3>Precio a 5 años ${cite(s.h)}</h3>${lines30([{pts:D.h5,color:'var(--em)'}],{h:200,fmt:x=>'$'+x.toFixed(0)})}${D.px?`<div class="kg31">${kv('Rendimiento total',pc30(D.px.ret*100),s.h)}${kv('Anual compuesto',pc30(D.px.cagr*100),s.h)}${kv('Volatilidad anual',(D.px.vol*100).toFixed(0)+'%',s.h)}${kv('Caída máxima',(D.px.mdd*100).toFixed(0)+'%',s.h)}</div>`:''}</section>`:''}
+ ${D.ins||D.inst?`<section class="rs30s"><h3>Directivos e institucionales ${cite(s.i)}</h3><div class="kg31">${D.ins?kv('Compras de directivos (12 m)',D.ins.b12??'—',s.i)+kv('Ventas de directivos (12 m)',D.ins.s12??'—',s.i):''}${D.inst?kv('En manos institucionales',D.inst.pct!=null?D.inst.pct+'%':'—',s.i)+kv('Tenedores institucionales',D.inst.holders??'—',s.i):''}</div><p class="note">Muchas ventas de directivos son planes programados o pagos de impuestos; no son por sí mismas una señal.</p></section>`:''}
+ ${D.news.length||D.k8.length?`<section class="rs30s"><h3>Noticias y reportes oficiales</h3><div class="nl31">${D.news.map(a=>`<a href="${esc(a.u)}" target="_blank" rel="noopener"><b>${esc(a.t)}</b><small>${esc(a.p||'Nasdaq')} · ${esc(a.a||'')}</small></a>`).join('')}${D.k8.slice(0,4).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener"><b>Formulario ${esc(f.form)} · ${esc(f.date)}</b><small>SEC EDGAR${f.items&&f.items.length?' · '+esc(f.items.map(i=>i.t||i.c).join(', ')):''}</small></a>`).join('')}</div></section>`:''}
+ <section class="rs30s rs30meth"><h3>Metodología y advertencias</h3><p>Datos de mercado y estados financieros: Nasdaq (los estados se publican en miles de dólares y aquí se convierten a dólares). Datos trimestrales: archivos XBRL presentados a la SEC; el cuarto trimestre fiscal se calcula restando los tres primeros del total anual cuando la empresa no lo reporta por separado. "FY" es el último ejercicio fiscal (${esc(v.fy||'—')}); "12 meses" suma los últimos cuatro trimestres${v.ttm?` hasta ${esc(v.ttm.end)}`:''}. Las cotizaciones pueden tener hasta 15 minutos de retraso. El análisis cualitativo lo redacta una IA a partir de estas fuentes; las afirmaciones marcadas como "(conocimiento general)" no están respaldadas por las fuentes listadas y conviene verificarlas.</p><p><b>Este informe es educativo.</b> Lucioni Capital no es una sociedad agente de bolsa ni está supervisada por la SMV y no brinda asesoría financiera personalizada. Los resultados pasados no garantizan resultados futuros.</p></section>
+ <section class="rs30s">${window.LC28?LC28.srcs28(D.S):''}</section></article>`;
+ $('#rsPdf').onclick=()=>pdf31(D);$('#rsAsk').onclick=()=>{setView('chat');setTimeout(()=>ask(`Según el informe de Deep Research de ${D.n} (${D.sym}), ¿cuáles son sus principales riesgos y cómo se compara con sus competidores?`),300);};
+ $('#rsFicha').onclick=()=>{if(member()){setView('stocks');setTimeout(()=>coOpen(D.sym),250);}else openAccount();};
+ $('#rsReport').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});}
+/* PDF: se imprime solo el informe con estilo editorial; el navegador ofrece "Guardar como PDF" */
+function pdf31(D){document.documentElement.classList.add('pr31');const prev=document.title;document.title=`Lucioni Capital — Deep Research — ${D.n} (${D.sym}) — ${new Date().toISOString().slice(0,10)}`;
+ const done=()=>{document.documentElement.classList.remove('pr31');document.title=prev;removeEventListener('afterprint',done);};addEventListener('afterprint',done);setTimeout(()=>{window.print();setTimeout(done,1500);},60);}
+window.research31=s=>{setView('research');$('#rsQ').value=s;research(s);};
+const go=()=>{const s=resolveSym($('#rsQ').value);if(!s){$('#rsMsg').textContent='No reconocemos esa empresa. Prueba con su ticker, por ejemplo MSFT.';return;}$('#rsMsg').textContent='';research(s);};
+$('#rsGo').onclick=go;$('#rsQ').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+$$('#research .rs30sug .pill').forEach(b=>b.onclick=()=>{$('#rsQ').value=b.dataset.s;go();});
+const fillList=()=>{const dl=$('#rsList');if(dl&&CO.length&&!dl.children.length)dl.innerHTML=CO.slice(0,600).map(r=>`<option value="${esc(r.s)}">${esc(r.n)}</option>`).join('');};
+const _sv31=setView;setView=function(v,o){_sv31(v,o);if(v==='research'){if(MKT&&!CO.length)coLoad().then(fillList);else fillList();}};
+{const v=ID2V[location.hash.slice(1)];if(v==='research')setTimeout(()=>setView(v,{noHash:true}),0);}
+}
+
+/* ===================== V32: Lucioni AI Copilot (acciones con tus datos) y Lucioni Watchtower (alertas inteligentes) ===================== */
+{
+const {J30,pool30,big30,pc30,cls30,stats30,align30,rets30,corr30,beta30,lines30}=window.L30;
+const day32=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const kp=(l,v,c='')=>`<div><small>${l}</small><b class="mono ${c}">${v}</b></div>`;
+
+/* ================= HERRAMIENTAS DEL COPILOT ================= */
+async function hist(s){const d=await J30(`${MKT}?h1y=${encodeURIComponent(s)}`,6*3600000);return d.pts||[];}
+/* análisis de la cartera real: pesos, sectores, concentración, volatilidad, caída máxima, Sharpe, beta y aporte al riesgo */
+async function toolPortfolio(step){if(!member()||!RPF.length)return {cards:'<div class="cp32c"><p class="note">No tienes una cartera real registrada. Agrégala en Mi patrimonio y vuelve a pedírmelo.</p><button class="btn" onclick="setView(\'port\')">Registrar mi cartera</button></div>',S:[],ctx:'El usuario no tiene cartera registrada.'};
+ step('Analizando tu cartera con precios de 1 año…');if(MKT)await ensurePrices(RPF.map(h=>h.s)).catch(()=>{});
+ const P=pfCalc(),rows=P.rows.filter(r=>r.val>0).sort((a,b)=>b.val-a.val).slice(0,12),V=rows.reduce((a,r)=>a+r.val,0);
+ const H=await pool30([...rows.map(r=>r.s),'SPY','BIL'],3,s=>hist(s));const spy=H[rows.length],bil=H[rows.length+1];
+ const ok=rows.map((r,i)=>({r,h:H[i]})).filter(x=>x.h&&x.h.length>20);
+ let pstat=null,beta=null,contrib=[],pair=null,rf=null,sharpe=null,sortino=null;
+ if(ok.length){const al=align30([...ok.map(x=>x.h),spy&&spy.length?spy:ok[0].h]);const W=ok.map(x=>x.r.val);const ws=W.reduce((a,b)=>a+b,0);const w=W.map(x=>x/ws);
+  const n=al[0].length;const port=Array.from({length:n},(_,k)=>ok.reduce((a,x,i)=>a+w[i]*al[i][k]/al[i][0],0));
+  const pts=port.map((v,k)=>[k*7*864e5,v]);pstat=stats30(pts);const pr=rets30(port),mr=rets30(al[al.length-1]);beta=spy&&spy.length?beta30(pr,mr):null;
+  const R=ok.map((x,i)=>rets30(al[i]));const vp=pr.reduce((a,b)=>a+(b-pr.reduce((x,y)=>x+y,0)/pr.length)**2,0)/(pr.length-1);
+  contrib=ok.map((x,i)=>{const mi=R[i].reduce((a,b)=>a+b,0)/R[i].length,mp=pr.reduce((a,b)=>a+b,0)/pr.length;let c=0;for(let k=0;k<pr.length;k++)c+=(R[i][k]-mi)*(pr[k]-mp);c/=(pr.length-1);return {s:x.r.s,w:w[i],rc:vp?w[i]*c/vp:0};}).sort((a,b)=>b.rc-a.rc);
+  for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++){const c=corr30(R[i],R[j]);if(c!=null&&(!pair||c>pair.c))pair={a:ok[i].r.s,b:ok[j].r.s,c};}
+  const bs=stats30(bil);rf=bs?bs.ret:null;if(pstat&&rf!=null){sharpe=(pstat.ret-rf)/pstat.vol;sortino=pstat.dvol?(pstat.ret-rf)/pstat.dvol:null;}}
+ const sec=P.sec.map(([k,v])=>[k,v/V]);const hhi=rows.reduce((a,r)=>a+(r.val/V)**2,0);
+ const S=[{kind:'Tu cuenta',title:'Tu cartera real guardada en Lucioni Capital',url:'',snip:`${rows.length} posiciones, valor ${big30(V)}. Pesos: ${rows.map(r=>`${r.s} ${(r.val/V*100).toFixed(1)}%`).join(', ')}. Sectores: ${sec.map(([k,v])=>`${SECES[k]||k} ${(v*100).toFixed(0)}%`).join(', ')}.`},
+  {kind:'Mercado',title:'Precios semanales de 1 año de tus posiciones, SPY y BIL',url:'https://www.nasdaq.com/market-activity/quotes/historical',snip:pstat?`Cartera (pesos actuales aplicados al último año): rendimiento ${pc30(pstat.ret*100)}, volatilidad anual ${(pstat.vol*100).toFixed(1)}%, caída máxima ${(pstat.mdd*100).toFixed(1)}%${beta!=null?`, beta frente al S&P 500 ${beta.toFixed(2)}`:''}${rf!=null?`; rendimiento de BIL (letras del Tesoro) ${pc30(rf*100)}`:''}.`:'Sin historial suficiente.'},
+  {kind:'Cálculo',title:'Cálculo de riesgo Lucioni Capital',url:'',snip:`Posiciones equivalentes ${(1/hhi).toFixed(1)}${sharpe!=null?`; Sharpe ${sharpe.toFixed(2)}`:''}${sortino!=null?`; Sortino ${sortino.toFixed(2)}`:''}. Mayor aporte al riesgo: ${contrib.slice(0,3).map(c=>`${c.s} ${(c.rc*100).toFixed(0)}% del riesgo con ${(c.w*100).toFixed(0)}% del peso`).join('; ')}${pair?`. Par más correlacionado: ${pair.a}-${pair.b} (${pair.c.toFixed(2)})`:''}.`}];
+ const cards=`<div class="cp32c"><h4>Análisis de tu cartera <small>pesos actuales aplicados al último año</small></h4><div class="cp32k">${kp('Valor',big30(V))}${pstat?kp('Rendimiento 1 año',pc30(pstat.ret*100),cls30(pstat.ret))+kp('Volatilidad anual',(pstat.vol*100).toFixed(1)+'%')+kp('Caída máxima',(pstat.mdd*100).toFixed(1)+'%','dn'):''}${beta!=null?kp('Beta vs S&P 500',beta.toFixed(2)):''}${sharpe!=null?kp('Sharpe',sharpe.toFixed(2)):''}${kp('Posiciones equivalentes',(1/hhi).toFixed(1))}</div>
+  <div class="cp32two"><div><h5>Sectores</h5>${sec.map(([k,v],i)=>`<div class="cp32b" style="--i:${i}"><span>${esc(SECES[k]||k)}</span><i style="--w:${(v*100).toFixed(1)}%"></i><b class="mono">${(v*100).toFixed(0)}%</b></div>`).join('')}</div>
+  <div><h5>Aporte al riesgo</h5>${contrib.length?contrib.slice(0,6).map((c,i)=>`<div class="cp32b" style="--i:${i}"><span>${c.s}</span><i class="r" style="--w:${Math.max(0,c.rc*100).toFixed(1)}%"></i><b class="mono">${(c.rc*100).toFixed(0)}% <small>peso ${(c.w*100).toFixed(0)}%</small></b></div>`).join(''):'<p class="note">Sin historial suficiente.</p>'}</div></div>
+  <p class="note">Supuestos: precios semanales del último año (Nasdaq), tasa libre de riesgo = rendimiento de BIL en el mismo período. Usa los pesos de hoy; no reconstruye tus compras pasadas. El pasado no garantiza el futuro.</p></div>`;
+ return {cards,S,ctx:'Análisis de la cartera real del usuario, hecho con sus datos y con su permiso.'};}
+/* exposición sectorial y qué activos la explican */
+async function toolSector(step,t){if(!member()||!RPF.length)return toolPortfolio(step);step('Calculando tu exposición por sector…');if(MKT)await ensurePrices(RPF.map(h=>h.s)).catch(()=>{});
+ const P=pfCalc(),V=P.rows.reduce((a,r)=>a+r.val,0);const want=/tecnol|tech/i.test(t)?'Technology':P.sec[0]&&P.sec[0][0];const inS=P.rows.filter(r=>r.sec===want).sort((a,b)=>b.val-a.val);const wS=inS.reduce((a,r)=>a+r.val,0)/V;
+ const snap=store.get('wtsnap',null);const prev=snap&&snap.sec?snap.sec[want]:null;
+ const S=[{kind:'Tu cuenta',title:`Exposición de tu cartera a ${SECES[want]||want}`,url:'',snip:`${(wS*100).toFixed(1)}% de tu cartera está en ${SECES[want]||want}${prev!=null?` (hace ${Math.round((Date.now()-snap.t)/864e5)} días: ${(prev*100).toFixed(1)}%)`:''}. Activos: ${inS.map(r=>`${r.s} ${(r.val/V*100).toFixed(1)}%`).join(', ')||'ninguno'}.`}];
+ const cards=`<div class="cp32c"><h4>Exposición a ${esc(SECES[want]||want)}</h4><div class="cp32k">${kp('Peso del sector',(wS*100).toFixed(1)+'%',wS>.4?'dn':'')}${prev!=null?kp('Cambio desde la última foto',pc30((wS-prev)*100)+' pts'):''}${kp('Activos del sector',inS.length)}</div>${inS.map((r,i)=>`<div class="cp32b" style="--i:${i}"><span>${r.s}</span><i style="--w:${(r.val/V*100).toFixed(1)}%"></i><b class="mono">${(r.val/V*100).toFixed(1)}%</b></div>`).join('')}</div>`;
+ return {cards,S,ctx:'Exposición sectorial de la cartera del usuario.'};}
+/* simulación de una inversión con Monte Carlo calibrado con 5 años reales del S&P 500 (SPY) */
+async function toolSim(step,t){const num=s=>{s=String(s).trim();if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');return parseFloat(s.replace(/[,\s]/g,''));};const am=t.match(/\$?\s?([\d][\d.,]*)\s*(mil\b|k\b)?/i),yr=t.match(/(\d{1,2})\s*(años|anos|years|yrs)/i),mo=t.match(/([\d][\d.,]*)\s*(al mes|mensual|cada mes|per month|monthly)/i);
+ let A=am?num(am[1])*(am[2]?1000:1):5000;const Y=yr?Math.min(40,+yr[1]):10,M=mo?num(mo[1]):0;if(!(A>0))A=5000;
+ step('Calibrando la simulación con 5 años del S&P 500…');let h=null;try{h=await J30(`${MKT}?h5=SPY`,21600000);}catch(e){}const st=stats30(h&&h.pts);
+ const mu=st?Math.log(1+st.cagr):Math.log(1.07),sg=st?st.vol:.16,N=2000;const yrs=[];
+ for(let y=0;y<=Y;y++)yrs.push([]);for(let k=0;k<N;k++){let v=A;yrs[0].push(v);for(let y=1;y<=Y;y++){let z=0;for(let j=0;j<6;j++)z+=Math.random();z=(z-3)*Math.SQRT2;v=v*Math.exp(mu-.5*sg*sg+sg*z)+M*12;yrs[y].push(v);}}
+ const q=(a,p)=>{const s=[...a].sort((x,y)=>x-y);return s[Math.floor(p*(s.length-1))];};const P10=yrs.map(a=>q(a,.1)),P50=yrs.map(a=>q(a,.5)),P90=yrs.map(a=>q(a,.9));const inv=A+M*12*Y;
+ const ts=y=>Date.now()+y*365.25*864e5;const S=[{kind:'Mercado',title:'S&P 500 (SPY): precios semanales de 5 años',url:'https://www.nasdaq.com/market-activity/etf/spy/historical',snip:st?`Rendimiento anual compuesto ${pc30(st.cagr*100)}, volatilidad anual ${(st.vol*100).toFixed(1)}%, caída máxima ${(st.mdd*100).toFixed(1)}% en ${st.yrs.toFixed(1)} años.`:'Sin datos; se usó un supuesto de 7% anual y 16% de volatilidad.'},
+  {kind:'Cálculo',title:`Simulación Monte Carlo Lucioni (${N} escenarios)`,url:'',snip:`Inversión inicial ${big30(A)}${M?` y ${big30(M)} al mes`:''} durante ${Y} años, total aportado ${big30(inv)}. Resultado al final: escenario malo (10%) ${big30(P10[Y])}, mediano ${big30(P50[Y])}, bueno (90%) ${big30(P90[Y])}. Supone rendimientos con la media y volatilidad del período; no incluye comisiones, impuestos ni inflación.`}];
+ const cards=`<div class="cp32c"><h4>Simulación: ${big30(A)}${M?` + ${big30(M)}/mes`:''} durante ${Y} años <small>${N} escenarios</small></h4><div class="cp32k">${kp('Aportado',big30(inv))}${kp('Escenario malo (10%)',big30(P10[Y]),'dn')}${kp('Mediano',big30(P50[Y]))}${kp('Escenario bueno (90%)',big30(P90[Y]),'up')}</div>
+  ${lines30([{pts:P90.map((v,y)=>[ts(y),v]),color:'var(--up)'},{pts:P50.map((v,y)=>[ts(y),v]),color:'var(--em)'},{pts:P10.map((v,y)=>[ts(y),v]),color:'var(--down)'}],{h:190,fmt:v=>big30(v)})}
+  <p class="note">Calibrado con el S&P 500 de los últimos 5 años: un período concreto que puede no repetirse. Es una ilustración, no una promesa.</p><button class="btn" onclick="setView('goals')">Convertirlo en una meta ${ic('right','',false)}</button></div>`;
+ return {cards,S,ctx:'Simulación hipotética hecha por Lucioni Capital.',noResearch:true};}
+/* por qué se movió el mercado: índices, sectores y titulares del día */
+async function toolMarket(step){step('Revisando índices, sectores y noticias de hoy…');const S=[];if(!CO.length&&MKT)await coLoad().catch(()=>{});
+ let q={};try{q=(await J30(`${MKT}?quotes=SPY,QQQ,DIA,IWM,EFA,EEM,TLT,GLD`,60000)).q||{};}catch(e){}
+ S.push({kind:'Mercado',title:'Índices y activos de referencia hoy (ETFs)',url:'https://www.nasdaq.com/market-activity/etf/spy',snip:Object.entries(q).map(([s,v])=>`${s} ${pc30(v.pc,2)}`).join(', ')+'.'});
+ const g={};CO.forEach(r=>{if(!r.m||r.pc==null)return;const k=r.sec||'Otros';g[k]=g[k]||{m:0,w:0};g[k].m+=r.m;g[k].w+=r.m*r.pc;});const secs=Object.entries(g).map(([k,v])=>[k,v.w/v.m]).sort((a,b)=>b[1]-a[1]);
+ if(secs.length)S.push({kind:'Mercado',title:'Variación por sector hoy (ponderada por capitalización)',url:'https://www.nasdaq.com/market-activity/stocks/screener',snip:secs.map(([k,v])=>`${SECES[k]||k} ${pc30(v,2)}`).join(', ')+'.'});
+ const big=[...CO].filter(r=>r.m).sort((a,b)=>b.m-a.m).slice(0,8);if(big.length)S.push({kind:'Mercado',title:'Las mayores empresas hoy',url:'https://www.nasdaq.com/market-activity/stocks/screener',snip:big.map(r=>`${r.s} ${pc30(r.pc,2)}`).join(', ')+'.'});
+ const nw=await pool30(['AAPL','NVDA','MSFT','AMZN'],2,s=>J30(`${MKT}?news=${s}`,600000));const seen=new Set();nw.forEach((d,i)=>{const a=d&&(d.rows||[]).find(x=>!seen.has(x.u));if(a){seen.add(a.u);S.push({kind:'Noticia',title:a.t,url:a.u,snip:`${a.p||'Nasdaq'} · ${a.a||''}`});}});
+ const cards=`<div class="cp32c"><h4>Mercado hoy</h4><div class="cp32k">${Object.entries(q).slice(0,6).map(([s,v])=>kp(s,pc30(v.pc,2),cls30(v.pc))).join('')}</div>${secs.length?`<h5>Sectores</h5>${secs.map(([k,v],i)=>`<div class="cp32b s" style="--i:${i}"><span>${esc(SECES[k]||k)}</span><i class="${cls30(v)}" style="--w:${Math.min(100,Math.abs(v)*25).toFixed(1)}%"></i><b class="mono ${cls30(v)}">${pc30(v,2)}</b></div>`).join('')}`:''}<button class="btn" onclick="setView('terminal')">Abrir Lucioni Terminal ${ic('right','',false)}</button></div>`;
+ return {cards,S,ctx:'Resumen del mercado de hoy.',noResearch:true};}
+const INTENTS=[[/(analiza|revisa|eval[uú]a|diagn[oó]stico).{0,20}(mi|mis) (cartera|portafolio|inversiones)|analy[sz]e my portfolio/i,toolPortfolio,true],
+ [/(exposici[oó]n|cu[aá]nto tengo|peso).{0,30}(sector|tecnol|tech)|tech(nology)? exposure/i,toolSector,true],
+ [/(simula|proyecta|si invierto|cu[aá]nto tendr[ií]a|simulate)/i,toolSim,false],
+ [/(por qu[eé]|qu[eé] pas[oó]|why).{0,40}(mercado|bolsa|market)|c[oó]mo (est[aá]|va) el mercado/i,toolMarket,false]];
+
+/* ================= COPILOT: nueva pregunta con herramientas ================= */
+{const h=$('#asesor .sh h2');if(h)h.innerHTML='Lucioni <em>Copilot</em>';const p=$('#asesor .sh p');if(p)p.textContent='Pregunta sobre mercados, empresas, tu cartera o cualquier concepto. El Copilot usa los módulos de Lucioni Capital con datos reales, cita sus fuentes y solo lee tu cartera si le das permiso.';
+ const sg=$('#sugs');if(sg&&!$('#cp32a')){const d=document.createElement('div');d.id='cp32a';d.className='cp32a';d.innerHTML=`<span>Acciones</span>`+[['diversificar','Analiza mi cartera'],['bolt','Compara Apple y Microsoft'],['news','¿Por qué se movió el mercado hoy?'],['compuesto','Simula $5,000 durante 10 años'],['volatilidad','¿Qué riesgos tiene mi exposición tecnológica?']].map(([i,q])=>`<button class="pill" data-q="${esc(q)}">${ic(i,'',false)} ${q}</button>`).join('');sg.before(d);d.querySelectorAll('button').forEach(b=>b.onclick=()=>ask(b.dataset.q));}}
+const cpOk=()=>store.get('cpOk',false)===true;
+ask=async function(t,again){
+ t=(t||$('#cq').value).trim();if(!t)return;$('#cq').value='';const ch=$('#chat');
+ if(!again)ch.insertAdjacentHTML('beforeend',`<div class="msg u">${esc(t)}</div>`);
+ if(!sample){ch.insertAdjacentHTML('beforeend',`<div class="msg a">${window.LC_API?'La IA no está disponible ahora. Intenta en un momento.':'La IA funciona cuando abres esta app dentro de Claude.'}</div>`);return;}
+ mission('ask');const m=document.createElement('div');m.className='msg a c28';m.innerHTML='<div class="c28st"><span class="typing"><span></span><span></span><span></span></span><small>Pensando…</small></div>';ch.appendChild(m);ch.scrollTop=ch.scrollHeight;
+ const step=s=>{const e=m.querySelector('.c28st small');if(e)e.textContent=s;};
+ const it=INTENTS.find(([re])=>re.test(t));
+ if(it&&it[2]&&member()&&!cpOk()){m.innerHTML=`<div class="cp32p"><b>¿Puedo leer tu cartera?</b><p>Para responder necesito usar las posiciones guardadas en tu cuenta de Lucioni Capital. Solo se usan para esta respuesta y para las siguientes que lo requieran; puedes retirar el permiso en Perfil.</p><div><button class="btn pri" data-y>Permitir</button><button class="btn" data-n>Ahora no</button></div></div>`;
+  m.querySelector('[data-y]').onclick=()=>{store.set('cpOk',true);m.remove();ask(t,true);};m.querySelector('[data-n]').onclick=()=>{m.innerHTML='Entendido. Puedo responder de forma general si me lo pides sin usar tus datos.';};return;}
+ $('#cs').disabled=true;
+ let T={cards:'',S:[],ctx:''};try{if(it&&MKT)T=await it[1](step,t);}catch(e){T={cards:'',S:[],ctx:''};}
+ let R={S:[],cards:[],imgs:[]};try{if(!T.noResearch&&window.LC28){if(MKT&&!CO.length)await Promise.race([coLoad(),new Promise(r=>setTimeout(r,2500))]);R=await LC28.research28(t,step);}}catch(e){}
+ const S=[...T.S];R.S.forEach(o=>{S.push({...o,n:S.length+1});});T.S.forEach((o,i)=>o.n=i+1);
+ R.cards.forEach(c=>LC28.data[c.s]=c);
+ step(S.length?`Redactando con ${S.length} fuente${S.length>1?'s':''}…`:'Redactando…');
+ const hoy=new Date().toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const sys=`Eres Lucioni Copilot, el asistente financiero de Lucioni Capital (herramienta educativa, inversionistas en Perú y el mundo). Hoy es ${hoy}. Respondes en español, claro y profesional (máx 190 palabras).
+Reglas: usa SOLO las fuentes numeradas para cifras, precios, noticias y fechas, y cita cada dato con [n]. Si falta un dato, dilo. Las simulaciones y proyecciones son hipotéticas: preséntalas así. Nunca prometes rentabilidades, no dices que un activo va a subir y no ejecutas operaciones reales. Cuando sea útil, sugiere qué herramienta de Lucioni Capital usar (Terminal, Deep Research, Watchtower, Metas, Mi patrimonio). Formato: texto simple, puedes usar **negritas** y listas con "- ".${T.ctx?`\nContexto: ${T.ctx}`:''}`;
+ const ctx=S.length?`\n\nFUENTES:\n${S.map(o=>`[${o.n}] ${o.kind} — ${o.title}${o.url?' ('+o.url.replace(/^https?:\/\/(www\.)?/,'').split('/')[0]+')':''}: ${o.snip}`).join('\n')}`:'\n\nFUENTES: ninguna; responde con conocimiento general y sin cifras actuales.';
+ const prev=HIST.slice(-8);
+ try{const r=await sample([...prev,{role:'user',content:sys+ctx+'\n\nPregunta: '+t}],{cache:false,modelTier:'default'});const txt=String(r.text||'').trim();
+  m.innerHTML=`<div class="c28tx">${LC28.text28(txt,S)}</div>${T.cards}${R.cards.map(LC28.card28).join('')}${LC28.imgs28(R.imgs)}${LC28.srcs28(S)}<p class="c28ft">Datos consultados en vivo · ${new Date().toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · Información educativa, no asesoría financiera</p>`;
+  m.querySelectorAll('.c28card').forEach(c=>{const b=document.createElement('button');b.className='btn';b.innerHTML=`Deep Research ${ic('right','',false)}`;b.onclick=()=>research31(c.dataset.sym);(c.querySelector('.c28open')||c.lastElementChild).after(b);});
+  LC28.wire28(m);HIST.push({role:'user',content:t},{role:'assistant',content:txt.replace(/\[\d{1,2}\]/g,'')});if(HIST.length>16)HIST.splice(0,HIST.length-16);}
+ catch(e){m.textContent=aiErr(e);}finally{$('#cs').disabled=false;m.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});}};
+
+/* ================= WATCHTOWER ================= */
+const WT_NEW=['hi52','lo52','earn','news','vol','pf','sector','fx'];
+const WTT={above:['Precio sube a','Avísame si el precio llega o supera un nivel','US$',true],below:['Precio baja a','Avísame si el precio cae a un nivel','US$',true],move:['Movimiento del día','Variación diaria mayor que','%',true],
+ hi52:['Nuevo máximo de 52 semanas','Cuando el precio toca su máximo del último año','',true],lo52:['Nuevo mínimo de 52 semanas','Cuando el precio toca su mínimo del último año','',true],earn:['Resultados próximos','Días de anticipación antes de que reporte','días',true],
+ news:['Noticia nueva','Cada vez que aparece un titular nuevo de la empresa','',true],vol:['Volatilidad en aumento','Volatilidad de 8 semanas vs. 1 año (veces)','x',true],pf:['Variación de mi cartera','Mi cartera real sube o baja más que','%',false],
+ sector:['Concentración sectorial','El peso de mi sector principal cambia más de','pts',false],fx:['Dólar frente al sol','El tipo de cambio oficial varía más de','%',false]};
+const DEF={move:3,earn:7,vol:1.5,pf:2,sector:5,fx:0.5};
+Object.assign(ALT_T,{hi52:'Máximo de 52 semanas',lo52:'Mínimo de 52 semanas',earn:'Resultados en',news:'Noticias de',vol:'Volatilidad x',pf:'Mi cartera ±',sector:'Sector ±',fx:'USD/PEN ±'});
+const wtLabel=a=>{const d=WTT[a.type]||[a.type];return `${a.s?a.s+' · ':''}${d[0]}${a.v&&!['hi52','lo52','news'].includes(a.type)?' '+(a.type==='above'||a.type==='below'?usd2(a.v):a.v+' '+d[2]):''}`;};
+if(typeof aRender==='function'){const _ar=aRender;aRender=function(){_ar();$$('#aL .rrow').forEach((r,i)=>{const a=TRD.alerts[i];if(a&&WT_NEW.includes(a.type)){const b=r.querySelector('b');if(b)b.textContent=wtLabel(a);}});};}
+let WLOG=store.get('wtlog',[]);if(!SYNC.includes('wtlog'))SYNC.push('wtlog');if(!SYNC.includes('wtsnap'))SYNC.push('wtsnap');
+const lim=()=>((ACC&&ACC.sub&&ACC.sub.limits&&ACC.sub.limits.alerts)||5);
+const w=mkView30('watch','watchtower','Watchtower',`<div class="sh"><div><h2>Lucioni <em>Watchtower</em></h2><p>Alertas que vigilan por ti: precios, máximos y mínimos, resultados, noticias, volatilidad, tu cartera y el dólar. Pocas y relevantes: cada alerta avisa como máximo una vez al día.</p></div></div>
+ <div class="wt32bar" id="wtBar"></div>
+ <div class="wt32g"><div class="panel"><h3>Nueva alerta</h3><form id="wtF" class="wt32f" autocomplete="off"><label>Tipo<select class="f" id="wtT">${Object.entries(WTT).map(([k,d])=>`<option value="${k}">${d[0]}</option>`).join('')}</select></label><p class="note" id="wtD"></p>
+  <label id="wtSL">Empresa o ETF<input class="f" id="wtS" maxlength="10" placeholder="Ej.: AAPL" style="text-transform:uppercase"></label><label id="wtVL">Valor<input class="f" id="wtV" type="number" step="any"></label><button class="btn pri" type="submit">Crear alerta</button></form>
+  <div class="wt32opt"><label class="chk"><input type="checkbox" id="wtNo"> Notificaciones del navegador</label><label>Máximo de avisos por día <select class="f" id="wtCap"><option>3</option><option>5</option><option>10</option></select></label></div></div>
+  <div class="panel"><h3>Tus alertas</h3><div id="wtL"></div></div>
+  <div class="panel wt32h"><h3>Lo que pasó</h3><div id="wtH"></div></div></div>`);
+function wtForm(){const t=$('#wtT').value,d=WTT[t];$('#wtD').textContent=d[1];$('#wtSL').hidden=!d[3];$('#wtVL').hidden=['hi52','lo52','news'].includes(t);$('#wtV').placeholder=DEF[t]!=null?String(DEF[t]):'Ej.: 200';$('#wtV').value=DEF[t]!=null?DEF[t]:'';}
+$('#wtT').onchange=wtForm;wtForm();$('#wtCap').value=String(store.get('wtcap',5));$('#wtCap').onchange=e=>store.set('wtcap',+e.target.value);
+$('#wtNo').checked='Notification' in window&&Notification.permission==='granted'&&store.get('wtno',false);
+$('#wtNo').onchange=async e=>{if(e.target.checked){if(!('Notification' in window)){toast('Tu navegador no admite notificaciones');e.target.checked=false;return;}const r=await Notification.requestPermission();e.target.checked=r==='granted';}store.set('wtno',e.target.checked);};
+$('#wtF').onsubmit=e=>{e.preventDefault();if(!member()){openAccount();return;}const t=$('#wtT').value,d=WTT[t],s=$('#wtS').value.trim().toUpperCase(),v=+$('#wtV').value||0;
+ if(d[3]&&!/^[A-Z.\-]{1,10}$/.test(s)){toast('Escribe un ticker válido');return;}if(['above','below','move','earn','vol','pf','sector','fx'].includes(t)&&!(v>0)){toast('Indica un valor mayor que cero');return;}
+ if(TRD.alerts.length>=lim()){toast(`Tu plan permite ${lim()} alertas. Premium amplía el límite.`,{action:{label:'Ver planes',fn:()=>premSheet()}});return;}
+ if(t==='pf'&&!RPF.length){toast('Primero registra tu cartera real');return;}
+ TRD.alerts.unshift({id:Date.now(),type:t,s:d[3]?s:'',v,rang:0,day:'',last:null});saveTrd();$('#wtF').reset();$('#wtT').value=t;wtForm();wtRender();toast('Alerta creada',ic('check','',false));wtCheck(true);};
+function wtRender(){const L=TRD.alerts,n=L.length;$('#wtBar').innerHTML=`<span><b>${n}</b> de ${lim()} alertas</span><span>Última revisión: ${store.get('wtlast',0)?new Date(store.get('wtlast')).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—'}</span><span>Avisos hoy: ${WLOG.filter(x=>x.d===day32()).length}</span><button class="btn" id="wtNow">${ic('clock','',false)} Revisar ahora</button>`;$('#wtNow').onclick=()=>wtCheck(true);
+ $('#wtL').innerHTML=n?L.map((a,i)=>`<div class="wt32a ${a.rang||a.day===day32()?'hit':''}" style="--i:${i}"><span class="wt32i">${ic(a.type==='news'?'news':a.type==='earn'?'clock':a.type==='pf'||a.type==='sector'?'diversificar':a.type==='fx'?'broker':'bell','',false)}</span><span><b>${esc(a.type==='bell'?'Campana de apertura':wtLabel(a))}</b><small>${a.rang?'Avisó el '+new Date(a.rang).toLocaleDateString('es-PE',{day:'numeric',month:'short'}):a.day?'Último aviso: '+a.day:'Vigilando'}</small></span><button class="ib" data-del="${i}" aria-label="Eliminar alerta">${ic('x','',false)}</button></div>`).join(''):'<p class="note">Aún no tienes alertas. Crea la primera a la izquierda.</p>';
+ $$('#wtL [data-del]').forEach(b=>b.onclick=()=>{TRD.alerts.splice(+b.dataset.del,1);saveTrd();wtRender();});
+ $('#wtH').innerHTML=WLOG.length?WLOG.slice(0,20).map((x,i)=>`<div class="wt32e" style="--i:${i}"><small>${new Date(x.t).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small><p>${esc(x.msg)}</p>${x.ctx?`<button class="btn" data-x="${i}">${ic('chat','',false)} Explicar con IA</button>`:''}</div>`).join(''):'<p class="note">Cuando una alerta se active verás aquí qué pasó y por qué.</p>';
+ $$('#wtH [data-x]').forEach(b=>b.onclick=()=>{const x=WLOG[+b.dataset.x];setView('chat');setTimeout(()=>ask(`Explícame esta alerta de Watchtower y qué podría significar para mí: "${x.msg}". Datos: ${x.ctx}`),300);});}
+function fire(a,msg,ctx){a.day=day32();a.lastAt=Date.now();WLOG.unshift({t:Date.now(),d:day32(),id:a.id,type:a.type,msg,ctx:ctx||''});WLOG=WLOG.slice(0,60);store.set('wtlog',WLOG);
+ const today=WLOG.filter(x=>x.d===day32()).length;if(today<=store.get('wtcap',5)){toast(msg,{icon:ic('bell','',false),action:{label:'Ver',fn:()=>setView('watch')},dur:7000});
+  try{if(store.get('wtno',false)&&'Notification' in window&&Notification.permission==='granted')new Notification('Lucioni Watchtower',{body:msg,icon:'/icons/icon-192.png'});}catch(e){}}}
+let EARN=null;async function earnSet(days){if(EARN&&EARN.n>=days)return EARN.m;const m=new Map();const ds=[];let k=0;while(ds.length<days&&k<days*2){const d=new Date(Date.now()+k*864e5);if(d.getDay()%6)ds.push(d.toISOString().slice(0,10));k++;}
+ const R=await pool30(ds,2,d=>J30(`${MKT}?earnings=${d}`,1800000));R.forEach((r,i)=>(r&&r.rows||[]).forEach(x=>{if(!m.has(x.s))m.set(x.s,ds[i]);}));EARN={n:days,m};return m;}
+let busy=false;
+async function wtCheck(force){if(!MKT||busy||!TRD.alerts.length||!member())return;if(!force&&Date.now()-store.get('wtlast',0)<9*60000)return;busy=true;
+ try{const syms=[...new Set(TRD.alerts.filter(a=>a.s).map(a=>a.s))];await ensurePrices(syms).catch(()=>{});try{altCheck();}catch(e){}
+  const today=day32(),todo=TRD.alerts.filter(a=>WT_NEW.includes(a.type)&&a.day!==today);
+  await pool30(todo,3,async a=>{
+   if(a.type==='hi52'||a.type==='lo52'){const d=await J30(`${MKT}?symbol=${a.s}&range=1d`,60000);const [hi,lo]=String(d.stats&&d.stats.FiftTwoWeekHighLow&&d.stats.FiftTwoWeekHighLow.v||'').split('/').map(x=>parseFloat(x.replace(/[$,]/g,'')));if(!d.p)return;
+    if(a.type==='hi52'&&hi&&d.p>=hi*.998)fire(a,`${a.s} toca su máximo de 52 semanas: ${usd2(d.p)} (máximo ${usd2(hi)}).`,`Precio ${d.p}, máximo 52 semanas ${hi}, fuente Nasdaq`);
+    if(a.type==='lo52'&&lo&&d.p<=lo*1.002)fire(a,`${a.s} toca su mínimo de 52 semanas: ${usd2(d.p)} (mínimo ${usd2(lo)}).`,`Precio ${d.p}, mínimo 52 semanas ${lo}, fuente Nasdaq`);}
+   if(a.type==='earn'){const m=await earnSet(Math.min(10,Math.max(1,a.v||7)));const d=m.get(a.s);if(d&&a.last!==d){a.last=d;fire(a,`${a.s} presenta resultados el ${new Date(d+'T12:00').toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'})}.`,`Calendario de resultados de Nasdaq, fecha ${d}`);}}
+   if(a.type==='news'){const d=await J30(`${MKT}?news=${a.s}`,600000);const n=(d.rows||[])[0];if(n){if(a.last&&a.last!==n.u)fire(a,`Noticia nueva de ${a.s}: ${n.t}`,`Titular: ${n.t} (${n.p||'Nasdaq'}, ${n.u})`);a.last=n.u;}}
+   if(a.type==='vol'){const h=await hist(a.s);if(h.length>20){const y=stats30(h),r=stats30(h.slice(-9));if(y&&r&&y.vol&&r.vol/y.vol>=a.v)fire(a,`La volatilidad de ${a.s} subió: ${(r.vol*100).toFixed(0)}% anualizada en 8 semanas frente a ${(y.vol*100).toFixed(0)}% del último año.`,`Volatilidad 8 semanas ${(r.vol*100).toFixed(1)}%, 1 año ${(y.vol*100).toFixed(1)}%, precios semanales Nasdaq`);}}
+   if(a.type==='pf'&&RPF.length){await ensurePrices(RPF.map(h=>h.s)).catch(()=>{});const P=pfCalc(),V=P.rows.reduce((x,r)=>x+r.val,0),D=P.rows.reduce((x,r)=>x+r.day,0),pc=V?D/(V-D)*100:0;
+    if(Math.abs(pc)>=a.v){const top=[...P.rows].sort((x,y)=>Math.abs(y.day)-Math.abs(x.day)).slice(0,3);fire(a,`Tu cartera ${pc>=0?'sube':'baja'} ${pc30(pc,2)} hoy. Lo explican sobre todo: ${top.map(r=>`${r.s} (${pc30(r.pc,1)})`).join(', ')}.`,`Variación de la cartera ${pc.toFixed(2)}%; mayores aportes ${top.map(r=>`${r.s} ${r.day.toFixed(0)} USD`).join(', ')}`);}}
+   if(a.type==='sector'&&RPF.length){const P=pfCalc(),V=P.rows.reduce((x,r)=>x+r.val,0);const now=Object.fromEntries(P.sec.map(([k,v])=>[k,v/V]));const snap=store.get('wtsnap',null);
+    if(snap&&snap.sec){const k=P.sec[0][0],ch=((now[k]||0)-(snap.sec[k]||0))*100;if(Math.abs(ch)>=a.v){const why=P.rows.filter(r=>r.sec===k).map(r=>{const wn=r.val/V,wo=snap.w&&snap.w[r.s]||0;return {s:r.s,d:(wn-wo)*100};}).sort((x,y)=>Math.abs(y.d)-Math.abs(x.d)).slice(0,3);
+     fire(a,`Tu cartera tiene ${ch>0?'más':'menos'} concentración en ${SECES[k]||k} que hace ${Math.round((Date.now()-snap.t)/864e5)} días (${pc30(ch,1)} pts). Lo explican: ${why.map(x=>`${x.s} ${pc30(x.d,1)} pts`).join(', ')}.`,`Peso actual ${((now[k]||0)*100).toFixed(1)}%, antes ${((snap.sec[k]||0)*100).toFixed(1)}%`);}}
+    if(!snap||Date.now()-snap.t>7*864e5)store.set('wtsnap',{t:Date.now(),sec:now,w:Object.fromEntries(P.rows.map(r=>[r.s,r.val/V]))});}
+   if(a.type==='fx'){const d=await J30(`${MKT}?fxpen=1`,3600000);const p=d.pts||[];if(p.length>1){const l=p.at(-1),b=p.at(-2),ch=(l[1]/b[1]-1)*100,dd=new Date(l[0]).toISOString().slice(0,10);if(Math.abs(ch)>=a.v&&a.last!==dd){a.last=dd;fire(a,`El dólar ${ch>0?'sube':'baja'} ${pc30(ch,2)} frente al sol: S/ ${l[1].toFixed(3)} (BCRP, ${dd}).`,`Tipo de cambio BCRP ${b[1]} → ${l[1]}`);}}}
+  });
+  store.set('wtlast',Date.now());saveTrd();}
+ catch(e){}finally{busy=false;if(VIEW==='watch')wtRender();}}
+setTimeout(()=>{if(member())wtCheck();},9000);setInterval(()=>{if(document.visibilityState==='visible'&&member())wtCheck();},10*60000);
+const _sv32=setView;setView=function(v,o){_sv32(v,o);if(v==='watch'){wtRender();wtCheck();}};
+{const v=ID2V[location.hash.slice(1)];if(v==='watch')setTimeout(()=>setView(v,{noHash:true}),0);}
+window.wtCheck32=wtCheck;
+}
