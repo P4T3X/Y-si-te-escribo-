@@ -248,6 +248,33 @@ Pedido: "añade más cosas profesionales de Brokers, efectos suaves y profesiona
 ### Desplegado
 `dpl_8bdbGSKwsXtiFZp8XBFm7FVPNN6n`. Verificado en producción: `?ohlc=AAPL&range=1y` devuelve 252 velas diarias reales de Nasdaq.
 
+## Entrega 6 — Complete Financial Platform, Fase 4: Global Economy (16 nov 2026)
+
+Auditoría previa: no existía un módulo macroeconómico. El Terminal ya tenía índices, divisas (BCE y BCRP) y materias primas; Economía global se agrega como módulo nuevo, enlazado desde el Terminal, Lucioni Pro y el Copilot, sin duplicar esos datos.
+
+### Hecho
+- **Servidor `vercel/api/macro.js`** (público, solo lectura, con caché en CDN). Cada respuesta trae fuente, enlace, unidad, frecuencia y fecha; si una fuente falla devuelve error, nunca valores de relleno.
+  - `?panel=1` y `?hist=<k>&c=PE,US`: 9 indicadores anuales de 21 economías desde el **FMI (World Economic Outlook)**: inflación, crecimiento del PIB real, PIB nominal, PIB per cápita, desempleo, deuda pública, resultado fiscal, cuenta corriente (% del PIB y US$). Se separa el último dato observado de la estimación del año en curso y se marca desde qué año hay proyección.
+  - `?rates=1`: tasas de política monetaria de 17 bancos centrales desde el **BIS** (diaria + 3 años mensual), con último movimiento, comparación con hace un año y aviso de dato antiguo. Los países del euro usan la tasa del BCE.
+  - `?curve=1`: curva del **Tesoro de EE.UU.** (13 plazos) hoy, hace 1 mes y hace 1 año; spread 10A−2A diario y 10A−3M.
+  - `?conf=1`: confianza del consumidor, confianza empresarial manufacturera e indicador adelantado (CLI) mensuales de 19 economías desde la **OCDE** (formato SDMX-XML).
+  - `?cal=1`: calendario con las reuniones del **FOMC** (página oficial de la Reserva Federal, marca las que traen proyecciones SEP) y, con `FRED_API_KEY`, las publicaciones de FRED (IPC, empleo, PIB, PCE, ventas minoristas, producción industrial, confianza…).
+  - `?us=1`: datos mensuales de EE.UU. desde FRED (IPC general y subyacente, desempleo, nóminas, fondos federales, producción industrial, ventas minoristas, confianza de Michigan). Sin clave responde `blocked: FRED_API_KEY`.
+- **Vista Economía global** (`macro`, id `economia`): Resumen por país (tarjetas con año, estimación, puesto entre 21 y fuente; tasa del banco central con su último movimiento; lectura de tasa real calculada con reglas fijas), Comparar países (ranking animado con barras divergentes para valores negativos, último dato o estimación, historial de hasta 6 países con tramo proyectado punteado, 10/20 años/todo, descarga CSV con fuente por fila), Bancos centrales (tabla ordenable con mini gráfico de 3 años y resumen del ciclo global), Curva de rendimientos, Confianza y ciclo, Calendario (estado de cada fuente) y EE.UU. mensual.
+- **Integraciones**: categoría *Economy* en Lucioni Pro, botón en el Terminal y el Copilot responde preguntas como "¿cómo está la inflación en Perú y Chile?" con datos del FMI y el BIS citados (sin pedir permiso: son datos públicos).
+
+### Bloqueos documentados
+- **Banco Mundial**: su firewall bloquea las peticiones desde los servidores de Vercel (respuesta 502 con página "waf-block"; con agente de navegador la conexión se cuelga). Probado el 16-nov-2026. Se reemplazó por el FMI, que cubre los mismos indicadores principales con estimaciones más recientes.
+- **BLS** (calendario de EE.UU.): responde 403 a servidores. El calendario completo de EE.UU. queda disponible al agregar `FRED_API_KEY`.
+- **Exportación CSV de la OCDE**: devuelve 500; se usa el formato XML, que funciona.
+- Perú y Argentina no están en la base de confianza de la OCDE; la app lo indica.
+
+### Pruebas
+`test/ui-macro.test.cjs` (46 correctas). El servidor de pruebas reproduce los formatos reales de cada fuente (JSON del FMI, CSV del BIS y del Tesoro, SDMX-XML de la OCDE, HTML de la Reserva Federal, 403 del BLS) para ejecutar los analizadores reales. Cubre: separación observado/estimado, último movimiento de tasas, BCE compartido, parámetros inválidos, bloqueos informados, todas las pestañas, ranking, historial, CSV, orden de tablas, errores con Reintentar, Copilot, Lucioni Pro y móvil sin desborde. La batería completa pasa.
+
+### Desplegado
+`dpl_55tcTu9XT7B7GpvzHZpm9AG1ndJv`. Verificado en producción: panel del FMI, historial de PIB de Perú y EE.UU., tasas del BIS, curva del Tesoro, OCDE y calendario del FOMC con datos reales.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
@@ -257,6 +284,7 @@ Pedido: "añade más cosas profesionales de Brokers, efectos suaves y profesiona
 | Pagos de Premium | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL` (ej. "US$ 7,99 al mes") y el webhook `https://lucioni-capital.vercel.app/api/billing?webhook=1` con los eventos `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` | Sin configurar; antes elegir proveedor según la entidad legal |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
 | Límites de planes | `PLAN_LIMITS` (opcional, JSON) | Valores por defecto |
+| Economía global: datos mensuales de EE.UU. y calendario completo | `FRED_API_KEY` (gratuita en fred.stlouisfed.org) | Sin configurar; el resto del módulo funciona sin clave |
 | Identificación ante la SEC | `SEC_USER_AGENT` (opcional) | Genérico |
 | Legal | Política de privacidad y términos; revisión regulatoria por país | Pendiente |
 | Datos de mercado con licencia | Contratar un proveedor con derechos de redistribución | Pendiente |

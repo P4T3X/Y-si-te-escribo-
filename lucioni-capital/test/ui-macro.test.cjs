@@ -1,0 +1,70 @@
+// Economía global (Fase 4): API /api/macro con formatos reales de FMI, BIS, Tesoro, OCDE y Reserva Federal (valores de prueba) + interfaz.
+// Requiere: node test/mock-server.mjs
+const {chromium,devices}=require('playwright');const fs=require('fs');const OUT=__dirname+'/shots';fs.mkdirSync(OUT,{recursive:true});
+let pass=0,fail=0;const ok=(c,m)=>{if(c){pass++;console.log('  ✓',m);}else{fail++;console.log('  ✗',m);}};
+const B='http://localhost:4320';const J=async p=>{const r=await fetch(B+p);return {s:r.status,d:await r.json()};};
+(async()=>{const Y=new Date().getUTCFullYear();
+console.log('1. API /api/macro');
+let r=await J('/api/macro?panel=1');const P=r.d;ok(r.s===200&&P.indicators.length===9&&P.countries.length===21,'panel: 9 indicadores del FMI y 21 economías');
+const inf=P.indicators.find(i=>i.k==='inf');ok(inf.values.PE.v===1.5&&inf.values.PE.y===Y-1&&inf.values.PE.estY===Y&&inf.values.PE.est!=null,'último dato observado separado de la estimación del año en curso');
+ok(P.indicators.every(i=>i.src&&i.url&&i.unit&&i.freq),'cada indicador trae fuente, enlace, unidad y frecuencia');
+r=await J('/api/macro?hist=debt&c=PE,US,XX');ok(r.s===200&&r.d.series.PE.length>20&&r.d.countries.length===2&&r.d.projFrom===Y,'historial: países válidos y año desde el que hay proyección');
+ok((await J('/api/macro?hist=nada')).s===400&&(await J('/api/macro?hist=inf&c=ZZ')).s===400&&(await J('/api/macro?x=1')).s===400,'parámetros inválidos → 400');
+r=await J('/api/macro?rates=1');const R=r.d;ok(r.s===200&&R.rows.length===17&&R.src.includes('BIS'),'tasas de 17 bancos centrales (BIS)');
+const gb=R.rows.find(x=>x.area==='GB');ok(gb.rate===3&&gb.lastChange&&gb.lastChange.to===3&&gb.lastChange.from===2.75,'un cambio diario más nuevo que el historial mensual se detecta como último movimiento');
+ok(R.rows.find(x=>x.area==='XM').countries.join()==='EA,DE,FR,IT,ES','los miembros del euro comparten la tasa del BCE');
+r=await J('/api/macro?curve=1');ok(r.s===200&&r.d.tenors.length===13&&r.d.now&&r.d.m1&&r.d.y1&&r.d.spread.length>200,'curva del Tesoro: hoy, hace 1 mes, hace 1 año y spread diario');
+r=await J('/api/macro?conf=1');ok(r.s===200&&r.d.measures.length===3&&r.d.measures[0].series.US.length===30&&!r.d.measures[0].series.PE,'OCDE (SDMX-XML): 3 medidas mensuales; Perú no está en la base de la OCDE');
+r=await J('/api/macro?cal=1');const CA=r.d;const fomc=CA.events.find(e=>/FOMC/.test(e.name));ok(r.s===200&&fomc&&fomc.sep===true&&fomc.date>=new Date().toISOString().slice(0,10),'calendario: próxima reunión del FOMC con marca de proyecciones (SEP)');
+ok(CA.sources.find(s=>s.src==='BLS').ok===false&&CA.sources.find(s=>s.src==='FRED').blocked==='FRED_API_KEY','fuentes caídas o sin clave se informan, no se inventan');
+r=await J('/api/macro?us=1');ok(r.s===200&&r.d.blocked==='FRED_API_KEY','EE.UU. mensual sin FRED_API_KEY: bloqueo documentado');
+
+console.log('2. Interfaz');
+const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1440,height:900},colorScheme:'dark'});const p=await ctx.newPage();
+const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error'&&!/favicon|404|ERR_|net::|50[23]/.test(m.text()))errs.push(m.text());});
+await ctx.route('https://icons.duckduckgo.com/**',r=>r.fulfill({status:404,body:''}));
+await p.addInitScript(()=>{sessionStorage.setItem('lc_gate','1');localStorage.setItem('lc_anOk','false');['lc_ecT','lc_ecC','lc_ecK','lc_ecCmp'].forEach(k=>localStorage.removeItem(k));});
+await p.goto(B+'/');await p.waitForTimeout(1000);
+ok(await p.evaluate(()=>!!document.querySelector('#pro30 [data-ec="sum"]')&&/Economy/.test(document.querySelector('#pro30').textContent)),'Lucioni Pro: categoría Economy');
+ok(await p.evaluate(()=>!!document.querySelector('#tmEc')),'acceso directo desde el Terminal');
+await p.evaluate(()=>EC36.open('sum','PE'));await p.waitForSelector('#ecBody .ec36k[data-k]',{timeout:15000});
+ok((await p.$$('#ecBody .ec36k[data-k]')).length===9,'resumen de Perú: 9 indicadores');
+ok(await p.evaluate(()=>{const t=document.querySelector('#ecBody').textContent;return /Estimación/.test(t)&&/Fuente:/.test(t)&&/FMI/.test(t)&&/de 21/.test(t);}),'cada tarjeta con año, estimación, puesto entre 21 y fuente');
+ok(await p.evaluate(()=>/Banco Central de Reserva del Perú/.test(document.querySelector('.ec36cb').textContent)&&!!document.querySelector('.ec36read')),'tasa del BCRP con lectura de tasa real');
+ok(await p.evaluate(()=>/no publica estos indicadores para Perú/.test(document.querySelector('#ecBody').textContent)),'sin datos de la OCDE para Perú: lo dice');
+await p.selectOption('#ecC','US');await p.waitForTimeout(500);ok(await p.evaluate(()=>/Reserva Federal/.test(document.querySelector('.ec36cb').textContent)&&/Indicador compuesto adelantado/.test(document.querySelector('#ecBody').textContent)),'cambio de país: Fed y confianza de la OCDE');
+await p.screenshot({path:OUT+'/economia-resumen.png'});
+await p.click('#ecBody .ec36k[data-k="debt"]');await p.waitForSelector('#ecRank .ec36row');await p.waitForTimeout(400);
+ok(await p.evaluate(()=>document.querySelector('#ecTabs .on').dataset.t==='cmp'&&document.querySelectorAll('#ecRank .ec36row').length===21),'tocar un indicador abre la comparación de 21 países');
+ok(await p.evaluate(()=>{const v=[...document.querySelectorAll('#ecRank .ec36row b')].map(b=>parseFloat(b.textContent.replace(/\./g,'').replace(',','.')));return v.every((x,i)=>!i||v[i-1]>=x);}),'ranking ordenado de mayor a menor');
+await p.waitForSelector('#ecHist svg');ok(await p.evaluate(()=>document.querySelectorAll('#ecHist path.ln30').length>=5&&document.querySelectorAll('#ecHist .ec36dash').length>=1),'historial con tramo proyectado punteado');
+const n0=await p.evaluate(()=>EC36.EC.cmp.length);await p.click('#ecRank .ec36row:not(.sel)');await p.waitForTimeout(500);ok(await p.evaluate(n0=>EC36.EC.cmp.length===n0+1&&document.querySelectorAll('#ecChips .ec36chip').length===n0+1,n0),'agregar país desde el ranking');
+await p.click('#ecChips [data-x]');await p.waitForTimeout(400);ok(await p.evaluate(n0=>EC36.EC.cmp.length===n0,n0),'quitar país desde el chip');
+await p.click('#ecMode button[data-m="est"]');await p.waitForTimeout(400);ok(await p.evaluate(Y=>[...document.querySelectorAll('#ecRank .ec36row small')].every(s=>s.textContent===String(Y)),Y),'modo estimación: todos los valores son del año en curso');
+await p.selectOption('#ecK','fiscal');await p.waitForTimeout(500);ok(await p.evaluate(()=>document.querySelector('#ecRank').classList.contains('neg')),'indicador con negativos: barras divergentes desde cero');
+const [dl]=await Promise.all([p.waitForEvent('download'),p.click('#ecCsv')]);ok(/lucioni-fiscal-.*\.csv/.test(dl.suggestedFilename()),'descarga CSV con fuente por fila');
+await p.screenshot({path:OUT+'/economia-comparar.png'});
+await p.click('#ecTabs [data-t="cb"]');await p.waitForSelector('.ec36t tbody tr');ok((await p.$$('.ec36t tbody tr')).length===17&&await p.evaluate(()=>!!document.querySelector('.ec36sp')),'bancos centrales: 17 filas con mini gráfico de 3 años');
+await p.click('#cbS [data-s="name"]');await p.waitForTimeout(300);ok(await p.evaluate(()=>{const n=[...document.querySelectorAll('.ec36t tbody td:first-child b')].map(b=>b.textContent);return n.join()===[...n].sort((a,b)=>a.localeCompare(b)).join();}),'orden alfabético');
+await p.click('#ecTabs [data-t="yc"]');await p.waitForSelector('.ec36ch');ok(await p.evaluate(()=>document.querySelectorAll('.ec36ch path.ln30').length===3&&document.querySelectorAll('.ec36pt').length===13&&/10 años − 2 años/.test(document.querySelector('#ecBody').textContent)),'curva: 3 fechas, 13 plazos y pendiente 10A−2A');
+await p.screenshot({path:OUT+'/economia-curva.png'});
+await p.click('#ecTabs [data-t="conf"]');await p.waitForSelector('#ecCM');const c0=await p.evaluate(()=>document.querySelectorAll('#ecCC path.ln30').length);
+await p.click('#ecBody [data-cc]:not(:checked)');await p.waitForTimeout(300);ok(await p.evaluate(c0=>document.querySelectorAll('#ecCC path.ln30').length===c0+1,c0),'confianza: marcar un país lo agrega al gráfico');
+await p.click('#ecCM [data-m="CCICP"]');await p.waitForTimeout(300);ok(await p.evaluate(()=>/hogares/.test(document.querySelector('.ec36what').textContent)),'cambio de medida con explicación');
+await p.click('#ecTabs [data-t="cal"]');await p.waitForSelector('.ec36cal, #ecBody .note');ok(await p.evaluate(()=>/FOMC/.test(document.querySelector('#ecBody').textContent)&&/SEP/.test(document.querySelector('#ecBody').textContent)&&/requiere FRED_API_KEY/.test(document.querySelector('.ec36srcs').textContent)&&/BLS: no disponible/.test(document.querySelector('.ec36srcs').textContent)),'calendario con FOMC y estado de cada fuente');
+await p.click('#ecTabs [data-t="us"]');await p.waitForSelector('.ec36lock');ok(await p.evaluate(()=>/FRED_API_KEY/.test(document.querySelector('.ec36lock').textContent)),'EE.UU. mensual: explica qué falta activar');
+// error y reintento
+await p.evaluate(()=>{delete EC36.EC.D.rates;L30.C30.clear();});await p.route('**/api/macro?rates=1',r=>r.fulfill({status:502,contentType:'application/json',body:'{"error":"La fuente oficial no respondió en este momento."}'}));
+await p.click('#ecTabs [data-t="cb"]');await p.waitForSelector('[data-retry="rates"]');ok(true,'si la fuente falla: mensaje y botón Reintentar (sin datos inventados)');
+await p.unroute('**/api/macro?rates=1');await p.click('[data-retry="rates"]');await p.waitForSelector('.ec36t tbody tr');ok(true,'Reintentar recupera los datos');
+// Copilot
+const cp=await p.evaluate(async()=>{const q='¿Cómo está la inflación en Perú y Chile?';const it=CP32.INTENTS.find(([re])=>re.test(q));if(!it)return null;const T=await it[1](()=>{},q);return {perm:it[2],c:T.cards,s:T.S.map(x=>x.kind+':'+x.title)};});
+ok(cp&&cp.perm===false&&/Perú/.test(cp.c)&&/Chile/.test(cp.c)&&cp.s.some(x=>/^FMI/.test(x))&&cp.s.some(x=>/^BIS/.test(x)),'Copilot: pregunta macro → datos del FMI y del BIS con fuente, sin pedir permiso');
+ok(!errs.length,'sin errores de consola'+(errs.length?': '+errs.slice(0,3).join(' | '):''));
+await ctx.close();
+console.log('3. Móvil');
+const mc=await b.newContext({...devices['iPhone 13'],colorScheme:'dark'});const m=await mc.newPage();const me=[];m.on('pageerror',e=>me.push(e.message));
+await m.addInitScript(()=>{sessionStorage.setItem('lc_gate','1');localStorage.setItem('lc_anOk','false');});await m.goto(B+'/');await m.waitForTimeout(1200);
+for(const t of ['sum','cmp','cb','yc','conf','cal']){await m.evaluate(t=>EC36.open(t,'PE'),t);await m.waitForTimeout(900);const ov=await m.evaluate(()=>document.scrollingElement.scrollWidth-innerWidth);ok(ov<=1,`sin desborde horizontal en ${t}`+(ov>1?` (${ov}px)`:''));if(t==='sum')await m.screenshot({path:OUT+'/economia-movil.png'});if(t==='cb')await m.screenshot({path:OUT+'/economia-bancos-movil.png'});}
+ok(!me.length,'sin errores en móvil'+(me.length?': '+me[0]:''));
+await b.close();console.log(`\n${pass} correctas, ${fail} fallidas`);process.exit(fail?1:0);})();

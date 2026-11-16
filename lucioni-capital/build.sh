@@ -3,7 +3,7 @@
 #   vercel/index.html  (sitio web)   y   dist/lucioni-capital.html  (versión artifact de Claude)
 set -e
 cd "$(dirname "$0")/src"
-for p in v25 v26 v27 v28 v29 v30 v33 v34 v35; do python3 ${p}_patch.py >/dev/null; done
+for p in v25 v26 v27 v28 v29 v30 v33 v34 v35 v36; do python3 ${p}_patch.py >/dev/null; done
 python3 patch3.py >/dev/null
 node --check appv3.js
 cd ..

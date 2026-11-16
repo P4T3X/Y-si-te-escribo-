@@ -11,7 +11,7 @@ await p.click('#accBtn');await p.waitForTimeout(400);await p.click('.authtabs bu
 await p.evaluate(()=>document.querySelectorAll('.tst').forEach(e=>e.remove()));
 console.log('1. Lucioni Pro');
 await p.evaluate(()=>setView('pro'));await p.waitForTimeout(500);
-ok((await p.$$('#pro30 .pg30')).length===7,'7 categorías: My Finances, Markets, Research, Analysis, Intelligence, Practice, Reports');
+ok((await p.$$('#pro30 .pg30')).length===8,'8 categorías: My Finances, Markets, Economy, Research, Analysis, Intelligence, Practice, Reports');
 ok((await p.$$('#pro30 .pt30')).length>=14,'cada herramienta abre una función real');
 ok(await p.evaluate(()=>!!document.querySelector('#menu .mcol h4')&&[...document.querySelectorAll('#menu .mcol h4')].some(h=>/Lucioni Pro/.test(h.textContent))),'Lucioni Pro en el menú del logo');
 console.log('2. Terminal');

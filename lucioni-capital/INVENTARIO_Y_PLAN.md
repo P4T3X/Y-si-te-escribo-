@@ -59,7 +59,7 @@ Personal Finance, Banking (**hecho en esta entrega**), Estate, Wealth, Retiremen
 | Wealth | Cartera (`pfCalc`), cuentas (Banking), deudas (Credit) | Patrimonio neto e historial | 3 ✔ |
 | Estate | Wealth | Inmuebles, hipotecas (motor de Credit), rentabilidad | 3 ✔ |
 | Retirement | Motor Monte Carlo de Metas (ampliado) | Fase de retiro, inflación y edades | 3 ✔ |
-| Global Economy | Terminal, BCE y BCRP | Indicadores con fuente, unidad y frecuencia (necesita `FRED_API_KEY` o Banco Mundial) | 4 |
+| Global Economy | Terminal, BCE y BCRP | ✔ Hecho: FMI, BIS, Tesoro de EE.UU., OCDE y FOMC sin clave; FRED opcional (`FRED_API_KEY`). El Banco Mundial bloquea a Vercel | 4 ✔ |
 | Intelligence Network | Copilot `v32` (intents con permiso por módulo) | Más módulos y sesiones guardadas | 5 |
 | Strategy Lab | Backtest `bt`, riesgo `v18`, cálculos del Copilot | Reglas, versiones, comisiones | 6 |
 | Document Vault | Blob privado por usuario | Subida, OCR, extracción revisable | 7 |
@@ -99,5 +99,5 @@ Para no duplicar, los ingresos y gastos son un solo registro de movimiento con s
 | Gemini (IA) | Real |
 | Open Banking | **Pendiente**: necesita proveedor y contrato por país. Candidatos a evaluar: Belvo (Latinoamérica), Plaid (EE. UU. y Canadá), TrueLayer o GoCardless (Europa y Reino Unido). Mientras tanto: registro manual e importación CSV |
 | OCR (Document Vault) | Pendiente (Fase 7) |
-| Indicadores macroeconómicos | Pendiente (Fase 4): FRED necesita `FRED_API_KEY` gratuita; el Banco Mundial no necesita clave |
+| Indicadores macroeconómicos | Hecho (Fase 4) con FMI, BIS, Tesoro, OCDE y Reserva Federal. FRED (`FRED_API_KEY`) agrega EE.UU. mensual y calendario completo |
 | Pagos (Stripe) | Preparado, inactivo sin claves |
