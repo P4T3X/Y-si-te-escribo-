@@ -10,6 +10,7 @@ run test/ui-platform.test.cjs
 run test/ui-pro.test.cjs
 run test/ui-finance.test.cjs
 run test/ui-phase3.test.cjs
+run test/ui-broker.test.cjs
 run test/chat-sources.test.cjs dark
 run test/video.test.cjs
 fresh; printf "%-34s " "test/perf.test.cjs"; SEL='#hub' node test/perf.test.cjs

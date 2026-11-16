@@ -188,6 +188,23 @@ async function fund(sym) {
       top: (inst.holdingsTransactions?.table?.rows || []).slice(0, 8).map(r => ({ n: r.ownerName, d: r.date, sh: nk(r.sharesHeld), ch: nk(r.sharesChangePCT), v: nk(r.marketValue) })) }; }
   return out;
 }
+/* velas OHLCV para el gráfico profesional: diarias hasta 1 año, semanales para 2 y 5 años */
+const OHLC_DAYS = { '3m': 95, '6m': 186, '1y': 372, '2y': 735, '5y': 1835 };
+async function ohlc(sym, range) {
+  const days = OHLC_DAYS[range] || 372, to = new Date(), from = new Date(Date.now() - days * 864e5), f = d => d.toISOString().slice(0, 10), S = encodeURIComponent(sym);
+  for (const ac of ['stocks', 'etf']) {
+    const d = await tryJSON(`${BASE}/quote/${S}/historical?assetclass=${ac}&fromdate=${f(from)}&todate=${f(to)}&limit=2000`, 6 * 3600_000);
+    let rows = (d?.tradesTable?.rows || []).map(r => ({ t: Date.parse(r.date), o: num(r.open), h: num(r.high), l: num(r.low), c: num(r.close), v: num(r.volume) || 0 }))
+      .filter(r => r.t && r.c != null).map(r => ({ ...r, o: r.o ?? r.c, h: r.h ?? Math.max(r.o ?? r.c, r.c), l: r.l ?? Math.min(r.o ?? r.c, r.c) })).reverse();
+    if (rows.length < 20) continue;
+    let tf = 'diario';
+    if (days > 400) { const w = []; for (const r of rows) { const k = Math.floor((r.t / 864e5 + 3) / 7); const last = w.at(-1);
+      if (last && last.k === k) { last.h = Math.max(last.h, r.h); last.l = Math.min(last.l, r.l); last.c = r.c; last.v += r.v; last.t = r.t; } else w.push({ k, t: r.t, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v }); }
+      rows = w.map(({ k, ...r }) => r); tf = 'semanal'; }
+    return { s: sym, range, tf, src: 'Nasdaq · precios históricos (cierre del día; pueden tener retraso)', bars: rows };
+  }
+  return { s: sym, range, bars: [] };
+}
 async function hist1y(sym) {
   const to = new Date(), from = new Date(Date.now() - 372 * 864e5), f = d => d.toISOString().slice(0, 10), S = encodeURIComponent(sym);
   for (const ac of ['stocks', 'etf']) {
@@ -277,6 +294,7 @@ export default async function handler(req, res) {
     if (q.get('h1y')) { const sy = q.get('h1y'); if (!/^[A-Za-z.\-]{1,10}$/.test(sy)) return send(res, 400, { code: 'bad_symbol' }); const d = await hist1y(sy.toUpperCase()); return send(res, 200, d, d.pts.length ? 21600 : 60); }
     if (q.get('h5')) { const sy = q.get('h5'); if (!/^[A-Za-z.\-]{1,10}$/.test(sy)) return send(res, 400, { code: 'bad_symbol' }); const d = await hist5(sy.toUpperCase()); return send(res, 200, d, d.pts.length ? 43200 : 60); }
     if (q.get('fx')) return send(res, 200, await fxAll(), 3600);
+    if (q.get('ohlc')) { const sy = q.get('ohlc'); if (!/^[A-Za-z.\-]{1,10}$/.test(sy)) return send(res, 400, { code: 'bad_symbol' }); const rg = OHLC_DAYS[q.get('range')] ? q.get('range') : '1y'; const d = await ohlc(sy.toUpperCase(), rg); return send(res, 200, d, d.bars.length ? 3600 : 60); }
     if (q.get('fxhist')) return send(res, 200, await fxHist(), 21600);
     if (q.get('fxpen')) return send(res, 200, await fxPen(), 10800);
     if (q.get('quotes')) { const L = q.get('quotes').toUpperCase().split(',').map(x => x.trim()).filter(x => /^[A-Z.\-]{1,10}$/.test(x)).slice(0, 16); return send(res, 200, await quotes([...new Set(L)]), 30); }

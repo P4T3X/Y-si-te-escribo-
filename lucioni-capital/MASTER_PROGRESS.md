@@ -232,6 +232,22 @@ Despliegue: `dpl_5beYP67XjFJPKjDXhr8FBzzVVeCm`. Pruebas: `bash test/run-all.sh` 
 
 **Próxima fase (4)**: Global Economy. Necesita una fuente de indicadores con licencia: el Banco Mundial no pide clave; FRED necesita `FRED_API_KEY` gratuita.
 
+## Entrega 5 — Herramientas de bróker y efectos de precio (16 nov 2026)
+
+Pedido: "añade más cosas profesionales de Brokers, efectos suaves y profesionales". Se amplió lo existente (simulador, ficha, Terminal, Watchtower); no se creó un segundo simulador ni otro sistema de alertas.
+
+### Hecho
+- **Gráfico profesional** (vista `chart`, desde la ficha de cada acción y Lucioni Pro → Markets): velas OHLC reales de Nasdaq (`/api/market?ohlc=SYM&range=3m|6m|1y|2y|5y`; semanales a partir de 2 años), línea opcional, volumen, SMA 20/50/200, EMA 20, Bollinger 20·2, RSI 14 (Wilder), MACD 12·26·9 y ATR 14. Retícula con lectura de apertura, máximo, mínimo, cierre y volumen; estadísticas del período; fuente y temporalidad visibles. Si no hay historial, lo dice y no dibuja nada inventado.
+- **Niveles de precio → alertas**: se marca un nivel con un clic y se convierte en alerta de Watchtower (por encima o por debajo), respetando el límite de alertas del plan.
+- **Boleta avanzada del simulador** (dinero ficticio): mercado, límite, stop, **stop-límite**, **trailing stop** (en %), **bracket con OCO** (objetivo y stop enlazados), vigencia **GTC o solo hoy**, **comisiones** configurables (sin comisión, US$1 fija, 0,10 % o 0,25 %) descontadas del efectivo, y vista previa con costo, comisión, efectivo restante y riesgo:beneficio. El botón se bloquea y explica el motivo si falta efectivo o acciones.
+- **Efectos**: destello verde o rojo cuando cambia un precio (Terminal y boleta), transición suave de cifras, velas que aparecen escalonadas y línea que se dibuja. Todo se desactiva con "reducir movimiento".
+
+### Pruebas
+`test/ui-broker.test.cjs` (33 correctas): indicadores contra valores conocidos, gráfico, niveles → alerta, stop-límite (se arma por encima del límite y se ejecuta al volver), trailing (sube y no baja; vende al cruzar), bracket con OCO, vencimiento del día, comisión, validación de efectivo, móvil sin desborde y sin errores de consola. La batería completa (`bash test/run-all.sh`) pasa.
+
+### Desplegado
+`dpl_8bdbGSKwsXtiFZp8XBFm7FVPNN6n`. Verificado en producción: `?ohlc=AAPL&range=1y` devuelve 252 velas diarias reales de Nasdaq.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
