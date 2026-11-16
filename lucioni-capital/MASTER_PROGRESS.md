@@ -105,6 +105,75 @@ Despliegue: `dpl_DJ1SpsbtY8F8sHVr36vL2rMaJyPC`. Pruebas: 41/41 servidor, 41/41 F
 - **Calendario económico y Macro**: necesitan una fuente con licencia y clave, por ejemplo FRED (gratuita, requiere `FRED_API_KEY`), Trading Economics o el Banco Mundial.
 - Alertas cuando la app está cerrada: necesitan correo configurado o notificaciones push con un servicio en segundo plano.
 
+## Entrega 3 — Complete Financial Platform, Fases 1 y 2 (16 nov 2026)
+
+Despliegue: `dpl_Ev9tHnTLzrUAn7ipF2F7K8tQPKW2`.
+
+**Fase 1:** inventario por categorías y plan de integración en `INVENTARIO_Y_PLAN.md`. No hubo cambios destructivos.
+
+### Fase 2 · Personal Finance, Banking y Credit — hecha
+1. **Qué se implementó**
+   - **Mis finanzas**:
+     - Primera configuración y moneda principal.
+     - Ingresos y gastos con categorías propias y categorización automática que aprende de tus cambios.
+     - Presupuestos mensuales por categoría, con aviso al excederse.
+     - Flujo de caja de 12 meses y comparación mensual y anual.
+     - Pagos recurrentes y suscripciones, con detección automática en los movimientos y los próximos 30 días.
+     - Fondo de emergencia.
+     - **Financial Health Score**: 4 componentes con pesos y método visibles; sin datos suficientes no se calcula.
+   - **Banking**:
+     - Cuentas bancarias, de ahorro, de efectivo, tarjetas y otras.
+     - Saldos e historial mensual.
+     - Importación CSV con mapeo de columnas, coma decimal, fechas DD/MM o MM/DD y vista previa.
+     - Detección de duplicados al importar y de posibles duplicados ya registrados.
+     - Movimientos inusuales (mediana y desviación absoluta).
+     - Conversión de monedas mostrando la tasa usada; el importe original no cambia.
+   - **Credit** (amplía Deudas):
+     - Tipo de deuda y día de pago.
+     - Meses, intereses y costo total por deuda.
+     - Calendario de obligaciones.
+     - Simulador de pago anticipado.
+     - Evolución de la deuda pendiente con avalancha y bola de nieve.
+     - Aviso cuando siguen siendo los datos de ejemplo.
+   - **Intelligence**: "Analiza mi situación financiera completa…".
+     - Pide un permiso específico.
+     - Lee finanzas, deudas, cartera y metas.
+     - Responde en los 10 apartados pedidos, con los datos usados y los que faltan.
+   - **Integración**:
+     - Tarjeta "Mis finanzas" en Lucioni Daily.
+     - Categoría My Finances en Lucioni Pro.
+     - "Finanzas" en la barra móvil.
+     - Entrada en el menú del logo.
+2. **Reutilizado**:
+   - Sesiones, planes, auditoría y límites (`lib/core.js`).
+   - Tipos de cambio BCE/BCRP.
+   - El motor `dSim` de Deudas, sin un segundo motor.
+   - El Copilot y sus permisos.
+   - El diseño y los gráficos compartidos (`L30`).
+3. **Ampliado**:
+   - Deudas → Lucioni Credit.
+   - Copilot: permisos por módulo.
+   - Exportación de datos: incluye las finanzas.
+   - Planes: límites de cuentas y movimientos.
+4. **Archivos**:
+   - Nuevos: `vercel/api/finance.js`, `src/v33.js`, `src/v33.css`, `src/v33_patch.py`, `INVENTARIO_Y_PLAN.md`, `test/finance-api.test.mjs`, `test/ui-finance.test.cjs`.
+   - Modificados: `vercel/lib/core.js`, `vercel/api/account.js`, `vercel/vercel.json`, `src/v29.js` (barra móvil), `src/v32.js` (permisos por módulo), `build.sh`, `test/mock-server.mjs`, `test/ui-pro.test.cjs`.
+5. **Datos**: `users/<uid>/fin/meta.json` y `users/<uid>/fin/tx-<año>.json`, versionados con `v: 1`.
+6. **Proveedores**: ninguno nuevo. Open Banking queda pendiente y documentado.
+7. **Pruebas**:
+   - Finanzas en el servidor: 22 de 22.
+   - Cálculos, interfaz, importación, Credit, IA y móvil: 39 de 39.
+   - Regresión: servidor 41, plataforma 27, Pro 41, chat con fuentes, video y rendimiento, todo sin fallos.
+   - Comprobado en producción: la función de finanzas está desplegada (responde 405 a GET, como debe).
+8. **Pendiente y problemas conocidos**:
+   - Open Banking.
+   - Cargar varios años antiguos de una vez: hoy se cargan el año actual y los dos anteriores.
+   - Detección de suscripciones con montos que cambian.
+   - Las pruebas que registran muchas cuentas seguidas chocan con el límite de 8 registros cada 10 minutos por IP. Es correcto en producción; en pruebas, basta reiniciar el servidor local.
+9. **Para producción**: nada adicional. Funciona con la configuración actual de Vercel (Blob y `AUTH_SECRET`).
+
+**Próxima fase (3)**: Wealth (patrimonio neto con cuentas, inversiones, deudas e inmuebles), Estate (reutilizando el motor de Credit para hipotecas) y Retirement (reutilizando el Monte Carlo de Metas).
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |

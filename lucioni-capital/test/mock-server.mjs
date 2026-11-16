@@ -19,7 +19,7 @@ globalThis.fetch=async(u,o)=>{const s=String(u);
 /* copia las funciones con el almacenamiento falso */
 const GEN=ROOT+'/test/.gen';fs.rmSync(GEN,{recursive:true,force:true});
 for(const d of ['lib','api']){fs.mkdirSync(GEN+'/'+d,{recursive:true});for(const f of fs.readdirSync(ROOT+'/vercel/'+d))fs.writeFileSync(GEN+'/'+d+'/'+f.replace(/\.js$/,'.mjs'),fs.readFileSync(ROOT+'/vercel/'+d+'/'+f,'utf8').replace(/import \{([^}]*)\} from '@vercel\/blob';/,'const {$1} = globalThis.__fake;').replace(/from '\.\.\/lib\/core\.js'/g,"from '../lib/core.mjs'"));}
-const mod={};for(const n of ['account','ai','academy','billing','event'])mod[n]=(await import(GEN+'/api/'+n+'.mjs')).default;
+const mod={};for(const n of ['account','ai','academy','billing','event','finance'])mod[n]=(await import(GEN+'/api/'+n+'.mjs')).default;
 const wrapReq=async req=>{if(req.method==='POST'&&!req.url.includes('webhook')){const c=[];for await(const x of req)c.push(x);const raw=Buffer.concat(c).toString()||'{}';try{req.body=JSON.parse(raw);}catch{req.body={};}}req.query=Object.fromEntries(new URL(req.url,'http://x').searchParams);return req;};
 const STATIC={'/media.js':'text/javascript','/manifest.webmanifest':'application/manifest+json','/sw.js':'text/javascript','/icons/icon-192.png':'image/png','/icons/icon-512.png':'image/png','/icons/icon-maskable-512.png':'image/png'};
 globalThis.PLAN={monto:5000,moneda:'PEN',plazo_meses:36,meta_pct:20,supuestos:'',resumen:'Cartera moderada.',realismo:'Realista.',cartera:[{ticker:'VOO',nombre:'Vanguard S&P 500',mercado:'NYSE',tipo:'ETF',porcentaje:45,monto:0,riesgo:'Medio',razon:'Núcleo.'},{ticker:'BND',nombre:'Bonos',mercado:'Nasdaq',tipo:'ETF',porcentaje:25,monto:0,riesgo:'Bajo',razon:'Estabilidad.'},{ticker:'QQQM',nombre:'Nasdaq 100',mercado:'EE.UU.',tipo:'Acción',porcentaje:20,monto:0,riesgo:'Alto',razon:'Puntaje alto.'},{ticker:'FAKEX',nombre:'Inventada',mercado:'?',tipo:'Acción',porcentaje:10,monto:0,riesgo:'Alto',razon:'x'}],escenarios:{pesimista:4800,base:6000,optimista:7200},consejos:['a','b','c']};
@@ -29,7 +29,7 @@ http.createServer(async(req,res)=>{const u=new URL(req.url,'http://x');res.setHe
  if(u.pathname==='/__store')return res.end(JSON.stringify(Object.fromEntries([...store.entries()].map(([k,v])=>[k,String(v).slice(0,4000)]))));
  if(u.pathname==='/__put'){const c=[];for await(const x of req)c.push(x);const {p,v}=JSON.parse(Buffer.concat(c).toString());store.set(p,JSON.stringify(v));return res.end('{"ok":true}');}
  if(u.pathname==='/__setsub'){const c=[];for await(const x of req)c.push(x);const {uid,sub}=JSON.parse(Buffer.concat(c).toString());const p=JSON.parse(store.get(`users/${uid}/profile.json`));p.sub={...p.sub,...sub};store.set(`users/${uid}/profile.json`,JSON.stringify(p));return res.end('{"ok":true}');}
- for(const n of ['academy','billing','event'])if(u.pathname==='/api/'+n)return mod[n](await wrapReq(req),res);
+ for(const n of ['academy','billing','event','finance'])if(u.pathname==='/api/'+n)return mod[n](await wrapReq(req),res);
  if(u.pathname==='/__ai')return res.end(String(globalThis.LASTAI||''));
  if(u.pathname==='/__mail')return res.end(JSON.stringify(LASTMAIL));
  if(u.pathname==='/api/account')return mod.account(await wrapReq(req),res);

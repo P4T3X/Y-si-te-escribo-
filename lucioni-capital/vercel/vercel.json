@@ -6,7 +6,8 @@
     "api/sec.js": { "maxDuration": 60 },
     "api/billing.js": { "maxDuration": 20 },
     "api/event.js": { "maxDuration": 10 },
-    "api/academy.js": { "maxDuration": 10 }
+    "api/academy.js": { "maxDuration": 10 },
+    "api/finance.js": { "maxDuration": 30 }
   },
   "crons": [
     { "path": "/api/market?ideas=1", "schedule": "17 13 * * 1-5" }

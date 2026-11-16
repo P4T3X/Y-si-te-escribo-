@@ -65,6 +65,7 @@ const INTENTS=[[/(analiza|revisa|eval[uú]a|diagn[oó]stico).{0,20}(mi|mis) (car
  [/(simula|proyecta|si invierto|cu[aá]nto tendr[ií]a|simulate)/i,toolSim,false],
  [/(por qu[eé]|qu[eé] pas[oó]|why).{0,40}(mercado|bolsa|market)|c[oó]mo (est[aá]|va) el mercado/i,toolMarket,false]];
 
+window.CP32={INTENTS};
 /* ================= COPILOT: nueva pregunta con herramientas ================= */
 {const h=$('#asesor .sh h2');if(h)h.innerHTML='Lucioni <em>Copilot</em>';const p=$('#asesor .sh p');if(p)p.textContent='Pregunta sobre mercados, empresas, tu cartera o cualquier concepto. El Copilot usa los módulos de Lucioni Capital con datos reales, cita sus fuentes y solo lee tu cartera si le das permiso.';
  const sg=$('#sugs');if(sg&&!$('#cp32a')){const d=document.createElement('div');d.id='cp32a';d.className='cp32a';d.innerHTML=`<span>Acciones</span>`+[['diversificar','Analiza mi cartera'],['bolt','Compara Apple y Microsoft'],['news','¿Por qué se movió el mercado hoy?'],['compuesto','Simula $5,000 durante 10 años'],['volatilidad','¿Qué riesgos tiene mi exposición tecnológica?']].map(([i,q])=>`<button class="pill" data-q="${esc(q)}">${ic(i,'',false)} ${q}</button>`).join('');sg.before(d);d.querySelectorAll('button').forEach(b=>b.onclick=()=>ask(b.dataset.q));}}
@@ -76,8 +77,8 @@ ask=async function(t,again){
  mission('ask');const m=document.createElement('div');m.className='msg a c28';m.innerHTML='<div class="c28st"><span class="typing"><span></span><span></span><span></span></span><small>Pensando…</small></div>';ch.appendChild(m);ch.scrollTop=ch.scrollHeight;
  const step=s=>{const e=m.querySelector('.c28st small');if(e)e.textContent=s;};
  const it=INTENTS.find(([re])=>re.test(t));
- if(it&&it[2]&&member()&&!cpOk()){m.innerHTML=`<div class="cp32p"><b>¿Puedo leer tu cartera?</b><p>Para responder necesito usar las posiciones guardadas en tu cuenta de Lucioni Capital. Solo se usan para esta respuesta y para las siguientes que lo requieran; puedes retirar el permiso en Perfil.</p><div><button class="btn pri" data-y>Permitir</button><button class="btn" data-n>Ahora no</button></div></div>`;
-  m.querySelector('[data-y]').onclick=()=>{store.set('cpOk',true);m.remove();ask(t,true);};m.querySelector('[data-n]').onclick=()=>{m.innerHTML='Entendido. Puedo responder de forma general si me lo pides sin usar tus datos.';};return;}
+ const ck=it&&(it[4]||'cpOk');if(it&&it[2]&&member()&&store.get(ck,false)!==true){m.innerHTML=`<div class="cp32p"><b>¿Puedo leer ${it[3]||'tu cartera'}?</b><p>Para responder necesito usar ${it[3]||'las posiciones'} guardad${it[3]?'os':'as'} en tu cuenta de Lucioni Capital. Solo se usan para esta respuesta y para las siguientes que lo requieran; puedes retirar el permiso en Perfil.</p><div><button class="btn pri" data-y>Permitir</button><button class="btn" data-n>Ahora no</button></div></div>`;
+  m.querySelector('[data-y]').onclick=()=>{store.set(ck,true);m.remove();ask(t,true);};m.querySelector('[data-n]').onclick=()=>{m.innerHTML='Entendido. Puedo responder de forma general si me lo pides sin usar tus datos.';};return;}
  $('#cs').disabled=true;
  let T={cards:'',S:[],ctx:''};try{if(it&&MKT)T=await it[1](step,t);}catch(e){T={cards:'',S:[],ctx:''};}
  let R={S:[],cards:[],imgs:[]};try{if(!T.noResearch&&window.LC28){if(MKT&&!CO.length)await Promise.race([coLoad(),new Promise(r=>setTimeout(r,2500))]);R=await LC28.research28(t,step);}}catch(e){}
