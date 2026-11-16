@@ -8,3 +8,4 @@ test/shots/
 node_modules/
 vercel/media.js
 test/mock.log
+marketing/out/clip-*.mp4
