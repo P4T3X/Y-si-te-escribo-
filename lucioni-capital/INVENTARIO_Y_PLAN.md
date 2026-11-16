@@ -48,7 +48,7 @@ Fecha: 16 de noviembre de 2026. Fase 1 del master prompt "Complete Financial Pla
 - **Tu cartera en video**: es un render real con Remotion, sin datos de mercado propios.
 
 ### 5. No existía y se desarrolla
-Personal Finance, Banking (**hecho en esta entrega**), Estate, Wealth, Retirement, Global Economy (hecho), Intelligence Network (hecho), Strategy Lab (hecho), Document Vault, Tax & Compliance ampliado, Life Planner e Intelligence Network. El análisis financiero completo del Copilot ya está hecho en esta entrega; queda ampliarlo con los módulos futuros.
+Personal Finance, Banking (**hecho en esta entrega**), Estate, Wealth, Retirement, Global Economy (hecho), Intelligence Network (hecho), Strategy Lab (hecho), Document Vault (hecho), Tax & Compliance ampliado (hecho), Life Planner e Intelligence Network. El análisis financiero completo del Copilot ya está hecho en esta entrega; queda ampliarlo con los módulos futuros.
 
 ## 3. Plan de integración (qué se reutiliza en cada módulo)
 | Módulo | Reutiliza | Nuevo | Fase |

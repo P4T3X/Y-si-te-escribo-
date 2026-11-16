@@ -28,9 +28,9 @@ ok(r.s === 200, 'datos de prueba cargados en los módulos reales (finanzas, inmu
 
 console.log('1. Consentimiento en el servidor');
 r = await intel('consent.get', {}); ok(r.s === 401, 'sin sesión no hay acceso');
-r = await intel('consent.get', {}, A); ok(r.s === 200 && r.d.modules.length === 8 && r.d.modules.filter(m => m.on).map(m => m.k).join() === 'macro', 'por defecto solo Economía global (datos públicos) está permitida');
+r = await intel('consent.get', {}, A); ok(r.s === 200 && r.d.modules.length === 9 && r.d.modules.filter(m => m.on).map(m => m.k).join() === 'macro', 'por defecto solo Economía global (datos públicos) está permitida');
 r = await intel('report', { mods: ['finance', 'macro'] }, A); ok(r.s === 403 && r.d.code === 'consent_required' && r.d.need.join() === 'finance', 'sin autorización no se lee Finanzas (403 consent_required)');
-r = await intel('consent.set', { mods: { finance: true, credit: true, wealth: true, invest: true, estate: true, retire: true, goals: true, macro: false, hack: true } }, A);
+r = await intel('consent.set', { mods: { finance: true, credit: true, wealth: true, invest: true, estate: true, retire: true, goals: true, docs: true, macro: false, hack: true } }, A);
 ok(r.s === 200 && r.d.modules.every(m => m.on) && !r.d.modules.some(m => m.k === 'hack'), 'permisos guardados; módulos desconocidos ignorados; Economía global no se puede "apagar" porque es pública');
 const st = await (await fetch(B + '/__store')).json();
 ok(/intel_consent/.test(st[`users/${uidA}/audit.json`] || ''), 'el cambio de permisos queda en la auditoría');

@@ -324,6 +324,34 @@ Auditoría previa: existían el Backtest de cartera (v23: 5 años de cierres sem
 ### Desplegado
 `dpl_EtEBPg49XeBbnG3qfoDsovGBoogy`.
 
+## Entrega 9 — Complete Financial Platform, Fase 7: Document Vault y Tax & Compliance (16 nov 2026)
+
+Auditoría previa: no existía almacenamiento de documentos. Las herramientas fiscales existentes eran "Impuestos y lotes" (Mesa del inversor: tasa estimada 5%, ganancia por lote, cosecha de pérdidas) y "Costo real desde Perú" (retención 30% de EE.UU. e impuesto 5%). Se amplían enlazándolas a un registro de reglas con fuente; no se duplicaron cálculos. Se usó un solo endpoint nuevo (`vault.js`) porque el plan de Vercel permite 12 funciones.
+
+### Hecho
+- **Servidor `vercel/api/vault.js`** (sesión obligatoria; uid de la sesión firmada):
+  - Subida de PDF, PNG, JPG y WEBP hasta 3 MB, validada por tipo **y por contenido** (bytes mágicos: un PNG con nombre .pdf se rechaza); límites por plan (Free 25 documentos / 50 MB; Premium 300 / 1 GB, configurables en `PLAN_LIMITS` con `docs` y `docMB`).
+  - Archivos privados en `users/<uid>/docs/<id>/v<n>`; nunca se exponen URLs de almacenamiento; descarga solo con la sesión del dueño. **Historial de versiones** (hasta 20 por documento).
+  - **OCR y extracción con IA** (Gemini lee el PDF o la imagen): texto, título, emisor, fecha, vencimiento, importes y resumen. El servidor limpia HTML, valida fechas reales, monedas ISO e importes, y guarda el resultado como **"sugerido"**; el usuario lo corrige y confirma (**"revisado"**). El texto del documento se trata como datos, no como instrucciones. Cada lectura queda en el registro de uso de IA y consume la cuota diaria.
+  - Búsqueda en nombre, categoría, etiquetas, notas, datos y texto reconocido, con fragmento. Recordatorios por vencimiento (días de anticipación por documento). Auditoría de subidas, revisiones y borrados. La exportación de datos incluye los datos de los documentos (sin rutas internas); el borrado de la cuenta los elimina.
+  - `GET ?tax=1`: **registro de reglas fiscales** (`vercel/lib/tax-rules.js`) con jurisdicción, base legal, fuente oficial, vigencia, fecha de revisión, estado e historial de cambios.
+- **Reglas cargadas (12, Perú y EE.UU.)**: dividendos peruanos 5% (con historial 4,1% → 6,8% → 5%), ganancia por venta de valores 5% efectivo, fuente extranjera (rango 8%–30%, por verificar), intereses de depósitos (exoneración por verificar), ITF 0,005%, UIT 2025 S/ 5.350, UIT 2026 (sin valor: se ingresa desde El Peruano), declaración anual (fecha según cronograma SUNAT), retención de 30% de EE.UU., ganancias de no residentes en EE.UU., impuesto a la herencia de EE.UU. (exención US$ 60.000) y vigencia del W-8BEN. **Las reglas que cambian o vencen se marcan "por verificar" y no llevan una cifra inventada.**
+- **Document Vault** (vista `vault`): subida por arrastre, lectura con IA opcional al subir, uso del plan, vencimientos y recordatorios, filtros por categoría (estados de cuenta, informes de inversión, comprobantes, contratos, inmuebles, impuestos), búsqueda, ficha con vista previa, datos editables, texto reconocido, versiones, descarga y borrado. Aviso diario de documentos por vencer.
+- **Tax & Compliance** (vista `tax`): resumen con alertas (reglas por verificar, revisiones antiguas, novedades del registro), calendario (declaración anual registrada por ti, vencimiento del W-8BEN, publicación de la UIT y vencimientos de tus documentos), reglas por jurisdicción con fuente e historial, simulador de dos escenarios (cada línea cita su regla; lo no verificado se muestra como rango; tipo de cambio del BCRP o ingresado), registro de eventos fiscales con documento de respaldo, **registro de supuestos** de cada escenario guardado (entradas, tipo de cambio, versión de reglas) e **informe educativo en PDF**.
+- **Integraciones**: "Costo real desde Perú" y "Impuestos y lotes" enlazan a la regla y su fuente; Intelligence Network agrega el módulo **Documentos** (con permiso): cantidades por categoría, vencimientos y resúmenes; los datos revisados cuentan como hechos y los sugeridos como estimaciones. El Gemini compartido pasó a `vercel/lib/gemini.js` (Intelligence y Vault usan el mismo).
+
+### Pruebas
+- `test/vault-api.test.mjs` (31 correctas): reglas con fuente y sin cifras inventadas, validación por contenido, límites, versiones, extracción revisable y limpia, búsqueda, aislamiento entre usuarios, registro de IA, auditoría, Intelligence con documentos, exportación y borrado completo.
+- `test/ui-vault.test.cjs` (29 correctas): subida con y sin IA, revisión, búsqueda, versiones, descarga, borrado, alertas, reglas, historial, calendario (W-8BEN y documentos), simulador con valores conocidos, registro de supuestos, eventos, informe, enlace desde las herramientas existentes y móvil.
+- Se actualizaron pruebas anteriores por cambios esperados (9 módulos de permisos en Intelligence; 9 categorías en Lucioni Pro). La batería completa pasa.
+
+### Pendiente
+- Los recordatorios son dentro de la app (al entrar). Avisos por correo requieren configurar `RESEND_API_KEY` y una tarea programada.
+- Las reglas deben revisarse al menos una vez al año (la app avisa si una revisión tiene más de 365 días). La UIT 2026 y el cronograma de la declaración deben registrarse desde la fuente oficial.
+
+### Desplegado
+`dpl_6gsfnC4rKLJcsEPXPpnZ2SZWuDck`. Verificado en producción: `/api/vault?tax=1` devuelve las 12 reglas.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
@@ -332,7 +360,8 @@ Auditoría previa: existían el Backtest de cartera (v23: 5 años de cierres sem
 | Correos de recuperación y verificación | `RESEND_API_KEY` + `MAIL_FROM`, o `SMTP_USER` + `SMTP_PASS` | Sin configurar |
 | Pagos de Premium | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL` (ej. "US$ 7,99 al mes") y el webhook `https://lucioni-capital.vercel.app/api/billing?webhook=1` con los eventos `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` | Sin configurar; antes elegir proveedor según la entidad legal |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
-| Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily` para informes completos) | Valores por defecto |
+| Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily`, `docs` y `docMB`) | Valores por defecto |
+| Reglas fiscales | Registrar la UIT 2026 y revisar el registro cada año (`vercel/lib/tax-rules.js`) | Pendiente de revisión anual |
 | Economía global: datos mensuales de EE.UU. y calendario completo | `FRED_API_KEY` (gratuita en fred.stlouisfed.org) | Sin configurar; el resto del módulo funciona sin clave |
 | Identificación ante la SEC | `SEC_USER_AGENT` (opcional) | Genérico |
 | Legal | Política de privacidad y términos; revisión regulatoria por país | Pendiente |
