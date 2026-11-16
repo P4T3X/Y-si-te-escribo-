@@ -1,0 +1,12 @@
+{
+  "name": "lucioni-capital",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.2",
+    "nodemailer": "6.9.16"
+  }
+}

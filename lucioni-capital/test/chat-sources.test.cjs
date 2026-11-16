@@ -1,0 +1,18 @@
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900},colorScheme:process.argv[2]||'dark'});const p=await ctx.newPage();
+const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text());});
+await ctx.route('https://es.wikipedia.org/**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({query:{pages:{1:{index:1,title:'Fondo cotizado',fullurl:'https://es.wikipedia.org/wiki/Fondo_cotizado',extract:'Un fondo cotizado (ETF) es un fondo de inversión que cotiza en bolsa.',thumbnail:{source:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="200"><rect width="360" height="200" fill="#8CC7B0"/></svg>')}}}}})}));
+await ctx.route('https://icons.duckduckgo.com/**',r=>r.fulfill({status:404,body:''}));
+await p.addInitScript(()=>{sessionStorage.setItem('lc_gate','1');});await p.goto('http://localhost:4320/');await p.waitForTimeout(1500);
+await p.click('#accBtn');await p.waitForTimeout(400);await p.click('.authtabs button[data-t="register"]');await p.fill('#auN','P L');await p.fill('#auE','c'+Date.now()+'@c.com');await p.fill('#auW','clave12345');await p.check('#auOk');await p.click('#auGo');await p.waitForTimeout(1200);await p.check('#rcOk');await p.click('#rcGo');await p.waitForTimeout(600);
+await p.evaluate(()=>setView('chat'));await p.waitForTimeout(800);
+await p.fill('#cq','¿Conviene invertir en Nvidia? ¿Qué es un ETF?');await p.click('#cs');
+await p.waitForSelector('.msg.c28 .c28tx',{timeout:20000});await p.waitForTimeout(2200);
+const info=await p.evaluate(()=>{const m=[...document.querySelectorAll('.msg.c28')].at(-1);return {cites:m.querySelectorAll('.c28ci').length,citeHref:m.querySelector('a.c28ci')?.href,cards:m.querySelectorAll('.c28card').length,svg:!!m.querySelector('.c28ch .c28fan'),tgt:!!m.querySelector('.c28tg'),srcs:m.querySelectorAll('.c28src li').length,imgs:m.querySelectorAll('.c28im a').length,kp:m.querySelector('.c28kp')?.innerText.replace(/\n/g,' | ')};});
+console.log(JSON.stringify(info));
+const ai=await (await p.request.get('http://localhost:4320/__ai')).text();console.log(ai.slice(ai.indexOf('FUENTES'),ai.indexOf('FUENTES')+900));
+const card=await p.$('.c28card');await card.scrollIntoViewIfNeeded();const bb=await (await p.$('.c28ch')).boundingBox();await p.mouse.move(bb.x+bb.width*.4,bb.y+bb.height/2);await p.waitForTimeout(200);
+await p.evaluate(()=>{const m=[...document.querySelectorAll('.msg.c28')].at(-1);m.scrollIntoView();document.querySelector('#chat').scrollTop-=60;});await p.waitForTimeout(300);
+await p.screenshot({path:__dirname+'/shots/chat28-'+(process.argv[2]||'dark')+'.png',fullPage:false});
+const ch=await p.$('#chat');await ch.evaluate(e=>e.scrollTop=e.scrollHeight);await p.waitForTimeout(300);await ch.screenshot({path:__dirname+'/shots/chat28b-'+(process.argv[2]||'dark')+'.png'});
+console.log('errs',errs.filter(e=>!/favicon|404|net::/.test(e)));await b.close();})();
