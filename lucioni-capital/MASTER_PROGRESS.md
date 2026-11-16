@@ -275,6 +275,33 @@ Auditoría previa: no existía un módulo macroeconómico. El Terminal ya tenía
 ### Desplegado
 `dpl_55tcTu9XT7B7GpvzHZpm9AG1ndJv`. Verificado en producción: panel del FMI, historial de PIB de Perú y EE.UU., tasas del BIS, curva del Tesoro, OCDE y calendario del FOMC con datos reales.
 
+## Entrega 7 — Complete Financial Platform, Fase 5: Intelligence Network (16 nov 2026)
+
+Auditoría previa: ya existían el Copilot (v32) con herramientas por intención (cartera, sector, simulación, mercado, finanzas y macro), la cuota diaria de IA por plan y el registro de tokens en `ai.js`. Faltaba una capa única que leyera los módulos con permiso verificado en el servidor y produjera un informe completo. No se creó otro chatbot: el Copilot enruta el análisis completo a esta capa y las demás preguntas siguen igual.
+
+### Hecho
+- **Servidor `vercel/api/intel.js`** (requiere sesión; el uid sale siempre del token firmado):
+  - `consent.get` / `consent.set`: permiso **por módulo** guardado en `users/<uid>/intel/consent.json`, con fecha y registro en la auditoría. Módulos: Finanzas y banca, Deudas, Patrimonio, Inversiones, Inmuebles, Jubilación, Metas (sensibles: requieren permiso) y Economía global (pública).
+  - `report`: lee en el servidor solo los módulos autorizados (403 `consent_required` si falta alguno), calcula los datos de forma determinista (promedios de 6 meses sin transferencias, tasa de ahorro, liquidez, fondo de emergencia, suscripciones, presupuestos, deuda total, TEA ponderada, meses para pagar, cuotas sobre ingreso, patrimonio y su cambio, cartera valorizada con precios de mercado, concentración, inmuebles con tasación, hipoteca y renta, proyección de jubilación, metas, inflación y tasa del país), detecta señales por reglas, datos faltantes y datos desactualizados, y simula escenarios (recorte de gasto, prepago de la deuda más cara, caída de 20% de la bolsa, inflación sobre el efectivo, más aporte para la jubilación).
+  - La IA (Gemini, modo JSON) solo redacta: el servidor elimina citas a datos inexistentes, quita HTML, descarta plazos inválidos y **marca como "cifra no verificada"** toda frase con un número que no está en los datos. Si la IA falla, el informe se entrega igual con el análisis calculado y sin texto inventado, y no se cobra la cuota.
+  - Cada dato lleva tipo (**hecho, estimación o simulación**), fecha y fuente.
+  - `log`: registro de cada uso y error de IA (módulos, modelo, tokens, duración, estado) en `users/<uid>/intel/log.json`, más el uso del día. `reports`: últimos 10 informes.
+  - Cuota: informes completos por día (`intelDaily`: Free 3, Premium 30; configurable en `PLAN_LIMITS`) además de la cuota general de IA.
+  - La exportación de datos incluye permisos, registro e informes; el borrado de la cuenta los elimina.
+- **Cliente (v37)**: el Copilot detecta pedidos de análisis completo ("Analiza mi situación financiera completa…") y muestra la tarjeta de permisos por módulo, el progreso por módulo y el **informe de 10 secciones**: resumen ejecutivo, datos utilizados, situación actual, fortalezas, riesgos, oportunidades, escenarios, recomendaciones educativas con plazo, datos faltantes (con botón para completarlos) y fuentes y fechas. Las citas llevan al dato exacto. Exporta a PDF. Hoja "Permisos y registro" para conceder o retirar permisos, ver el uso del día, el registro de IA y abrir informes anteriores. Accesos: acción del Copilot y Lucioni Pro → Intelligence.
+
+### Pruebas
+- `test/intel-api.test.mjs` (32 correctas): permisos por módulo, auditoría, informe con datos reales de todos los módulos, tipos de dato, escenarios, validación de la salida de la IA (citas, HTML, cifras no verificadas, plazos), aislamiento entre usuarios, revocación, fallo de la IA sin texto inventado, registro, cuota y exportación.
+- `test/ui-intel.test.cjs` (19 correctas): sin cuenta, permiso, progreso, 10 secciones, citas navegables, PDF, hoja de permisos y registro, revocación aplicada en el servidor, informes anteriores, que las demás preguntas sigan en el Copilot normal y móvil sin desborde.
+- Se actualizaron dos pruebas anteriores por el cambio esperado (la pregunta de análisis completo ahora va a Intelligence Network; el Copilot tiene 7 acciones). La batería completa pasa.
+
+### Pendiente o limitado
+- El informe completo con IA real en producción requiere iniciar sesión; se verificó contra el servidor de pruebas y el endpoint está desplegado. Conviene que el dueño genere un informe real y revise la redacción.
+- "Resumen de documentos" queda para la Fase 7 (Document Vault).
+
+### Desplegado
+`dpl_D6XTam4isScXwU2Djx7dbu1oPUGd`.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
@@ -283,7 +310,7 @@ Auditoría previa: no existía un módulo macroeconómico. El Terminal ya tenía
 | Correos de recuperación y verificación | `RESEND_API_KEY` + `MAIL_FROM`, o `SMTP_USER` + `SMTP_PASS` | Sin configurar |
 | Pagos de Premium | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL` (ej. "US$ 7,99 al mes") y el webhook `https://lucioni-capital.vercel.app/api/billing?webhook=1` con los eventos `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` | Sin configurar; antes elegir proveedor según la entidad legal |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
-| Límites de planes | `PLAN_LIMITS` (opcional, JSON) | Valores por defecto |
+| Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily` para informes completos) | Valores por defecto |
 | Economía global: datos mensuales de EE.UU. y calendario completo | `FRED_API_KEY` (gratuita en fred.stlouisfed.org) | Sin configurar; el resto del módulo funciona sin clave |
 | Identificación ante la SEC | `SEC_USER_AGENT` (opcional) | Genérico |
 | Legal | Política de privacidad y términos; revisión regulatoria por país | Pendiente |

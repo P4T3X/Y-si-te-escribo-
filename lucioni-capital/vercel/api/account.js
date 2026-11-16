@@ -195,8 +195,9 @@ export default async function handler(req, res) {
       if (limited('export:' + uid, 5)) return err(res, 429, 'rate', 'Demasiadas exportaciones seguidas.');
       const st = await readJSON(`users/${uid}/state.json`), au = (await readJSON(`users/${uid}/audit.json`)) || [];
       const fm = await readJSON(`users/${uid}/fin/meta.json`), ftx = {}; for (const y of (fm && fm.years) || []) ftx[y] = ((await readJSON(`users/${uid}/fin/tx-${y}.json`)) || { txs: [] }).txs;
+      const intel = { consent: await readJSON(`users/${uid}/intel/consent.json`), log: await readJSON(`users/${uid}/intel/log.json`), reports: await readJSON(`users/${uid}/intel/reports.json`) };
       await audit(uid, 'data_exported');
-      return send(res, 200, { exportedAt: new Date().toISOString(), app: 'Lucioni Capital', profile: pub(u), state: st?.state || null, updatedAt: st?.updatedAt || 0, finance: fm ? { meta: fm, transactions: ftx } : null, activity: au });
+      return send(res, 200, { exportedAt: new Date().toISOString(), app: 'Lucioni Capital', profile: pub(u), state: st?.state || null, updatedAt: st?.updatedAt || 0, finance: fm ? { meta: fm, transactions: ftx } : null, intelligence: intel, activity: au });
     }
     return err(res, 400, 'action', 'Acción no válida.');
   } catch (e) {

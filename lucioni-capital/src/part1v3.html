@@ -2078,6 +2078,57 @@ button.ec36k,a.ec36k{cursor:pointer}button.ec36k:hover,a.ec36k:hover{border-colo
 .ec36disc{margin-top:8px}
 @media (max-width:700px){.ec36row{grid-template-columns:minmax(96px,130px) 1fr 84px;gap:8px;padding:7px 6px}.ec36row small{display:none}.ec36lab .f{min-width:0;width:100%}.ec36head .ec36lab{flex:1}.ec36cyc b{font-size:22px}.ec36g{grid-template-columns:1fr 1fr}.ec36g.wide{grid-template-columns:1fr}.ec36k > b{font-size:20px}.ec36big b{font-size:32px}.ec36ev{grid-template-columns:52px 1fr}}
 @media (prefers-reduced-motion:reduce){.ec36k,.ec36row,.ec36t tbody tr,.ec36cal li,.ec36flag{animation:none!important}.ec36b i{transition:none}}
+/* ===== V37 ===== */
+/* Lucioni Intelligence Network */
+.in37m{max-width:min(860px,100%)!important;width:100%}
+.in37card{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--well);border:1px solid var(--line);animation:p30up .4s var(--ease-out) both}.in37card p{margin:0;color:var(--ink2)}
+.in37h{display:flex;gap:12px;align-items:flex-start}.in37h > .ic{width:26px;height:26px;color:var(--em);flex:0 0 auto}
+.in37mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.in37mod{display:grid;grid-template-columns:20px 32px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--sheet);border:1px solid var(--line);cursor:pointer;transition:border-color .2s,background .2s}
+.in37mod:hover{border-color:var(--line2)}.in37mod:has(input:checked){border-color:var(--em);background:color-mix(in oklab,var(--em) 8%,var(--sheet))}.in37mod.pub{cursor:default;opacity:.85}
+.in37mod input{width:18px;height:18px;accent-color:var(--em)}.in37mod small{display:block;color:var(--ink2);font-size:12px;line-height:1.35;margin-top:2px}
+.in37ic{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--well);color:var(--em)}.in37ic .ic{width:18px;height:18px}
+.in37row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.in37ct{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}.in37ct .f{min-height:40px}
+.in37prog ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.in37prog li{display:grid;grid-template-columns:22px 1fr 18px;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;color:var(--ink2);opacity:.55;transition:opacity .3s,color .3s,background .3s}
+.in37prog li .ic{width:18px;height:18px}.in37prog li.ai{grid-template-columns:1fr 18px;padding-left:42px}
+.in37prog li i{width:16px;height:16px;border-radius:50%;border:2px solid var(--line2)}
+.in37prog li.now{opacity:1;color:var(--ink);background:color-mix(in oklab,var(--em) 6%,transparent)}.in37prog li.now i{border-color:var(--em);border-top-color:transparent;animation:in37spin .8s linear infinite}
+.in37prog li.done{opacity:1;color:var(--ink)}.in37prog li.done i{border-color:var(--em);background:var(--em) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23052016' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/11px no-repeat;animation:in37pop .3s var(--ease-out)}
+@keyframes in37spin{to{transform:rotate(360deg)}}@keyframes in37pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+.in37r{display:flex;flex-direction:column;gap:12px}
+.in37top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:linear-gradient(135deg,color-mix(in oklab,var(--em) 14%,var(--well)),var(--well));border:1px solid color-mix(in oklab,var(--em) 30%,var(--line))}
+.in37top small{color:var(--em);font-weight:700;letter-spacing:.02em}.in37top h3{margin:4px 0;font-size:18px;line-height:1.3}.in37top p{margin:0;color:var(--ink2);font-size:13px}.in37acts{display:flex;gap:8px;flex-wrap:wrap}
+.in37warn{margin:0;padding:10px 14px;border-radius:12px;background:color-mix(in oklab,var(--gold) 14%,transparent);border:1px solid color-mix(in oklab,var(--gold) 40%,transparent)}
+.in37s{padding:14px 16px;border-radius:14px;background:var(--well);animation:p30up .45s var(--ease-out) both;animation-delay:calc(var(--i)*50ms)}
+.in37s h4{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:15px}.in37s h4 span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--em);color:var(--on-accent);font-size:12px;font-weight:700;flex:0 0 auto}
+.in37s ul,.in37s ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}.in37s li{line-height:1.5}
+.in37s.pos h4 span{background:var(--up)}.in37s.neg h4 span{background:var(--down);color:#fff}
+.in37two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.in37sum{margin:0;font-size:15.5px;line-height:1.6}
+.in37c{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;margin:0 1px;border-radius:6px;background:color-mix(in oklab,var(--em) 18%,transparent);color:var(--em);font-size:11px;font-weight:700;text-decoration:none;vertical-align:1px;transition:background .2s}.in37c:hover{background:var(--em);color:var(--on-accent)}
+.in37uv{font-style:normal;font-size:11px;padding:1px 7px;border-radius:999px;background:color-mix(in oklab,var(--gold) 22%,transparent);white-space:nowrap}
+.in37s details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-bottom:8px}
+.in37tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.in37d{width:100%;border-collapse:collapse;font-size:13.5px}.in37d td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}.in37d td small{display:block;color:var(--ink2);font-size:11.5px;margin-top:2px}
+.in37d td:first-child{width:28px;color:var(--ink2)}.in37d td:nth-child(3){white-space:normal;min-width:120px}
+.in37d tr.in37g th{text-align:left;padding:12px 8px 6px;font-size:12px;color:var(--em);font-weight:700}.in37d tr.in37g .ic{width:14px;height:14px;vertical-align:-2px}
+.in37d tr.hl td{animation:in37hl 1.6s var(--ease-out)}@keyframes in37hl{0%,30%{background:color-mix(in oklab,var(--em) 22%,transparent)}100%{background:transparent}}
+.in37t{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}.in37t.h{background:color-mix(in oklab,var(--up) 16%,transparent);color:var(--up)}.in37t.e{background:color-mix(in oklab,var(--gold) 20%,transparent);color:var(--ink)}.in37t.s{background:color-mix(in oklab,#8FA9D6 22%,transparent);color:var(--ink)}
+.in37stale{margin-top:10px;padding:10px 12px;border-radius:10px;background:color-mix(in oklab,var(--gold) 12%,transparent)}.in37stale ul{margin-top:6px}
+.in37sc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.in37scn{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;background:var(--sheet);border:1px solid var(--line);animation:p30up .4s var(--ease-out) both;animation-delay:calc(var(--i)*60ms)}.in37scn small{color:var(--ink2)}.in37scn p{margin:0}.in37scn .in37t{align-self:flex-start}
+.in37sct{margin-top:10px!important}
+.in37rec{counter-reset:r}.in37rec li{display:flex;flex-direction:column;gap:3px}.in37rec small{color:var(--ink2)}.in37when{align-self:flex-start;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in oklab,var(--em) 16%,transparent);color:var(--em)}
+.in37miss{list-style:none;padding:0!important}.in37miss li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.in37src{font-size:13px}
+.in37sheet h4{margin:18px 0 8px}.in37hist{display:flex;flex-wrap:wrap;gap:6px}
+.in37pill{border-color:var(--em)!important;color:var(--em)!important}
+#pr37{display:none}
+@media (max-width:700px){.in37two{grid-template-columns:1fr}.in37mods{grid-template-columns:1fr}.in37top h3{font-size:16px}.in37s{padding:12px}}
+@media (prefers-reduced-motion:reduce){.in37s,.in37scn,.in37card{animation:none!important}.in37prog li.now i{animation:none}}
+@media print{html.pr37 body>*:not(#pr37){display:none!important}html.pr37 #pr37{display:block!important;color:#111;background:#fff;font:12px/1.5 system-ui,sans-serif}
+ html.pr37 .in37s,html.pr37 .in37top,html.pr37 .in37scn{background:#fff!important;border:1px solid #ccc;break-inside:avoid;animation:none!important}html.pr37 .in37top h3,html.pr37 .in37s h4{color:#111}
+ html.pr37 .pr37head{display:flex;justify-content:space-between;border-bottom:2px solid #0a7;padding-bottom:6px;margin-bottom:10px}html.pr37 .in37c{background:#e7f6ef;color:#065}html.pr37 .in37two{grid-template-columns:1fr 1fr}}
 </style>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="gate" role="dialog" aria-modal="true" aria-label="Bienvenida a Lucioni Capital">

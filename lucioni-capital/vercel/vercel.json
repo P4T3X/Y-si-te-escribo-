@@ -8,7 +8,8 @@
     "api/event.js": { "maxDuration": 10 },
     "api/academy.js": { "maxDuration": 10 },
     "api/finance.js": { "maxDuration": 30 },
-    "api/macro.js": { "maxDuration": 30 }
+    "api/macro.js": { "maxDuration": 30 },
+    "api/intel.js": { "maxDuration": 60 }
   },
   "crons": [
     { "path": "/api/market?ideas=1", "schedule": "17 13 * * 1-5" }

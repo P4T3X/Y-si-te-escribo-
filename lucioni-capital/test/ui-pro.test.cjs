@@ -44,15 +44,15 @@ ok(await p.evaluate(()=>/No es una recomendación/.test(document.querySelector('
 await p.screenshot({path:OUT+'/research.png',fullPage:false});
 console.log('5. AI Copilot');
 await p.evaluate(()=>{RPF=[{s:'AAPL',n:'Apple',q:10,c:200,at:1},{s:'NVDA',n:'NVIDIA',q:20,c:100,at:1},{s:'KO',n:'Coca',q:30,c:60,at:1}];savePf();setView('chat');});await p.waitForTimeout(500);
-ok((await p.$$('#cp32a .pill')).length===5,'5 acciones inteligentes');
-await p.click('#cp32a .pill >> nth=0');await p.waitForSelector('.cp32p');ok(true,'pide permiso antes de leer la cartera');
+ok((await p.$$('#cp32a .pill')).length===7,'7 acciones inteligentes (incluye Informe financiero completo y Permisos de IA)');
+await p.click('#cp32a .pill >> nth=2');await p.waitForSelector('.cp32p');ok(true,'pide permiso antes de leer la cartera');
 await p.click('.cp32p [data-y]');await p.waitForSelector('.msg.c28 .cp32c',{timeout:20000});
 ok(await p.evaluate(()=>{const c=[...document.querySelectorAll('.cp32c')].at(-1);return /Volatilidad anual/.test(c.textContent)&&/Beta/.test(c.textContent)&&/Aporte al riesgo/.test(c.textContent);}),'análisis de cartera con volatilidad, beta y aporte al riesgo');
 await p.waitForTimeout(400);
-await p.click('#cp32a .pill >> nth=3');await p.waitForFunction(()=>[...document.querySelectorAll('.cp32c h4')].some(h=>/Simulación/.test(h.textContent)),null,{timeout:20000});ok(true,'simulación Monte Carlo calibrada con datos reales');
-await p.click('#cp32a .pill >> nth=1');await p.waitForFunction(()=>[...document.querySelectorAll('.msg.c28')].at(-1).querySelectorAll('.c28card').length>=2,null,{timeout:20000});
+await p.click('#cp32a .pill >> nth=5');await p.waitForFunction(()=>[...document.querySelectorAll('.cp32c h4')].some(h=>/Simulación/.test(h.textContent)),null,{timeout:20000});ok(true,'simulación Monte Carlo calibrada con datos reales');
+await p.click('#cp32a .pill >> nth=3');await p.waitForFunction(()=>[...document.querySelectorAll('.msg.c28')].at(-1).querySelectorAll('.c28card').length>=2,null,{timeout:20000});
 ok(await p.evaluate(()=>[...document.querySelectorAll('.msg.c28')].at(-1).querySelectorAll('.c28card .btn').length>=2),'comparación con tarjetas y acceso a Deep Research');
-await p.click('#cp32a .pill >> nth=2');await p.waitForFunction(()=>[...document.querySelectorAll('.cp32c h4')].some(h=>/Mercado hoy/.test(h.textContent)),null,{timeout:20000});ok(true,'explicación del mercado con índices, sectores y noticias');
+await p.click('#cp32a .pill >> nth=4');await p.waitForFunction(()=>[...document.querySelectorAll('.cp32c h4')].some(h=>/Mercado hoy/.test(h.textContent)),null,{timeout:20000});ok(true,'explicación del mercado con índices, sectores y noticias');
 console.log('6. Watchtower');
 await p.evaluate(()=>setView('watch'));await p.waitForTimeout(400);
 for(const [t,s,v] of [['news','AAPL',''],['hi52','NVDA',''],['earn','NVDA','7'],['pf','','0.01'],['vol','KO','0.1']]){await p.selectOption('#wtT',t);if(s)await p.fill('#wtS',s);if(v!=='')await p.fill('#wtV',v);await p.click('#wtF button[type=submit]');await p.waitForTimeout(250);}
