@@ -67,7 +67,7 @@ ok((await p.$$('#cr33 .ln30')).length===2,'evolución de deuda: avalancha y bola
 await p.screenshot({path:OUT+'/credit.png'});
 console.log('4. Lucioni Intelligence (finanzas completas)');
 await p.evaluate(()=>{setView('chat');ask('Analiza mi situación financiera completa y ayúdame a identificar qué debería mejorar durante los próximos 12 meses');});
-await p.waitForSelector('.cp32p');ok(await p.evaluate(()=>/tus finanzas personales/.test(document.querySelector('.cp32p').textContent)),'pide permiso específico para leer las finanzas');
+await p.waitForSelector('.cp32p');ok(await p.evaluate(()=>/tus finanzas, patrimonio, inmuebles/.test(document.querySelector('.cp32p').textContent)),'pide permiso específico para leer las finanzas');
 await p.click('.cp32p [data-y]');await p.waitForFunction(()=>[...document.querySelectorAll('.cp32c h4')].some(h=>/Datos usados/.test(h.textContent)),null,{timeout:20000});
 const ai=await (await p.request.get('http://localhost:4320/__ai')).text();ok(/Resumen ejecutivo/.test(ai)&&/Datos faltantes/.test(ai)&&/Promedio mensual/.test(ai),'la IA recibe tus datos con permiso y la estructura de 10 apartados');
 ok(await p.evaluate(()=>{const c=[...document.querySelectorAll('.cp32c')].at(-1).textContent;return /Mis finanzas\s*Incluido/.test(c)&&/Mi patrimonio\s*Sin datos/.test(c);}),'muestra qué datos usó y cuáles faltan');

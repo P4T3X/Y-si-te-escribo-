@@ -18,11 +18,15 @@ function gTarget(g){const yrs=monthsTo(g.date)/12;return g.real?g.target*Math.po
 function gSim(g,opt={}){const M=opt.months||monthsTo(g.date),P=GPROF[g.risk]||GPROF.moderado,r=opt.r??P.r,v=opt.v??P.v,c=opt.c??g.monthly,N=opt.n||700,keep=opt.keep;
   const mu=Math.log(1+r)/12,s=v/Math.sqrt(12),R=rng(opt.seed||12345),fin=new Float64Array(N),T=opt.target??gTarget(g),step=Math.max(1,Math.round(M/40)),snaps=keep?[]:null;
   const cols=keep?Math.floor(M/step)+1:0,grid=keep?Array.from({length:cols},()=>new Float64Array(N)):null;
-  for(let i=0;i<N;i++){let x=g.saved;if(keep)grid[0][i]=x;for(let m=1;m<=M;m++){const u1=R()||1e-9,u2=R(),z=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);x=(x+c)*Math.exp(mu-s*s/2+s*z);if(keep&&m%step===0)grid[m/step][i]=x;}fin[i]=x;}
+  const wd=opt.wd||null;let depl=0;const ruin=[];
+  for(let i=0;i<N;i++){let x=g.saved,dead=false;if(keep)grid[0][i]=x;for(let m=1;m<=M;m++){const u1=R()||1e-9,u2=R(),z=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2),gr=Math.exp(mu-s*s/2+s*z);
+    /* fase de retiro (Retirement): desde wd.from se retira wd.amt cada mes; un camino que llega a cero queda agotado */
+    if(wd&&m>wd.from){x=(x-wd.amt)*gr;if(x<=0){x=0;if(!dead){dead=true;depl++;ruin.push(m);}}}else x=(x+c)*gr;if(keep&&m%step===0)grid[m/step][i]=x;}fin[i]=x;}
   const sorted=Array.from(fin).sort((a,b)=>a-b),q=p=>sorted[Math.min(N-1,Math.floor(p*N))];
   const prob=sorted.filter(x=>x>=T).length/N;
   let bands=null;if(keep){bands=grid.map((col,k)=>{const s2=Array.from(col).sort((a,b)=>a-b),qq=p=>s2[Math.min(N-1,Math.floor(p*N))];return {m:k*step,p10:qq(.1),p50:qq(.5),p90:qq(.9)};});}
-  return {prob,p10:q(.1),p50:q(.5),p90:q(.9),T,M,bands};}
+  ruin.sort((a,b)=>a-b);
+  return {prob,p10:q(.1),p50:q(.5),p90:q(.9),T,M,bands,depl:depl/N,ruinP10:ruin.length?ruin[Math.floor(.1*ruin.length)]:null};}
 function gNeeded(g,target=.8){let lo=0,hi=Math.max(gTarget(g)/monthsTo(g.date),1);for(let k=0;k<4&&gSim(g,{c:hi,n:300}).prob<target;k++)hi*=2;
   for(let k=0;k<16;k++){const m=(lo+hi)/2;if(gSim(g,{c:m,n:300}).prob>=target)hi=m;else lo=m;}return hi;}
 function gDet(g,c=g.monthly){const M=monthsTo(g.date),r=Math.pow(1+GPROF[g.risk].r,1/12)-1;let x=g.saved;const path=[x];for(let m=1;m<=M;m++){x=(x+c)*(1+r);path.push(x);}return path;}

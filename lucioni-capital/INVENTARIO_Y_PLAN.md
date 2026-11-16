@@ -56,9 +56,9 @@ Personal Finance, Banking (**hecho en esta entrega**), Estate, Wealth, Retiremen
 | Personal Finance | Sesiones, planes, auditoría (`core.js`); tipos de cambio BCE/BCRP (`market.js`) | `api/finance.js`, `v33.js` | 2 ✔ |
 | Banking | Mismo almacenamiento que Personal Finance | Cuentas, saldos, CSV, duplicados, inusuales | 2 ✔ |
 | Credit | Motor `dSim` y datos `DBT` de Deudas | Detalle, calendario, prepago, evolución | 2 ✔ |
-| Wealth | Cartera (`pfCalc`), cuentas (Banking), deudas (Credit) | Patrimonio neto e historial | 3 |
-| Estate | Wealth | Inmuebles, hipotecas (motor de Credit), rentabilidad | 3 |
-| Retirement | Motor Monte Carlo de Metas | Fase de retiro, inflación y edades | 3 |
+| Wealth | Cartera (`pfCalc`), cuentas (Banking), deudas (Credit) | Patrimonio neto e historial | 3 ✔ |
+| Estate | Wealth | Inmuebles, hipotecas (motor de Credit), rentabilidad | 3 ✔ |
+| Retirement | Motor Monte Carlo de Metas (ampliado) | Fase de retiro, inflación y edades | 3 ✔ |
 | Global Economy | Terminal, BCE y BCRP | Indicadores con fuente, unidad y frecuencia (necesita `FRED_API_KEY` o Banco Mundial) | 4 |
 | Intelligence Network | Copilot `v32` (intents con permiso por módulo) | Más módulos y sesiones guardadas | 5 |
 | Strategy Lab | Backtest `bt`, riesgo `v18`, cálculos del Copilot | Reglas, versiones, comisiones | 6 |

@@ -1,0 +1,7 @@
+/* ===== V34 ===== */
+/* Wealth, Estate y Retirement */
+.fn33sep{width:1px;align-self:stretch;margin:4px 6px;background:var(--line2)}
+.rt34 .fn33f.row label{min-width:150px}
+.rt34a ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--ink2);font-size:13.5px;line-height:1.5}
+.t30 td small{display:block}
+@media (max-width:900px){.rt34 .fn33f.row label{min-width:0}}

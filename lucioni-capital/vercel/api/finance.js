@@ -40,6 +40,26 @@ function cleanTx(t, accIds, catIds) {
   x.h = hashTx(x); return [x, null];
 }
 const txPath = (uid, y) => `users/${uid}/fin/tx-${y}.json`;
+/* ---------- Lucioni Estate: inmuebles. Se distinguen precio de compra (transacción real), valor declarado por el usuario y tasaciones ---------- */
+const PTYPES = ['house', 'apartment', 'land', 'commercial', 'office', 'parking', 'other'];
+function cleanProps(list, lim) {
+  const e = [], out = [];
+  if (!Array.isArray(list)) return { e: ['lista inválida'], out };
+  if (list.length > lim.properties) e.push(`Tu plan permite ${lim.properties} inmuebles.`);
+  for (const p of list.slice(0, 100)) {
+    const x = { id: String(p.id || ''), name: str(p.name, 60), type: PTYPES.includes(p.type) ? p.type : 'other', country: str(p.country, 2).toUpperCase(), city: str(p.city, 60), cur: String(p.cur || '').toUpperCase(),
+      price: num(p.price), date: okDate(p.date) ? p.date : null, closing: num(p.closing) ?? 0, use: ['rent', 'own', 'vacant'].includes(p.use) ? p.use : 'own',
+      valuations: (Array.isArray(p.valuations) ? p.valuations : []).slice(0, 60).map(v => ({ date: okDate(v.date) ? v.date : null, value: num(v.value), src: ['user', 'appraisal'].includes(v.src) ? v.src : 'user' })).filter(v => v.date && v.value > 0).sort((a, b) => a.date < b.date ? -1 : 1),
+      mort: p.mort ? { initial: num(p.mort.initial) ?? 0, balance: num(p.mort.balance) ?? 0, tea: num(p.mort.tea) ?? 0, payment: num(p.mort.payment) ?? 0, inCredit: p.mort.inCredit === true } : null,
+      rent: num(p.rent) ?? 0, occ: Math.min(100, Math.max(0, num(p.occ) ?? 100)),
+      exp: { maint: num(p.exp?.maint) ?? 0, hoa: num(p.exp?.hoa) ?? 0, tax: num(p.exp?.tax) ?? 0, ins: num(p.exp?.ins) ?? 0, other: num(p.exp?.other) ?? 0 }, notes: str(p.notes, 400) };
+    if (!ID.test(x.id)) e.push('id de inmueble inválido'); if (!x.name) e.push('cada inmueble necesita un nombre'); if (!CURS.test(x.cur)) e.push(`moneda inválida en ${x.name || 'un inmueble'}`);
+    if (!(x.price > 0)) e.push(`precio de compra inválido en ${x.name || 'un inmueble'}`);
+    if ([x.closing, x.rent, x.exp.maint, x.exp.hoa, x.exp.tax, x.exp.ins, x.exp.other].some(v => v < 0) || (x.mort && [x.mort.initial, x.mort.balance, x.mort.tea, x.mort.payment].some(v => v < 0))) e.push('los montos no pueden ser negativos');
+    out.push(x);
+  }
+  return { e, out };
+}
 async function loadYear(uid, y) { return (await readJSON(txPath(uid, y))) || { txs: [] }; }
 
 export default async function handler(req, res) {
@@ -56,7 +76,8 @@ export default async function handler(req, res) {
       const now = new Date().getUTCFullYear();
       const years = (Array.isArray(b.years) ? b.years : [now, now - 1]).map(Number).filter(y => y >= 1970 && y <= now + 1).slice(0, 6);
       const tx = {}; for (const y of years) tx[y] = (await loadYear(uid, y)).txs;
-      return send(res, 200, { meta, tx, years: meta.years || [], limits: { finAccounts: lim.finAccounts, finTxYear: lim.finTxYear } });
+      const estate = (await readJSON(`users/${uid}/fin/estate.json`)) || { v: 1, props: [] }, wealth = (await readJSON(`users/${uid}/fin/wealth.json`)) || { v: 1, snaps: [] };
+      return send(res, 200, { meta, tx, estate, wealth, years: meta.years || [], limits: { finAccounts: lim.finAccounts, finTxYear: lim.finTxYear, properties: lim.properties } });
     }
     if (a === 'meta.save') {
       const { e, meta: m } = cleanMeta(b.meta || {}, lim);
@@ -95,6 +116,21 @@ export default async function handler(req, res) {
       const f = await loadYear(uid, y), n0 = f.txs.length; f.txs = f.txs.filter(t => !ids.has(t.id)); await writeJSON(txPath(uid, y), f);
       return send(res, 200, { ok: true, deleted: n0 - f.txs.length });
     }
+    if (a === 'estate.save') {
+      const { e, out } = cleanProps(b.props, lim);
+      if (e.length) return err(res, e.some(x => /plan permite/.test(x)) ? 403 : 400, e.some(x => /plan permite/.test(x)) ? 'premium_required' : 'invalid', [...new Set(e)].slice(0, 3).join(' · '));
+      const doc = { v: 1, props: out, updatedAt: Date.now() }; await writeJSON(`users/${uid}/fin/estate.json`, doc); return send(res, 200, { ok: true, estate: doc });
+    }
+    /* Lucioni Wealth: una foto del patrimonio neto por día (la calcula el navegador con los datos del usuario; aquí se valida y se guarda) */
+    if (a === 'wealth.snap') {
+      const s = b.snap || {}, d = new Date().toISOString().slice(0, 10), cur = String(s.cur || '').toUpperCase();
+      const n = { date: d, cur, assets: num(s.assets), liab: num(s.liab), nw: num(s.nw), parts: {} };
+      for (const [k, v] of Object.entries(s.parts || {}).slice(0, 12)) { const x = num(v); if (/^[a-z]{2,12}$/.test(k) && x != null) n.parts[k] = x; }
+      if (!CURS.test(cur) || n.assets == null || n.liab == null || n.nw == null || Math.abs(n.assets - n.liab - n.nw) > 1) return err(res, 400, 'invalid', 'Foto de patrimonio inválida.');
+      const w = (await readJSON(`users/${uid}/fin/wealth.json`)) || { v: 1, snaps: [] };
+      w.snaps = w.snaps.filter(x => !(x.date === d && x.cur === cur)).concat(n).slice(-1500); await writeJSON(`users/${uid}/fin/wealth.json`, w);
+      return send(res, 200, { ok: true, wealth: w });
+    }
     if (a === 'acc.delete') {
       const id = String(b.id || ''); if (!meta.accounts.some(x => x.id === id)) return err(res, 404, 'nf', 'Cuenta no encontrada.');
       let removed = 0; for (const y of meta.years || []) { const f = await loadYear(uid, y), n0 = f.txs.length; f.txs = f.txs.filter(t => t.acc !== id); removed += n0 - f.txs.length; await writeJSON(txPath(uid, y), f); }
@@ -104,4 +140,4 @@ export default async function handler(req, res) {
     return err(res, 400, 'action', 'Acción no válida.');
   } catch (e) { return err(res, 500, 'server', 'Error del servidor. Intenta de nuevo.'); }
 }
-export { cleanMeta, cleanTx, hashTx, normDesc, okDate };
+export { cleanMeta, cleanTx, cleanProps, hashTx, normDesc, okDate };

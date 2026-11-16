@@ -63,7 +63,7 @@ const LFIN={
 window.LFIN=LFIN;
 
 /* ================= ESTADO ================= */
-let FIN={meta:null,tx:{},loaded:false,busy:false,limits:null};const R0=()=>window.__fxR||null;
+let FIN={meta:null,tx:{},estate:{props:[]},wealth:{snaps:[]},loaded:false,busy:false,limits:null};const R0=()=>window.__fxR||null;
 let FXR=null;async function fx(){if(FXR||!MKT)return FXR;try{FXR=await J30(`${MKT}?fx=1`,3600000);}catch(e){FXR=null;}return FXR;}
 const allTx=()=>Object.values(FIN.tx).flat();
 const accOf=id=>FIN.meta.accounts.find(a=>a.id===id);
@@ -72,7 +72,7 @@ const fm=(v,cur)=>{try{return new Intl.NumberFormat('es-PE',{style:'currency',cu
 const ym0=()=>new Date().toISOString().slice(0,7);
 const ymPrev=(ym,k=1)=>{const d=new Date(ym+'-15');d.setMonth(d.getMonth()-k);return d.toISOString().slice(0,7);};
 const ymName=ym=>new Date(ym+'-15').toLocaleDateString('es-PE',{month:'long',year:'numeric'});
-async function finLoad(force){if(!member()||!WEBF())return;if(FIN.loaded&&!force)return;FIN.busy=true;try{const y=new Date().getFullYear();const d=await fapi('load',{years:[y,y-1,y-2]});FIN.meta=d.meta;FIN.tx=d.tx;FIN.limits=d.limits;FIN.loaded=true;}catch(e){FIN.err=e.message;}FIN.busy=false;await fx();}
+async function finLoad(force){if(!member()||!WEBF())return;if(FIN.loaded&&!force)return;FIN.busy=true;try{const y=new Date().getFullYear();const d=await fapi('load',{years:[y,y-1,y-2]});FIN.meta=d.meta;FIN.tx=d.tx;FIN.limits=d.limits;FIN.estate=d.estate||{props:[]};FIN.wealth=d.wealth||{snaps:[]};FIN.loaded=true;}catch(e){FIN.err=e.message;}FIN.busy=false;await fx();}
 const WEBF=()=>!!window.LC_API;
 async function saveMeta(){const d=await fapi('meta.save',{meta:FIN.meta});FIN.meta=d.meta;return d;}
 /* datos de deudas: solo si el usuario guardó las suyas (no los de ejemplo) */
@@ -80,16 +80,17 @@ const realDebt=()=>{const d=store.get('debt',null);return d&&Array.isArray(d.deb
 
 /* ================= VISTA ================= */
 const sec=mkView30('finance','finanzas','Mis finanzas',`<div class="sh"><div><h2>Mis <em>finanzas</em></h2><p>Ingresos, gastos, cuentas, presupuestos, suscripciones y deudas en un solo lugar, con tu salud financiera calculada a la vista. Registras a mano o importas el archivo de tu banco: nunca te pedimos claves bancarias.</p></div></div>
- <div class="tb30 fn33t" role="tablist" id="fnTabs">${[['sum','Resumen'],['tx','Movimientos'],['acc','Cuentas'],['bud','Presupuestos'],['rec','Recurrentes'],['debt','Deudas']].map(([k,l],i)=>`<button role="tab" data-k="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</div><div id="fnBody"></div>`);
+ <div class="tb30 fn33t" role="tablist" id="fnTabs">${[['sum','Resumen'],['tx','Movimientos'],['acc','Cuentas'],['bud','Presupuestos'],['rec','Recurrentes'],['|',''],['nw','Patrimonio neto'],['est','Inmuebles'],['ret','Jubilación'],['debt','Deudas']].map(([k,l],i)=>k==='|'?'<span class="fn33sep" aria-hidden="true"></span>':`<button role="tab" data-k="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</div><div id="fnBody"></div>`);
 sec.querySelector('.backb span').textContent='Inicio';sec.querySelector('.backb').onclick=()=>setView('inicio');
 let TAB='sum',MONTH=ym0(),FILT={acc:'',cat:'',q:'',flag:'',page:0};
 $$('#fnTabs button').forEach(b=>b.onclick=()=>{if(b.dataset.k==='debt'){setView('debt');return;}$$('#fnTabs button').forEach(x=>x.classList.toggle('on',x===b));TAB=b.dataset.k;fnRender();});
-async function fnOpen(){const B=$('#fnBody');if(!WEBF()){B.innerHTML='<div class="panel"><p class="note">Mis finanzas funciona en la versión web, con tu cuenta.</p></div>';return;}
+async function fnOpen(){const B=$('#fnBody');if(TAB==='ret'&&TABS.ret&&(!member()||!WEBF())){TABS.ret(B);return;}if(!WEBF()){B.innerHTML='<div class="panel"><p class="note">Mis finanzas funciona en la versión web, con tu cuenta.</p></div>';return;}
  if(!member()){B.innerHTML=`<div class="panel fn33e"><h3>Tus finanzas, privadas y en orden</h3><p>Crea una cuenta gratis para registrar ingresos, gastos y cuentas. Tus datos se guardan cifrados en tránsito y solo tú puedes verlos.</p><button class="btn pri" onclick="openAccount()">Crear cuenta gratis</button></div>`;return;}
  if(!FIN.loaded){B.innerHTML='<div class="panel"><span class="spin30"></span> Cargando tus finanzas…</div>';await finLoad();}
  if(FIN.err&&!FIN.meta){B.innerHTML=`<div class="panel"><p class="note">${esc(FIN.err)}</p><button class="btn" id="fnRetry">Reintentar</button></div>`;$('#fnRetry').onclick=()=>{FIN.err=null;fnOpen();};return;}
  fnRender();}
-function fnRender(){const B=$('#fnBody');if(!FIN.meta)return;if(!FIN.meta.accounts.length){setupUI(B);return;}({sum:sumUI,tx:txUI,acc:accUI33,bud:budUI,rec:recUI}[TAB]||sumUI)(B);}
+const TABS={sum:sumUI,tx:txUI,acc:accUI33,bud:budUI,rec:recUI};const FREE_TABS=new Set(['ret','est','nw']);
+function fnRender(){const B=$('#fnBody');if(!FIN.meta)return;if(!FIN.meta.accounts.length&&!FREE_TABS.has(TAB)){setupUI(B);return;}(TABS[TAB]||sumUI)(B);}
 
 /* ---------- primera configuración ---------- */
 function setupUI(B){const cur=(ACC&&ACC.cur)||'USD';B.innerHTML=`<div class="panel fn33e"><h3>Empieza con tu primera cuenta</h3><p>Puede ser tu cuenta de sueldo, tu ahorro o el efectivo. Luego agregas movimientos a mano o importas el CSV de tu banca por internet.</p>
@@ -255,7 +256,9 @@ async function dailyFin(){const host=$('#d29my');if(!host||!member()||!WEBF())re
 {const g=$('#pro30');if(g){const d=document.createElement('div');d.className='pg30';d.innerHTML=`<h3><span>My Finances</span><small>Mis finanzas</small></h3>`+[['finance','dividendo','Personal Finance','Ingresos, gastos, presupuestos y Financial Health Score'],['finance','diversificar','Banking','Cuentas, saldos e importación CSV del banco'],['debt','stop','Credit','Préstamos y tarjetas: costo total, pagos anticipados y calendario']].map(([v,i,t,dd])=>`<button class="pt30" data-v33="${v}">${ic(i,'',false)}<span><b>${t}</b><small>${dd}</small></span>${ic('right','',false)}</button>`).join('');g.prepend(d);d.querySelectorAll('[data-v33]').forEach(b=>b.onclick=()=>setView(b.dataset.v33));}}
 {const cols=$('#menu .mcols .mcol');if(cols){const b=document.createElement('button');b.className='mi2';b.setAttribute('role','menuitem');b.innerHTML=`${ic('dividendo','',false)}<span>Mis finanzas<small>Ingresos, gastos, cuentas y presupuestos</small></span>`;b.onclick=()=>{closeMenu();setTimeout(()=>setView('finance'),80);};cols.querySelector('h4').after(b);}}
 const _sv33=setView;setView=function(v,o){_sv33(v,o);if(v==='finance')fnOpen();if(v==='debt')setTimeout(crRender,60);if(v==='inicio')dailyFin();};
-const _au33=accUI;accUI=function(){_au33();if(!member()){FIN={meta:null,tx:{},loaded:false,busy:false,limits:null};}};
+const _au33=accUI;accUI=function(){_au33();if(!member()){FIN={meta:null,tx:{},estate:{props:[]},wealth:{snaps:[]},loaded:false,busy:false,limits:null};}};
+/* interfaz para los módulos de la Fase 3 (Wealth, Estate, Retirement): mismos datos, misma carga, mismas pestañas */
+window.F33={get FIN(){return FIN;},fapi,fm,allTx,finLoad,fx,get FXR(){return FXR;},computeMonth,realDebt,TABS,FREE_TABS,render:fnRender,open:fnOpen,ymName,amort,goTab:k=>{TAB=k;$$('#fnTabs button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));fnOpen();}};
 {const v=ID2V[location.hash.slice(1)];if(v==='finance')setTimeout(()=>setView(v,{noHash:true}),0);}
 setTimeout(()=>{if(VIEW==='inicio')dailyFin();},2500);
 }

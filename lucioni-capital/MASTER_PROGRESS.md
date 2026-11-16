@@ -174,6 +174,64 @@ Despliegue: `dpl_Ev9tHnTLzrUAn7ipF2F7K8tQPKW2`.
 
 **Próxima fase (3)**: Wealth (patrimonio neto con cuentas, inversiones, deudas e inmuebles), Estate (reutilizando el motor de Credit para hipotecas) y Retirement (reutilizando el Monte Carlo de Metas).
 
+## Entrega 4 — Complete Financial Platform, Fase 3: Wealth, Estate y Retirement (16 nov 2026)
+
+Despliegue: `dpl_5beYP67XjFJPKjDXhr8FBzzVVeCm`. Pruebas: `bash test/run-all.sh` corre todo, reiniciando el servidor local entre grupos.
+
+1. **Qué se implementó**
+   - **Patrimonio neto (Wealth)**, en Mis finanzas → Patrimonio neto:
+     - Activos: cuentas y efectivo, inversiones, inmuebles y otros.
+     - Deudas: tarjetas, préstamos de Credit e hipotecas.
+     - Liquidez y relación entre deuda y activos.
+     - Detalle por partida con su importe original y la tasa usada.
+     - Una foto diaria guardada en el servidor que forma el historial (empieza el primer día que se abre).
+     - Si falta un tipo de cambio, la partida no se suma, se avisa y no se guarda la foto.
+   - **Inmuebles (Estate)**:
+     - Tipo, uso, país y ciudad.
+     - Precio de compra con su fecha y gastos de compra.
+     - Valoraciones propias o tasaciones, con su historial y gráfico.
+     - Alquiler y ocupación; mantenimiento, cuota de edificio, predial y seguro.
+     - Hipoteca: préstamo inicial, saldo, TEA y cuota, amortizada con el motor de Credit.
+     - Rentabilidad bruta y neta, flujo mensual, cash-on-cash, patrimonio en el inmueble, revalorización anual y comparación entre inmuebles, con la metodología visible.
+     - Se distinguen siempre el precio de compra, el valor declarado y la tasación. No hay estimador automático de precios: no existe un proveedor con licencia para todos los países.
+     - Una hipoteca marcada "ya está en Deudas" no se resta dos veces.
+   - **Jubilación (Retirement)**:
+     - Edades actual, de retiro y final; ahorro, aporte, ingreso deseado y pensión.
+     - Perfil o rendimiento y volatilidad propios, e inflación.
+     - Todo en dinero de hoy.
+     - Probabilidad de que el dinero alcance, ingreso sostenible con 85% de probabilidad, capital al jubilarse (mediana y rango) y escenarios pesimista, base y optimista.
+     - Abanico por edad y comparación de 5 edades de retiro.
+     - Supuestos y límites visibles.
+     - Funciona sin cuenta y se sincroniza con ella.
+   - **Integración**:
+     - Patrimonio neto en Lucioni Daily.
+     - Wealth, Estate y Retirement en Lucioni Pro.
+     - El análisis completo del Copilot incluye patrimonio, inmuebles y jubilación.
+2. **Reutilizado**:
+   - El motor Monte Carlo de Metas (`gSim`). Se **amplió** con una fase de retiro opcional en lugar de crear otro motor; una prueba confirma que Metas sigue dando los mismos resultados.
+   - La amortización de Credit para las hipotecas.
+   - Cuentas y tipos de cambio de Banking, y la cartera (`pfCalc`).
+   - Permisos, límites y almacenamiento de `finance.js`.
+3. **Ampliado**:
+   - `gSim`: fase de retiro, probabilidad de agotarse y mes de agotamiento.
+   - `lines30`: formato del eje horizontal.
+   - Mis finanzas: pestañas de patrimonio, separadas de las del día a día.
+   - Copilot: permiso y datos de los nuevos módulos.
+4. **Archivos**:
+   - Nuevos: `src/v34.js`, `src/v34.css`, `src/v34_patch.py`, `test/ui-phase3.test.cjs`, `test/run-all.sh`.
+   - Modificados: `vercel/api/finance.js`, `vercel/lib/core.js` (límite de inmuebles: Free 2, Premium 50), `src/v19.js`, `src/v30.js`, `src/v33.js`, `build.sh`, `test/ui-finance.test.cjs`.
+5. **Datos**: `users/<uid>/fin/estate.json` y `users/<uid>/fin/wealth.json` (`v: 1`); el plan de jubilación se guarda en el estado sincronizado (`ret`). La exportación y el borrado de la cuenta ya los cubren (todo `users/<uid>/`).
+6. **Proveedores**: ninguno nuevo. La valuación automática de inmuebles queda pendiente: requiere un proveedor por país.
+7. **Pruebas** (suite completa sin fallos):
+   - Fase 3: 34 de 34. Incluye la rentabilidad de un caso calculado a mano (bruta 7,20%, neta 6,08%, cash-on-cash 3,56%), el patrimonio neto (255.125 − 108.500 = 146.625), la tasa real, que el Monte Carlo sin volatilidad coincida con el cálculo exacto, la compatibilidad de Metas, validación y aislamiento en el servidor, interfaz y móvil.
+   - Regresión: servidor 41, finanzas 22, plataforma 27, Pro 41, finanzas e interfaz 39, chat, video y rendimiento.
+8. **Pendiente y conocido**:
+   - En un móvil de gama media simulado (CPU 4 veces más lenta), el cálculo de jubilación tiene una tarea de hasta unos 750 ms. Las edades de retiro se calculan de a una para no congelar la página.
+   - El historial de patrimonio comienza el primer día de uso; no se reconstruye hacia atrás.
+9. **Para producción**: nada adicional.
+
+**Próxima fase (4)**: Global Economy. Necesita una fuente de indicadores con licencia: el Banco Mundial no pide clave; FRED necesita `FRED_API_KEY` gratuita.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
