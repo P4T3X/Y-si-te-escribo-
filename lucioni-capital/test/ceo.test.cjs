@@ -23,6 +23,8 @@ let {ctx,p}=await login(ceo);
 ok(await p.evaluate(()=>{const tx=document.querySelector('#accBtn .tx');return !!document.querySelector('#accBtn .ceo43b')&&getComputedStyle(tx).webkitTextFillColor==='rgba(0, 0, 0, 0)'&&/linear-gradient/.test(getComputedStyle(tx).backgroundImage);}),'cabecera: nombre en dorado con insignia CEO');
 ok(await p.evaluate(()=>{const em=document.querySelector('.d29hl h1 em');return em&&em.classList.contains('ceo43n')&&!!em.parentElement.querySelector('.ceo43b');}),'saludo de Lucioni Daily con el nombre en dorado y la insignia CEO');
 await p.screenshot({path:OUT+'/ceo-header.png',clip:{x:0,y:0,width:1366,height:300}});
+await p.evaluate(()=>openAccount());await p.waitForSelector('#ceoGo',{timeout:10000});ok(await p.evaluate(()=>document.querySelector('.accard h3').classList.contains('ceo43n')&&!!document.querySelector('.accard h3 .ceo43b')),'hoja de cuenta: nombre en dorado, insignia CEO y acceso al Panel CEO');
+await p.waitForTimeout(900);await p.screenshot({path:OUT+'/ceo-cuenta.png'});await p.click('#ceoGo');await p.waitForSelector('#ceoU table',{timeout:10000});ok(true,'el acceso de la hoja de cuenta abre el panel con los usuarios');await p.evaluate(()=>closeSheet());await p.waitForTimeout(500);
 await p.evaluate(()=>profSheet());await p.waitForSelector('.ceo43sub',{timeout:10000});ok(await p.evaluate(()=>/CEO · Lucioni Enterprises/.test(document.querySelector('.ceo43sub').textContent)),'perfil: "CEO · Lucioni Enterprises"');
 await p.waitForSelector('#b42ad',{timeout:10000});ok(await p.evaluate(()=>document.querySelector('#b42ad').textContent==='Panel CEO'),'botón "Panel CEO" en el perfil');
 await p.click('#b42ad');await p.waitForSelector('#ceoU table',{timeout:10000});
@@ -32,6 +34,6 @@ const [dl]=await Promise.all([p.waitForEvent('download'),p.click('#ceoCsv')]);ok
 ok(await p.evaluate(()=>/Integraciones/.test(document.querySelector('#b42adm').textContent)&&/Comentarios recientes/.test(document.querySelector('#b42adm').textContent)),'el panel CEO incluye también integraciones, uso, comentarios y errores');
 await p.screenshot({path:OUT+'/ceo-panel.png'});ok(!p.errs.length,'sin errores'+(p.errs.length?': '+p.errs[0]:''));await ctx.close();
 ({ctx,p}=await login(n1));ok(await p.evaluate(()=>!document.querySelector('.ceo43b')&&!document.documentElement.classList.contains('ceo43')),'un usuario normal no ve insignia ni dorado');
-await p.evaluate(()=>profSheet());await p.waitForTimeout(1200);ok(await p.evaluate(()=>!document.querySelector('#b42ad')),'ni el botón de administración');await ctx.close();await b.close();
+await p.evaluate(()=>profSheet());await p.waitForTimeout(1200);ok(await p.evaluate(()=>!document.querySelector('#b42ad')),'ni el botón de administración');await p.evaluate(()=>{closeSheet();});await p.waitForTimeout(400);await p.evaluate(()=>openAccount());await p.waitForTimeout(600);ok(await p.evaluate(()=>!document.querySelector('#ceoGo')),'ni el acceso en su hoja de cuenta');await ctx.close();await b.close();
 await env('OWNER_EMAILS','');r=await post('/api/account',{action:'me'},TC);ok(r.d.profile.role==='user','sin la variable, la cuenta deja de ser CEO (lo decide el servidor)');
 console.log(`\n${pass} correctas, ${fail} fallidas`);process.exit(fail?1:0);})();

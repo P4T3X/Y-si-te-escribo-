@@ -499,7 +499,7 @@ Auditoría previa: Premium ya existía (Entrega 1): planes Free y Premium con l�
 ## Entrega 15 — Rol CEO para la cuenta del dueño (17 nov 2026)
 
 - Los correos de la variable **`OWNER_EMAILS`** de Vercel tienen el rol **CEO**. Lo decide el servidor (`roleOf`/`isOwner` en `vercel/lib/core.js`): Premium permanente y acceso de administración. `ADMIN_EMAILS` sigue dando solo acceso de administración.
-- Interfaz (`src/v43.js`, `src/v43.css`): el nombre se muestra en dorado con la insignia "CEO" en la cabecera, el saludo de Lucioni Daily y el perfil ("CEO · Lucioni Enterprises").
+- Interfaz (`src/v43.js`, `src/v43.css`): el nombre se muestra en dorado con la insignia "CEO" en la cabecera, el saludo de Lucioni Daily, la hoja de cuenta (con un acceso dorado "Panel CEO") y el perfil ("CEO · Lucioni Enterprises").
 - **Panel CEO** (en el perfil o tocando la insignia): usuarios registrados (`GET /api/event?users=1`, solo para administradores; devuelve 403 al resto). Muestra totales, nuevos en 7 días, cuántos tienen Premium, una búsqueda y una exportación CSV. Incluye además el panel de administración de la beta: integraciones, uso, comentarios y errores. Solo se muestran datos de la cuenta: nunca contraseñas, finanzas ni documentos.
 - Prueba: `test/ceo.test.cjs` (19/19). Regresión: security, qa-ui, owner, billing-mp y api-flows en verde.
 
