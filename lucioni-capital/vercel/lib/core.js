@@ -70,7 +70,10 @@ export const priceLabel = () => process.env.PREMIUM_PRICE_LABEL || (mpOn() ? `S/
 export const ANON_AI_DAILY = 5;
 
 /* Estado de suscripción del usuario → plan efectivo. Una prueba vencida vuelve a Free sola, sin borrar nada. */
+/* Cuentas con Premium permanente (dueño y equipo): correos en la variable PREMIUM_EMAILS de Vercel, separados por comas. Nunca en el código. */
+export const ownerPremium = u => !!(u && u.email) && String(process.env.PREMIUM_EMAILS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean).includes(String(u.email).trim().toLowerCase());
 export function subOf(u, now = Date.now()) {
+  if (ownerPremium(u)) return { ...(u.sub || {}), status: 'active', source: 'owner', trialUsed: !!u.sub?.trialUsed, trialEnd: null, periodEnd: null, plan: 'premium' };
   const s = { status: 'none', trialUsed: false, ...(u && u.sub || {}) };
   let plan = 'free';
   if (s.status === 'trialing') { if (s.trialEnd && now >= s.trialEnd && s.source !== 'stripe') s.status = 'expired'; else if (!s.trialEnd || now < s.trialEnd || s.source === 'stripe') plan = 'premium'; }

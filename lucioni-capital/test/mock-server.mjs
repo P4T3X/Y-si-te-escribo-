@@ -58,7 +58,7 @@ http.createServer(async(req,res)=>{const u=new URL(req.url,'http://x');res.setHe
  if(u.pathname==='/__setsub'){const c=[];for await(const x of req)c.push(x);const {uid,sub}=JSON.parse(Buffer.concat(c).toString());const p=JSON.parse(store.get(`users/${uid}/profile.json`));p.sub={...p.sub,...sub};store.set(`users/${uid}/profile.json`,JSON.stringify(p));return res.end('{"ok":true}');}
  for(const n of ['academy','billing','event','finance','macro','intel','vault'])if(u.pathname==='/api/'+n)return mod[n](await wrapReq(req),res);
  if(u.pathname==='/__ai')return res.end(String(globalThis.LASTAI||''));
- if(u.pathname==='/__env'){const k=u.searchParams.get('k'),v=u.searchParams.get('v');if(/^(MP_|PREMIUM_PRICE|BILLING_PROVIDER)/.test(k)){if(v==null||v==='')delete process.env[k];else process.env[k]=v;}return res.end('{}');}
+ if(u.pathname==='/__env'){const k=u.searchParams.get('k'),v=u.searchParams.get('v');if(/^(MP_|PREMIUM_PRICE|PREMIUM_EMAILS|BILLING_PROVIDER)/.test(k)){if(v==null||v==='')delete process.env[k];else process.env[k]=v;}return res.end('{}');}
  if(u.pathname==='/__mp'){const MP=globalThis.MPS||(globalThis.MPS={n:0,subs:{},last:null});const id=u.searchParams.get('id');if(id&&MP.subs[id]){if(u.searchParams.get('status'))MP.subs[id].status=u.searchParams.get('status');if(u.searchParams.get('next'))MP.subs[id].next_payment_date=u.searchParams.get('next');if(u.searchParams.get('ref'))MP.subs[id].external_reference=u.searchParams.get('ref');}return res.end(JSON.stringify(MP));}
  if(u.pathname==='/__intel')return res.end(String(globalThis.LASTINTEL||''));
  if(u.pathname==='/__intelfail'){globalThis.INTEL_FAIL=u.searchParams.get('on')==='1';return res.end('{}');}

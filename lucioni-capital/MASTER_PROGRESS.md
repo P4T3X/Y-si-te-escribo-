@@ -2,7 +2,7 @@
 
 Registro real de lo terminado y lo pendiente. "Hecho" significa implementado **y** probado; lo que no se pudo probar se dice.
 
-Producción: https://lucioni-capital.vercel.app · Último despliegue: `dpl_68C4SmgC6bbtELKr6GUSGi3XjPvN`
+Producción: https://lucioni-capital.vercel.app · Último despliegue: `dpl_7p9UjwQpwqbxaPT4Q2ZjwrHahFC1`
 
 ## Estado final de la plataforma (Fase 10 · 17 nov 2026)
 
@@ -490,6 +490,12 @@ Auditoría previa: Premium ya existía (Entrega 1): planes Free y Premium con l�
 - **Pruebas**: `test/billing-mp.test.cjs` (18 correctas) con la API de Mercado Pago simulada en el servidor de pruebas. La batería completa pasa. **No se probó con una cuenta real de Mercado Pago**: hace falta configurar las claves y hacer un pago de prueba con las credenciales de prueba de Mercado Pago antes de cobrar.
 - Desplegado: `dpl_68C4SmgC6bbtELKr6GUSGi3XjPvN`.
 
+## Entrega 14 — Premium permanente para la cuenta del dueño (17 nov 2026)
+
+- Las cuentas cuyos correos están en la variable **`PREMIUM_EMAILS`** de Vercel (separados por comas; sin distinguir mayúsculas) tienen Lucioni Premium **sin vencimiento ni cobros** (`source: 'owner'`). Lo decide el servidor en `subOf` (`vercel/lib/core.js`), así que todos los límites de Premium se aplican en el backend; la hoja de plan muestra "Premium permanente" y no ofrece prueba ni pago.
+- La variable ya está configurada en producción con el correo del dueño (cifrada en Vercel). **El correo no está en el código ni en el repositorio.** Para dar o quitar el acceso, se edita la variable y se vuelve a desplegar; quitarla devuelve la cuenta a Free sin borrar datos.
+- Pruebas: `test/owner.test.cjs` (7 correctas). Desplegado: `dpl_7p9UjwQpwqbxaPT4Q2ZjwrHahFC1`.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
@@ -498,6 +504,7 @@ Auditoría previa: Premium ya existía (Entrega 1): planes Free y Premium con l�
 | Correos de recuperación y verificación | `RESEND_API_KEY` + `MAIL_FROM`, o `SMTP_USER` + `SMTP_PASS` | Sin configurar |
 | Pagos de Premium (Perú) | Cuenta de **Mercado Pago** Perú → credenciales de producción: `MP_ACCESS_TOKEN`; en Webhooks, la URL `https://lucioni-capital.vercel.app/api/billing?mp=1` con el evento **Planes y suscripciones**, y su clave secreta en `MP_WEBHOOK_SECRET`; el precio mensual en soles en `PREMIUM_PRICE_PEN` (ej. `29.90`). Stripe queda solo como alternativa para otros países (`BILLING_PROVIDER=stripe`). | Sin configurar |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
+| Premium permanente | `PREMIUM_EMAILS` (correos con Premium sin vencimiento) | Configurado con la cuenta del dueño |
 | Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily`, `docs`, `docMB` y `strategies`) | Valores por defecto |
 | Traducciones | Revisar el inglés y completar el portugués (`src/v41.js`) | Inglés parcial; portugués en vista previa |
 | Reglas fiscales | Registrar la UIT 2026 y revisar el registro cada año (`vercel/lib/tax-rules.js`) | Pendiente de revisión anual |
