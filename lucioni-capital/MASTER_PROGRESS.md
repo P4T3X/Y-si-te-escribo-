@@ -352,6 +352,26 @@ Auditoría previa: no existía almacenamiento de documentos. Las herramientas fi
 ### Desplegado
 `dpl_6gsfnC4rKLJcsEPXPpnZ2SZWuDck`. Verificado en producción: `/api/vault?tax=1` devuelve las 12 reglas.
 
+## Entrega 10 — Complete Financial Platform, Fase 8: Life Planner (17 nov 2026)
+
+Auditoría previa: existía **Lucioni Goals / Metas** (v19): metas sincronizadas con la cuenta (`GOALS`, clave `goals`), probabilidad por Monte Carlo (`gSim`), aporte para 80% (`gNeeded`), ajuste por inflación y perfiles de riesgo; Retirement (v34) ya usaba el mismo motor. Life Planner **amplía Metas**: usa las mismas metas y el mismo motor; no hay un segundo sistema de metas.
+
+### Hecho
+- **Metas ampliadas**: nuevos tipos (Vehículo y Patrimonio objetivo) y, en el mismo formulario, prioridad (alta, media, baja), dependencia ("empieza después de" otra meta), fuente del dinero (liquidez, inversiones aparte u otra) y vínculos con el **plan de jubilación** (capital necesario, ahorro, aporte y fecha calculados con el mismo método de Retirement) o con el **patrimonio neto** (último registro de Mis finanzas). Se conservan los ids y todo se sincroniza con la cuenta.
+- **Motor `LP40`** (puro y probado): aporte necesario con rentabilidad esperada (el ahorro actual crece todo el plazo; los aportes empiezan cuando termina la meta previa), detección de dependencias circulares, conversión de metas en dólares, y **reparto mes a mes** de la capacidad de ahorro por prioridad y fecha: cuando una meta termina, su aporte pasa a las demás.
+- **Vista Life Planner** (`plan`): aporte necesario hoy y en el mes más exigente (con el criterio de Metas: 80% de probabilidad), capacidad de ahorro (promedio de ingresos menos gastos de Mis finanzas o un monto ingresado), faltante o margen, **liquidez libre** después de apartar las metas que salen de tu liquidez y cuántos meses de gasto cubre; prioridades y financiamiento; **línea de tiempo** con esperas, dependencias y fechas de uso; **impacto en la liquidez mensual** (aportes comprometidos frente a la capacidad); **escenarios** pesimista, base y optimista por meta y el efecto de una capacidad 20% menor; **comparación** de metas ordenable (prioridad, fecha, probabilidad, aporte) con progreso, aporte actual y necesario, dependencia y estado.
+- Accesos: botón en Metas y Lucioni Pro → My Finances. Intelligence Network ya lee las metas con permiso.
+
+### Problemas encontrados y corregidos
+- **Reparto estático**: la primera versión asignaba la capacidad una sola vez, así que una meta dependiente "reservaba" dinero meses antes de empezar y dejaba sin fondos a otras que sí cabían. Se cambió a reparto mes a mes; hay una prueba con valores conocidos.
+- **Criterio distinto al de Metas**: el aporte calculado con la rentabilidad media dejaba cada meta financiada en ~50% de probabilidad. Ahora usa el mismo criterio de Metas (80%) y el mismo Monte Carlo (700 escenarios).
+
+### Pruebas
+`test/ui-planner.test.cjs` (25 correctas): aporte sin y con rentabilidad (llega exacto al objetivo), ahorro suficiente, meta que empieza más tarde, dependencia, prioridades, reparto mes a mes, ciclos, dólares, vista (capacidad, reparto, línea de tiempo, escenarios, liquidez, comparación), formulario de Metas con los campos nuevos, vínculo con jubilación y móvil. La batería completa pasa.
+
+### Desplegado
+`dpl_7nUbp16YgcHxDBari14pFNJExFn5`.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |

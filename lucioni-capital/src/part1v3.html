@@ -2193,6 +2193,25 @@ button.ec36k,a.ec36k{cursor:pointer}button.ec36k:hover,a.ec36k:hover{border-colo
 .vt39log summary{cursor:pointer;padding:8px 0}.vt39log ul{margin:0 0 8px;padding-left:18px;font-size:13px;color:var(--ink2)}
 @media (max-width:820px){.vt39top,.vt39sim,.vt39f{grid-template-columns:1fr}.vt39grid,.vt39rules{grid-template-columns:1fr}.vt39a{grid-template-columns:1fr 96px 60px}}
 @media (prefers-reduced-motion:reduce){.vt39doc,.vt39rule,.vt39p{animation:none!important}.vt39bar i{animation:none}}
+/* ===== V40 ===== */
+/* Life Planner */
+.lp40{display:flex;flex-direction:column;gap:14px}
+.lp40cap{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}.lp40cap .f{width:140px;min-height:40px}.lp40cap[hidden]{display:none}
+.lp40alloc{display:flex;flex-direction:column;gap:6px}
+.lp40a{display:grid;grid-template-columns:64px minmax(120px,1fr) 2fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--well);animation:p30up .35s var(--ease-out) both;animation-delay:calc(var(--i)*50ms)}
+.lp40a .mono{font-size:13px;color:var(--ink2)}
+.lp40bar,.lp40mini{position:relative;height:10px;border-radius:6px;background:var(--sheet);overflow:hidden}.lp40mini{display:inline-block;width:60px;height:6px;margin-right:8px;vertical-align:middle}
+.lp40bar i,.lp40mini i{position:absolute;inset:0 auto 0 0;width:0;border-radius:6px;background:var(--em);transition:width .8s var(--ease-out)}.lp40.in .lp40bar i,.lp40.in .lp40mini i{width:var(--w)}
+.lp40p{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-align:center}.lp40p.p1{background:color-mix(in oklab,var(--down) 18%,transparent);color:var(--down)}.lp40p.p2{background:color-mix(in oklab,var(--gold) 22%,transparent)}.lp40p.p3{background:var(--well);color:var(--ink2)}
+.lp40st{font-size:12px;font-weight:700;white-space:nowrap}.lp40st.ok{color:var(--up)}.lp40st.mid{color:var(--gold)}.lp40st.bad{color:var(--down)}
+.lp40tl{width:100%;min-width:560px;height:auto}.lp40tn{font:600 12px var(--sans,inherit);fill:var(--ink)}
+.lp40b{transform-box:fill-box;transform-origin:left;animation:lp40g .7s var(--ease-out) both;animation-delay:calc(var(--i)*80ms)}@keyframes lp40g{from{transform:scaleX(0)}}
+.lp40b.ok{fill:var(--em)}.lp40b.mid{fill:var(--gold)}.lp40b.bad{fill:var(--down)}.lp40wait{fill:none;stroke:var(--line2);stroke-dasharray:4 4}
+.lp40d{fill:var(--ink)}.lp40dep{fill:none;stroke:var(--ink2);stroke-width:1.5;stroke-dasharray:3 3}
+.lp40ext{margin-top:14px;padding:12px;border-radius:12px;background:var(--well)}.lp40ext h4{margin:0 0 8px}
+.ec36t td small{display:block;color:var(--ink2);font-size:11.5px}
+@media (max-width:700px){.lp40a{grid-template-columns:56px 1fr;}.lp40a .lp40bar{grid-column:1/-1}.lp40a .mono{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.lp40a,.lp40b{animation:none!important}.lp40bar i,.lp40mini i{transition:none}}
 </style>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="gate" role="dialog" aria-modal="true" aria-label="Bienvenida a Lucioni Capital">

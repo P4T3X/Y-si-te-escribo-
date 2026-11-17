@@ -17,6 +17,7 @@ run test/ui-intel.test.cjs
 run test/ui-lab.test.cjs
 run test/vault-api.test.mjs
 run test/ui-vault.test.cjs
+run test/ui-planner.test.cjs
 run test/chat-sources.test.cjs dark
 run test/video.test.cjs
 fresh; printf "%-34s " "test/perf.test.cjs"; SEL='#hub' node test/perf.test.cjs
