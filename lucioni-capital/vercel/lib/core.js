@@ -55,8 +55,8 @@ export const ipOf = req => String(req.headers['x-forwarded-for'] || '').split(',
 /* ---------- planes: un solo lugar para los límites ----------
    Se pueden cambiar sin tocar el código con la variable PLAN_LIMITS (JSON con las mismas claves). */
 const DEFAULT_PLANS = {
-  free: { aiDaily: 15, deepResearch: false, academyAdvanced: false, portfolios: 1, alerts: 5, finAccounts: 5, finTxYear: 3000, properties: 2, intelDaily: 3, docs: 25, docMB: 50, label: 'Lucioni Free' },
-  premium: { aiDaily: 150, deepResearch: true, academyAdvanced: true, portfolios: 10, alerts: 50, finAccounts: 50, finTxYear: 50000, properties: 50, intelDaily: 30, docs: 300, docMB: 1000, label: 'Lucioni Premium' },
+  free: { aiDaily: 15, deepResearch: false, academyAdvanced: false, portfolios: 1, alerts: 5, finAccounts: 5, finTxYear: 3000, properties: 2, intelDaily: 3, docs: 25, docMB: 50, strategies: 3, label: 'Lucioni Free' },
+  premium: { aiDaily: 150, deepResearch: true, academyAdvanced: true, portfolios: 10, alerts: 50, finAccounts: 50, finTxYear: 50000, properties: 50, intelDaily: 30, docs: 300, docMB: 1000, strategies: 20, label: 'Lucioni Premium' },
 };
 export const PLANS = (() => {
   try { const o = JSON.parse(process.env.PLAN_LIMITS || '{}'); return { free: { ...DEFAULT_PLANS.free, ...(o.free || {}) }, premium: { ...DEFAULT_PLANS.premium, ...(o.premium || {}) } }; }

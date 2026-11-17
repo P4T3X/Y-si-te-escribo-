@@ -372,6 +372,31 @@ Auditoría previa: existía **Lucioni Goals / Metas** (v19): metas sincronizadas
 ### Desplegado
 `dpl_7nUbp16YgcHxDBari14pFNJExFn5`.
 
+## Entrega 11 — Complete Financial Platform, Fase 9: Premium e internacionalización (17 nov 2026)
+
+Auditoría previa: Premium ya existía (Entrega 1): planes Free y Premium con límites en el servidor, prueba de 7 días sin tarjeta, pagos preparados (inactivos sin claves) y hoja de plan con condiciones de la prueba. Faltaba que la comparación mostrara los módulos nuevos, un panel de uso y un límite en el servidor para Strategy Lab. La internacionalización existía para Lucioni Daily y la navegación (español e inglés, unas 60 claves), con moneda de presentación, país y zona horaria en el perfil.
+
+### Hecho — Premium
+- **Límites en el servidor** (`PLANS` en `lib/core.js`, configurables con `PLAN_LIMITS`): IA por día, informes de Intelligence, Deep Research, Academy Advanced, alertas, documentos y espacio, **estrategias guardadas (nuevo: Free 3, Premium 20)**, cuentas, movimientos, inmuebles y carteras.
+- **Strategy Lab limitado sin borrar datos**: el servidor conserva siempre las estrategias que ya existían (por ejemplo, al volver de Premium a Free) y solo rechaza las nuevas por encima del límite, avisando en la respuesta (`limited`). La app avisa antes de guardar.
+- **Hoja de plan**: comparación Free/Premium generada desde los límites que devuelve el servidor (no escrita a mano) y **panel "Tu uso"** (consultas e informes de hoy, documentos, estrategias y alertas). Se mantiene la información de la prueba de 7 días y del vencimiento.
+
+### Hecho — Internacionalización
+- **Idiomas**: español e inglés; **portugués en vista previa** (base de portada y navegación más frases de los módulos). Agregar un idioma = agregar un diccionario. Una capa de traducción cubre títulos, pestañas, botones, etiquetas y descripciones de los módulos construidos después (Economía global, Strategy Lab, Intelligence, Vault, Tax, Life Planner, Gráfico profesional, Mis finanzas), la navegación y todo Lucioni Pro. El cambio a inglés o portugués se aplica sin recargar.
+- **Formato por país**: el idioma decide las palabras y el país, el formato de números, fechas y moneda (por ejemplo, España `1.234.567,89 €`, Brasil `pt-BR`); la hora se muestra en la zona horaria del perfil.
+- **Disponibilidad por país** en el perfil: qué funciona en cada país y qué no (reglas fiscales solo Perú y EE.UU.; tipo de cambio oficial del sol solo Perú; sin conexión bancaria automática en ningún país; pago de Premium dependiente del proveedor).
+- **Moneda original y tasa**: en Mis finanzas cada movimiento conserva su monto y moneda originales; si la cuenta está en otra moneda se muestra además la conversión a la moneda base con la tasa usada, su fuente y su fecha. Monedas de presentación: USD, EUR, PEN y GBP.
+
+### Cobertura y pendientes (honesto)
+- Traducido al inglés: navegación, Lucioni Daily, Lucioni Pro y la interfaz fija de los módulos nuevos (~320 frases). **Sin traducir todavía**: textos generados dinámicamente con cifras, herramientas antiguas (v16–v28), lecciones de Academy y respuestas de la IA (la IA responde en español). El portugués es una vista previa.
+- El pago de Premium sigue inactivo hasta configurar Stripe; el precio de renovación, la fecha de cobro y la cancelación se muestran desde Stripe cuando esté activo.
+
+### Pruebas
+`test/ui-i18n.test.cjs` (23 correctas): límites definidos por el servidor, Strategy Lab sin borrado al bajar de plan, perfil en portugués, español sin cambios, inglés en módulos y Pro, portugués y formato de Brasil, España con formato es-ES, aviso de límite, disponibilidad por país, comparación y uso en la hoja de plan, monto original con tasa. La batería completa pasa.
+
+### Desplegado
+`dpl_EPZSqVtNnje6Z9iTo8NDthiTnwDj`.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
@@ -380,7 +405,8 @@ Auditoría previa: existía **Lucioni Goals / Metas** (v19): metas sincronizadas
 | Correos de recuperación y verificación | `RESEND_API_KEY` + `MAIL_FROM`, o `SMTP_USER` + `SMTP_PASS` | Sin configurar |
 | Pagos de Premium | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL` (ej. "US$ 7,99 al mes") y el webhook `https://lucioni-capital.vercel.app/api/billing?webhook=1` con los eventos `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` | Sin configurar; antes elegir proveedor según la entidad legal |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
-| Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily`, `docs` y `docMB`) | Valores por defecto |
+| Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily`, `docs`, `docMB` y `strategies`) | Valores por defecto |
+| Traducciones | Revisar el inglés y completar el portugués (`src/v41.js`) | Inglés parcial; portugués en vista previa |
 | Reglas fiscales | Registrar la UIT 2026 y revisar el registro cada año (`vercel/lib/tax-rules.js`) | Pendiente de revisión anual |
 | Economía global: datos mensuales de EE.UU. y calendario completo | `FRED_API_KEY` (gratuita en fred.stlouisfed.org) | Sin configurar; el resto del módulo funciona sin clave |
 | Identificación ante la SEC | `SEC_USER_AGENT` (opcional) | Genérico |

@@ -1,0 +1,12 @@
+/* ===== V41 ===== */
+/* Premium completo e internacionalización */
+.i41av{margin:8px 0 4px}.i41fmt{margin:0 0 6px;font-size:13px;color:var(--ink2)}.i41fmt b{color:var(--ink)}
+.i41av summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--em);padding:4px 0}
+.i41av ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.i41av li{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:start}.i41av li span{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-align:center}
+.i41av li.y span{background:color-mix(in oklab,var(--up) 16%,transparent);color:var(--up)}.i41av li.n span{background:color-mix(in oklab,var(--down) 14%,transparent);color:var(--down)}.i41av li.q span{background:color-mix(in oklab,var(--gold) 20%,transparent)}
+.i41av li small{grid-column:2;color:var(--ink2);font-size:12px}
+.i41use{margin:14px 0;display:flex;flex-direction:column;gap:8px}.i41use h3{margin:0 0 4px}
+.i41m{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px}.i41m i{grid-column:1/-1;height:6px;border-radius:4px;background:var(--well);position:relative;overflow:hidden}
+.i41m i::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--em);border-radius:4px;animation:vt39w .8s var(--ease-out) both}
+.i41cv{display:block;font-size:11px;color:var(--ink2);font-weight:400}

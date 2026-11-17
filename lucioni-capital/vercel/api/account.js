@@ -28,7 +28,7 @@ async function readJSON(path) {
   return JSON.parse(await new Response(r.stream).text());
 }
 const writeJSON = (path, obj) => put(path, JSON.stringify(obj), { access: 'private', allowOverwrite: true, addRandomSuffix: false, contentType: 'application/json' });
-const CURS = ['USD', 'EUR', 'PEN', 'GBP'], LANGS = ['es', 'en'], LEVELS = ['principiante', 'avanzado'];
+const CURS = ['USD', 'EUR', 'PEN', 'GBP'], LANGS = ['es', 'en', 'pt'], LEVELS = ['principiante', 'avanzado'];
 const pick = (v, list, d) => list.includes(v) ? v : d;
 const pub = u => ({ email: u.email, name: u.name, risk: u.risk, cur: u.cur, goal: u.goal || '', since: u.since, lang: u.lang || 'es', country: u.country || '', tz: u.tz || '', level: u.level || 'principiante',
   prefs: { notif: u.prefs?.notif !== false, analytics: u.prefs?.analytics !== false }, sub: entitlements(u) });
@@ -154,7 +154,20 @@ export default async function handler(req, res) {
       if (b.state && Array.isArray(b.state.pfs) && b.state.pfs.length > entitlements(u).limits.portfolios) return err(res, 403, 'premium_required', `Tu plan permite ${entitlements(u).limits.portfolios} cartera(s). Activa Premium para tener más.`);
       let trimmed = 0; const al = b.state?.trd?.alerts, lim = entitlements(u).limits.alerts;
       if (Array.isArray(al) && al.length > lim) { trimmed = al.length - lim; b.state.trd.alerts = al.slice(0, lim); } // Watchtower: el servidor aplica el límite del plan
-      if (b.state) { const s = JSON.stringify(b.state); if (s.length > MAX_STATE) return err(res, 413, 'too_big', 'Tus datos superan el límite.'); const at = Date.now(); await writeJSON(`users/${uid}/state.json`, { state: b.state, updatedAt: at }); return send(res, 200, { ok: true, updatedAt: at, profile: pub(u), ...(trimmed ? { trimmed: { alerts: trimmed } } : {}) }); }
+      /* Strategy Lab: el servidor aplica el límite del plan sin borrar nada. Se conservan siempre las estrategias que ya existían
+         (por ejemplo, tras volver de Premium a Free) y se rechazan solo las nuevas por encima del límite. */
+      let limited = null;
+      if (b.state && b.state.slab != null) {
+        const raw = b.state.slab, sl = typeof raw === 'string' ? (() => { try { return JSON.parse(raw); } catch { return null; } })() : raw;
+        if (sl && Array.isArray(sl.list)) {
+          const prevSt = (await readJSON(`users/${uid}/state.json`))?.state?.slab, prev = typeof prevSt === 'string' ? (() => { try { return JSON.parse(prevSt); } catch { return null; } })() : prevSt;
+          const had = new Set((prev?.list || []).map(x => x && x.id)), sLim = entitlements(u).limits.strategies ?? 3;
+          let room = Math.max(0, sLim - sl.list.filter(x => had.has(x && x.id)).length), cut = 0;
+          const keep = sl.list.filter(x => { if (had.has(x && x.id)) return true; if (room > 0) { room--; return true; } cut++; return false; });
+          if (cut) { sl.list = keep; b.state.slab = typeof raw === 'string' ? JSON.stringify(sl) : sl; limited = { strategies: cut, limit: sLim }; }
+        }
+      }
+      if (b.state) { const s = JSON.stringify(b.state); if (s.length > MAX_STATE) return err(res, 413, 'too_big', 'Tus datos superan el límite.'); const at = Date.now(); await writeJSON(`users/${uid}/state.json`, { state: b.state, updatedAt: at }); return send(res, 200, { ok: true, updatedAt: at, profile: pub(u), ...(trimmed ? { trimmed: { alerts: trimmed } } : {}), ...(limited ? { limited } : {}) }); }
       return send(res, 200, { ok: true, profile: pub(u) });
     }
     if (a === 'password') {
