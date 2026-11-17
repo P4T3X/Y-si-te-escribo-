@@ -511,8 +511,8 @@ Auditoría previa: Premium ya existía (Entrega 1): planes Free y Premium con l�
 | Correos de recuperación y verificación | `RESEND_API_KEY` + `MAIL_FROM`, o `SMTP_USER` + `SMTP_PASS` | Sin configurar |
 | Pagos de Premium (Perú) | Cuenta de **Mercado Pago** Perú → credenciales de producción: `MP_ACCESS_TOKEN`; en Webhooks, la URL `https://lucioni-capital.vercel.app/api/billing?mp=1` con el evento **Planes y suscripciones**, y su clave secreta en `MP_WEBHOOK_SECRET`; el precio mensual en soles en `PREMIUM_PRICE_PEN` (ej. `29.90`). Stripe queda solo como alternativa para otros países (`BILLING_PROVIDER=stripe`). | Sin configurar |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
-| Rol CEO (panel de administración y usuarios) | `OWNER_EMAILS` (correos del dueño) | Configurado con la cuenta del dueño |
-| Premium permanente | `PREMIUM_EMAILS` (correos con Premium sin vencimiento) | Configurado con la cuenta del dueño |
+| Rol CEO (panel de administración y usuarios) | `OWNER_EMAILS` (correos del dueño) | Configurado con las dos cuentas del dueño |
+| Premium permanente | `PREMIUM_EMAILS` (correos con Premium sin vencimiento) | Configurado con las dos cuentas del dueño |
 | Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily`, `docs`, `docMB` y `strategies`) | Valores por defecto |
 | Traducciones | Revisar el inglés y completar el portugués (`src/v41.js`) | Inglés parcial; portugués en vista previa |
 | Reglas fiscales | Registrar la UIT 2026 y revisar el registro cada año (`vercel/lib/tax-rules.js`) | Pendiente de revisión anual |
