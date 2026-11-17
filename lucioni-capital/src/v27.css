@@ -1,0 +1,54 @@
+/* ===== V27 ===== */
+/* Refinamiento visual: escala de espacios de 4/8 px, 4 radios, menos color, etiquetas en tipo oración y números tabulares */
+:root{--r-xs:6px;--r-sm:10px;--r-md:14px;--r-lg:18px}
+/* 1. etiquetas: tipo oración en lugar de MAYÚSCULAS espaciadas */
+.idring small,.pfk small,.fk small,.dcfout > small,.gring small,.drow small,.blk{text-transform:none!important;letter-spacing:0!important;font-weight:500!important}
+.fk small,.pfk small{font-size:12.5px!important;color:var(--ink2)!important}
+.blk{font-size:13px!important;color:var(--ink2)!important}
+.idring small{font-size:10.5px!important;bottom:-15px!important}
+/* 2. números tabulares para que las cifras se alineen */
+.fk b,.pfk b,.idpx,.ftbl td,.bltb td,.drows b,.gnums b,.cbars b,.idm b,.kpi b,.tape,.pfscore b,.dval,.idring span,.gpct,.vl,.tp,.coprice,.copc,.cocap{font-variant-numeric:tabular-nums}
+/* 3. color con intención: el acento solo para acciones y lo más importante */
+.idbars rect.br{fill:color-mix(in oklab,var(--ink) 78%,transparent)}
+.idbars g:first-of-type rect.br{fill:var(--accent)}
+.idm .t i{background:color-mix(in oklab,var(--ink) 55%,transparent)!important}
+.idwhy li::before{background:var(--ink3)!important}
+.idwhy li.w::before{background:var(--gold)!important}
+.idsc circle{fill:var(--ink3)!important;fill-opacity:.55!important}
+.idsc circle.top{fill:var(--accent)!important;fill-opacity:.9!important}
+.pfw i,.gbar i{background:color-mix(in oklab,var(--ink) 60%,transparent)!important}
+.cologo:not(.hasimg){background:var(--well)!important;color:var(--ink2)!important;box-shadow:inset 0 0 0 1px var(--line)}
+.htile .hk{color:var(--ink2)!important}
+.htile.dk .hk{color:#A9BAB0!important}
+.htile .hv > .ic{color:var(--ink3)!important;opacity:.9}
+.mi2 .ic{color:var(--ink2)!important;transition:color .2s}
+@media (hover:hover) and (pointer:fine){.mi2:hover .ic{color:var(--accent)!important}}
+.gic,.mfind .ic{color:var(--ink2)!important}
+/* 4. espacios y radios en una sola escala */
+.panel{border-radius:var(--r-lg)!important;padding:24px!important}
+.idc,.gcard,.dsc,.scc,.ticket{border-radius:var(--r-lg)!important}
+.fk,.pfk,.rrow,.fchip,.drow,.buylist,.facheck,.dcfout,.mailok{border-radius:var(--r-md)!important}
+.fk{padding:12px 16px!important}
+.pfk{padding:16px!important}
+.idc,.gcard,.dsc{padding:24px!important}
+.cologo{border-radius:var(--r-sm)!important}
+.cologo.big{border-radius:var(--r-md)!important}
+.fkg,.pfkpis,.idgrid,.ggrid,.dstrat,.dkcols,.idcharts,.pfgrid,.scgrid{gap:16px!important}
+.fkg{margin-bottom:16px!important}
+/* paneles lado a lado: misma línea superior */
+.pfgrid > *,.idcharts > *,.dkcols > *,.dcfg > *,.zgrid > *{margin-top:0!important}
+.idm{gap:8px!important}.idwhy{gap:8px!important}
+/* 5. bordes finos y sombras discretas */
+.idc,.gcard,.dsc,.scc,.pfk,.ticket{box-shadow:none!important;border:1px solid var(--line)!important}
+.panel{box-shadow:none!important;border:1px solid var(--line)}
+.fk{border:1px solid transparent}
+/* 6. jerarquía tipográfica: cifras grandes con peso medio, textos secundarios más tenues */
+.fk b{font-weight:650!important}
+.pfk b{font-weight:650!important;letter-spacing:-.01em}
+.idpx{font-weight:650!important}
+.note{color:var(--ink2)}
+/* 7. gráficos: líneas más finas y cuadrícula sutil */
+.fachart .ax,.idsc .ax{stroke:color-mix(in oklab,var(--line) 70%,transparent)!important}
+.fachart text,.idbars text,.idsc text{font-family:var(--mono,monospace)!important;font-size:11px!important}
+.idbars .lb{font-family:var(--sans)!important;font-size:12.5px!important;font-weight:600}
+.pfrisk .rl.p,#btOut .bta,#prOut .pl2,#dCh .dl{stroke-width:2!important}

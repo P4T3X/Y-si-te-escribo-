@@ -1,0 +1,11 @@
+dist/
+vercel/index.html
+src/appv3.js
+src/part1v3b.html
+src/lucioni-capital.html
+test/.gen/
+test/shots/
+node_modules/
+vercel/media.js
+test/mock.log
+marketing/out/clip-*.mp4

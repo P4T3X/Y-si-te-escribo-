@@ -1,0 +1,43 @@
+/* ===== V25 ===== */
+/* menú del logo: el fondo queda fijo y solo la lista se desplaza */
+.menu{width:min(1120px,calc(100vw - 32px));max-height:calc(100dvh - 78px);overflow:hidden;display:flex;flex-direction:column;padding:0}
+.menu .mitems{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:18px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.menu .mitems.fb{-webkit-mask-image:linear-gradient(#000 calc(100% - 46px),transparent);mask-image:linear-gradient(#000 calc(100% - 46px),transparent)}
+.menu .mitems.ft.fb{-webkit-mask-image:linear-gradient(transparent,#000 36px,#000 calc(100% - 46px),transparent);mask-image:linear-gradient(transparent,#000 36px,#000 calc(100% - 46px),transparent)}
+.menu .mitems.ft:not(.fb){-webkit-mask-image:linear-gradient(transparent,#000 36px);mask-image:linear-gradient(transparent,#000 36px)}
+.mcols{display:block!important;columns:4 228px;column-gap:20px}
+.mcol{display:contents}
+.mcol h4{break-after:avoid;break-inside:avoid;display:block;margin-top:6px}
+.mi2{break-inside:avoid;padding:8px 10px}
+.mi2 small{font-size:12.5px}
+@media (max-width:520px){.menu{max-height:calc(100dvh - 90px)}.menu .mitems{padding:14px}}
+/* buscador del menú */
+.mfind{position:relative;margin:0 0 14px}
+.mfind input{width:100%;height:42px;border-radius:12px;border:1px solid var(--line2);background:var(--well);color:var(--ink);font:500 15px var(--sans);padding:0 14px 0 40px;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
+.mfind input:focus{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent);background:var(--sheet)}
+.mfind .ic{position:absolute;left:13px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:var(--ink3);pointer-events:none}
+.mfind kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:600 11px var(--mono,monospace);color:var(--ink3);border:1px solid var(--line2);border-radius:6px;padding:2px 6px}
+.mnone{padding:18px 10px;color:var(--ink2);font-size:14px}
+.mi2 mark{background:color-mix(in srgb,var(--accent) 22%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+/* hover de las opciones: barra de acento y desplazamiento suave */
+.mi2::before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:3px;border-radius:3px;background:var(--accent);transform:scaleY(0);transition:transform .25s cubic-bezier(.2,.9,.3,1.3)}
+.mi2 > span{transition:transform .25s cubic-bezier(.16,1,.3,1)}
+@media (hover:hover) and (pointer:fine){.mi2:hover::before,.mi2:focus-visible::before{transform:scaleY(1)}.mi2:hover > span{transform:translateX(3px)}}
+/* botones: elevación suave */
+.btn,.cta{transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s,background-color .2s,border-color .2s,color .2s}
+@media (hover:hover) and (pointer:fine){.btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px -12px rgba(0,0,0,.45)}.cta:not(.mag):hover{transform:translateY(-1px);box-shadow:0 12px 26px -14px var(--accent)}}
+/* transición entre secciones (navegadores compatibles) */
+::view-transition-old(root){animation:vtout .22s cubic-bezier(.4,0,1,1) both}
+::view-transition-new(root){animation:vtin .38s cubic-bezier(.16,1,.3,1) both}
+@keyframes vtout{to{opacity:0;transform:scale(.985)}}
+@keyframes vtin{from{opacity:0;transform:translateY(14px) scale(1.01)}}
+/* brillo que recorre la palabra destacada de cada título */
+.sh h2 em.shine,.sh h2 em .wi.shine{background:linear-gradient(100deg,var(--accent) 0 38%,color-mix(in srgb,var(--accent) 35%,#fff) 50%,var(--accent) 62% 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:emshine 1.1s cubic-bezier(.4,0,.2,1) .25s both}
+@keyframes emshine{from{background-position:100% 0}to{background-position:0 0}}
+/* aparición en cascada del inicio */
+.htile.pop{animation:tilepop .55s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i) * 45ms)}
+@keyframes tilepop{from{opacity:0;transform:translateY(22px) scale(.97)}}
+@media (prefers-reduced-motion:reduce){.htile.pop,.sh h2 em.shine,.sh h2 em .wi.shine{animation:none}::view-transition-old(root),::view-transition-new(root){animation:none}}
+/* barra superior: translúcida sin desenfoque en vivo (mucho más liviana) */
+.top{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:color-mix(in oklab,var(--paper) 93%,transparent)!important}
+body.lite .menu .mitems{-webkit-mask-image:none!important;mask-image:none!important}

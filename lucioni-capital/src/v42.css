@@ -1,0 +1,16 @@
+/* ===== V42 ===== */
+/* beta */
+.b42tag{border:1px solid color-mix(in oklab,var(--em) 50%,transparent);background:color-mix(in oklab,var(--em) 12%,transparent);color:var(--em);font:700 10.5px var(--sans,inherit);letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;cursor:pointer;margin-left:-6px;transition:background .2s}
+.b42tag:hover{background:color-mix(in oklab,var(--em) 22%,transparent)}
+.b42{display:flex;flex-direction:column;gap:10px}.b42 h2{margin:0}.b42 h3{margin:14px 0 6px;font-size:15px}
+.b42r{display:flex;gap:4px}.b42r button{border:0;background:none;font-size:24px;line-height:1;color:var(--line2);cursor:pointer;padding:4px;min-width:36px;min-height:36px;transition:color .15s,transform .15s}.b42r button.on{color:var(--gold)}.b42r button:hover{transform:scale(1.12)}
+.b42lim summary{cursor:pointer;color:var(--em);font-size:13.5px;font-weight:600}.b42lim ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--ink2);display:flex;flex-direction:column;gap:4px}
+.b42foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;color:var(--ink2);font-size:13px}
+.b42pro{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:14px 16px;border-radius:14px;border:1px dashed var(--line2);color:var(--ink2)}
+.b42h{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}.b42h li{display:flex;gap:8px;align-items:center;font-size:13px;text-transform:capitalize}
+.b42h li span{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:none}.b42h li.y span{background:color-mix(in oklab,var(--up) 16%,transparent);color:var(--up)}.b42h li.n span{background:color-mix(in oklab,var(--gold) 20%,transparent)}
+.b42fb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.b42fb li{padding:10px 12px;border-radius:10px;background:var(--well);font-size:12.5px;color:var(--ink2)}.b42fb p{margin:4px 0 0;color:var(--ink);font-size:13.5px}
+@media (max-width:520px){.b42tag{display:none}}
+/* la insignia queda en la misma línea que "Lucioni Capital" y nunca lo corta */
+.bwrap{display:flex;align-items:center;gap:8px;flex:none}.bwrap .brand{flex:none}.b42tag{margin-left:0;white-space:nowrap;flex:none;line-height:1.2}
+@media (max-width:1180px){.b42tag{display:none}}
