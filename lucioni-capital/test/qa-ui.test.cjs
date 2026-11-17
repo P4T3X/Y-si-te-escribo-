@@ -36,7 +36,7 @@ await p.click('#accBtn');await p.waitForTimeout(400);await p.click('.authtabs bu
 const reg=await p.evaluate(()=>!!document.querySelector('#rcOk'));if(reg){await p.check('#rcOk');await p.click('#rcGo');await p.waitForTimeout(900);}else{await p.evaluate(()=>closeSheet&&closeSheet());}
 if(!(await p.evaluate(()=>!!localStorage.getItem('lc_tok')))){await p.click('#accBtn');await p.waitForTimeout(400);await p.fill('#auE','admin@test.dev');await p.fill('#auW','clave12345');await p.click('#auGo');await p.waitForTimeout(1300);}
 await p.evaluate(()=>{document.querySelectorAll('.tst').forEach(e=>e.remove());profSheet();});await p.waitForSelector('#b42ad',{timeout:10000});
-await p.click('#b42ad');await p.waitForSelector('.b42h');ok(await p.evaluate(()=>{const t=document.querySelector('#b42adm').textContent;return /ia gemini/i.test(t)&&/pagos stripe/i.test(t)&&/Pendiente/.test(t)&&/Comentarios recientes/.test(t)&&/El gráfico profesional debería recordar/.test(t)&&/fallo de prueba #/.test(t);}),'panel de administración: integraciones configuradas o pendientes, comentarios y errores agrupados');
+await p.click('#b42ad');await p.waitForSelector('.b42h');ok(await p.evaluate(()=>{const t=document.querySelector('#b42adm').textContent;return /ia gemini/i.test(t)&&/pagos mercadopago/i.test(t)&&/Pendiente/.test(t)&&/Comentarios recientes/.test(t)&&/El gráfico profesional debería recordar/.test(t)&&/fallo de prueba #/.test(t);}),'panel de administración: integraciones configuradas o pendientes, comentarios y errores agrupados');
 await p.screenshot({path:OUT+'/admin-beta.png'});
 ok(!errs.length,'sin errores de consola'+(errs.length?': '+errs[0]:''));
 await ctx.close();await b.close();console.log(`\n${pass} correctas, ${fail} fallidas`);process.exit(fail?1:0);})();

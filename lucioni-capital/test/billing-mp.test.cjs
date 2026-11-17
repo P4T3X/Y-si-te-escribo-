@@ -1,0 +1,48 @@
+// Pagos de Premium con Mercado Pago (Perú): suscripción en soles, notificaciones firmadas, estado consultado a la API,
+// cancelación con acceso hasta el fin del periodo y pantalla de plan. Requiere: node test/mock-server.mjs
+const {chromium}=require('playwright');const crypto=require('crypto');const fs=require('fs');const OUT=__dirname+'/shots';
+let pass=0,fail=0;const ok=(c,m)=>{if(c){pass++;console.log('  ✓',m);}else{fail++;console.log('  ✗',m);}};const B='http://localhost:4320';
+const post=async(p,b,t,h={})=>{const r=await fetch(B+p,{method:'POST',headers:{'content-type':'application/json',...(t?{authorization:'Bearer '+t}:{}),...h},body:JSON.stringify(b)});return {s:r.status,d:await r.json().catch(()=>({}))};};
+const SECRET='mp_whsec_prueba';const sign=(id,ts=Math.floor(Date.now()/1000),rid='req-1',sec=SECRET)=>({'x-request-id':rid,'x-signature':`ts=${ts},v1=${crypto.createHmac('sha256',sec).update(`id:${id};request-id:${rid};ts:${ts};`).digest('hex')}`});
+const env=(k,v)=>fetch(`${B}/__env?k=${k}&v=${encodeURIComponent(v??'')}`);const mp=(q='')=>fetch(`${B}/__mp${q}`).then(r=>r.json());
+(async()=>{
+console.log('1. Sin claves: pagos inactivos (sin cambios)');
+let r=await (await fetch(B+'/api/billing')).json();ok(r.enabled===false&&r.provider===null,'sin claves de Mercado Pago ni Stripe, los pagos aparecen inactivos');
+await env('MP_ACCESS_TOKEN','TEST-123');await env('MP_WEBHOOK_SECRET',SECRET);await env('PREMIUM_PRICE_PEN','29.9');
+console.log('2. Mercado Pago activo');
+r=await (await fetch(B+'/api/billing')).json();ok(r.enabled&&r.provider==='mercadopago'&&r.price==='S/ 29.90 al mes','proveedor Mercado Pago con precio transparente en soles');
+const e=`mp${Date.now()}@test.dev`,uid=crypto.createHash('sha256').update('lc:'+e).digest('hex').slice(0,40);const T=(await post('/api/account',{action:'register',email:e,password:'clave12345',name:'Prueba'})).d.token;
+r=await post('/api/account',{action:'plan'},T);ok(r.d.billing===true&&r.d.provider==='mercadopago','la app sabe qué proveedor está activo');
+r=await post('/api/billing',{action:'checkout'});ok(r.s===401,'pagar requiere sesión');
+r=await post('/api/billing',{action:'checkout'},T);let M=await mp();const id=Object.keys(M.subs)[0];
+ok(r.s===200&&/mercadopago\.com\.pe/.test(r.d.url)&&M.last.auto_recurring.currency_id==='PEN'&&M.last.auto_recurring.transaction_amount===29.9&&M.last.auto_recurring.frequency_type==='months'&&M.last.external_reference===uid&&M.last.payer_email===e,'suscripción mensual en soles creada en Mercado Pago, ligada al usuario');
+console.log('3. Notificaciones');
+r=await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id}});ok(r.s===400,'sin firma: rechazada');
+r=await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id}},null,sign(id,undefined,'req-1','otra'));ok(r.s===400,'firma con otra clave: rechazada');
+r=await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id}},null,sign(id,Math.floor(Date.now()/1000)-3600));ok(r.s===400,'firma vieja (más de 10 minutos): rechazada');
+r=await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id},status:'authorized'},null,sign(id));let P=await post('/api/account',{action:'plan'},T);
+ok(r.s===200&&P.d.sub.plan==='free','firmada pero el pago sigue pendiente en Mercado Pago: sigue en Free (el cuerpo de la notificación no decide)');
+await mp(`?id=${id}&status=authorized`);r=await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id}},null,sign(id));P=await post('/api/account',{action:'plan'},T);
+ok(r.s===200&&P.d.sub.plan==='premium'&&P.d.sub.source==='mercadopago'&&P.d.sub.periodEnd>Date.now(),'pago autorizado y confirmado con la API: Premium con fecha de próximo cobro');
+await mp(`?id=${id}&ref=${'f'.repeat(40)}`);r=await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id}},null,sign(id));ok(r.s===200,'una suscripción ligada a un usuario inexistente se ignora');await mp(`?id=${id}&ref=${uid}`);
+console.log('4. Cancelación');
+r=await post('/api/billing',{action:'cancel_paid'},T);M=await mp();P=await post('/api/account',{action:'plan'},T);
+ok(r.s===200&&M.subs[id].status==='cancelled'&&P.d.sub.status==='canceled'&&P.d.sub.plan==='premium','cancelar: Mercado Pago deja de cobrar y se mantiene Premium hasta el fin del periodo pagado');
+await mp(`?id=${id}&next=${new Date(Date.now()-864e5).toISOString()}`);await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id}},null,sign(id));P=await post('/api/account',{action:'plan'},T);
+ok(P.d.sub.plan==='free','vencido el periodo pagado: vuelve a Free (sin borrar datos)');
+console.log('5. Pantalla de plan');
+const b=await chromium.launch();const p=await b.newPage({viewport:{width:1280,height:900}});const errs=[];p.on('pageerror',x=>errs.push(x.message));
+await p.addInitScript(()=>{sessionStorage.setItem('lc_gate','1');localStorage.setItem('lc_anOk','false');});await p.goto(B+'/');await p.waitForTimeout(1000);
+await p.click('#accBtn');await p.waitForTimeout(400);await p.click('.authtabs button[data-t="register"]');await p.fill('#auN','Prueba Pago');await p.fill('#auE','mpui'+Date.now()+'@test.dev');await p.fill('#auW','clave12345');await p.check('#auOk');await p.click('#auGo');await p.waitForTimeout(1300);await p.check('#rcOk');await p.click('#rcGo');await p.waitForTimeout(900);
+await p.evaluate(()=>{document.querySelectorAll('.tst').forEach(x=>x.remove());premSheet();});await p.waitForSelector('#p29buy',{timeout:10000});
+ok(await p.evaluate(()=>{const t=document.querySelector('.p29pay').textContent;return /S\/ 29\.90 al mes/.test(t)&&/Mercado Pago/.test(t)&&/cada mes/.test(t)&&/cancelas aquí/.test(t)&&/Suscribirme con Mercado Pago/.test(document.querySelector('#p29buy').textContent);}),'antes de pagar: precio en soles, renovación mensual y cómo cancelar');
+const u2=await p.evaluate(()=>JSON.parse(localStorage.getItem('lc_acc')||'{}').email);const uid2=crypto.createHash('sha256').update('lc:'+u2).digest('hex').slice(0,40);
+await p.evaluate(()=>{window.__go=null;});await p.route('**/subscriptions/checkout**',rt=>rt.fulfill({status:200,body:'checkout'}));
+await Promise.all([p.waitForNavigation({timeout:10000}).catch(()=>null),p.click('#p29buy')]);ok(/mercadopago\.com\.pe\/subscriptions\/checkout/.test(p.url()),'el botón lleva al pago seguro de Mercado Pago');
+M=await mp();const id2=Object.keys(M.subs).find(k=>M.subs[k].external_reference===uid2);await mp(`?id=${id2}&status=authorized`);await post('/api/billing?mp=1',{type:'subscription_preapproval',data:{id:id2}},null,sign(id2));
+await p.goto(B+'/');await p.waitForTimeout(1200);await p.evaluate(()=>premSheet());await p.waitForSelector('#p29mpx',{timeout:10000});
+ok(await p.evaluate(()=>/próximo cobro el/.test(document.querySelector('.p29pay').textContent)),'con Premium pagado: próxima fecha de cobro y botón para cancelar');
+p.once('dialog',d=>d.accept());await p.click('#p29mpx');await p.waitForTimeout(1200);ok(await p.evaluate(()=>/Cancelaste tu suscripción/.test(document.querySelector('.p29pay')?.textContent||'')),'cancelar desde la app');
+await p.screenshot({path:OUT+'/pago-mp.png'});ok(!errs.length,'sin errores de consola'+(errs.length?': '+errs[0]:''));
+await b.close();await env('MP_ACCESS_TOKEN','');await env('MP_WEBHOOK_SECRET','');await env('PREMIUM_PRICE_PEN','');
+console.log(`\n${pass} correctas, ${fail} fallidas`);process.exit(fail?1:0);})();

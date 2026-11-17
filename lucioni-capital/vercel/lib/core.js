@@ -63,6 +63,10 @@ export const PLANS = (() => {
   catch { return DEFAULT_PLANS; }
 })();
 export const TRIAL_DAYS = 7;
+/* proveedor de pagos activo: Mercado Pago (Perú y Latinoamérica) o Stripe; ninguno si faltan las claves */
+export const mpOn = () => !!(process.env.MP_ACCESS_TOKEN && +process.env.PREMIUM_PRICE_PEN > 0) && process.env.BILLING_PROVIDER !== 'stripe';
+export const billingProvider = () => mpOn() ? 'mercadopago' : (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID) ? 'stripe' : null;
+export const priceLabel = () => process.env.PREMIUM_PRICE_LABEL || (mpOn() ? `S/ ${(+process.env.PREMIUM_PRICE_PEN).toFixed(2)} al mes` : null);
 export const ANON_AI_DAILY = 5;
 
 /* Estado de suscripción del usuario → plan efectivo. Una prueba vencida vuelve a Free sola, sin borrar nada. */
@@ -70,9 +74,9 @@ export function subOf(u, now = Date.now()) {
   const s = { status: 'none', trialUsed: false, ...(u && u.sub || {}) };
   let plan = 'free';
   if (s.status === 'trialing') { if (s.trialEnd && now >= s.trialEnd && s.source !== 'stripe') s.status = 'expired'; else if (!s.trialEnd || now < s.trialEnd || s.source === 'stripe') plan = 'premium'; }
-  else if (s.source === 'stripe' && s.status === 'active') plan = 'premium';
+  else if ((s.source === 'stripe' || s.source === 'mercadopago') && s.status === 'active') plan = 'premium';
   // pago atrasado o cancelado: conserva Premium solo hasta el final del período ya pagado
-  else if (s.source === 'stripe' && ['past_due', 'canceled'].includes(s.status) && s.periodEnd && now < s.periodEnd) plan = 'premium';
+  else if ((s.source === 'stripe' || s.source === 'mercadopago') && ['past_due', 'canceled'].includes(s.status) && s.periodEnd && now < s.periodEnd) plan = 'premium';
   s.plan = plan; return s;
 }
 export function entitlements(u) {

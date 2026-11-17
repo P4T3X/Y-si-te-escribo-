@@ -2,7 +2,7 @@
 
 Registro real de lo terminado y lo pendiente. "Hecho" significa implementado **y** probado; lo que no se pudo probar se dice.
 
-Producción: https://lucioni-capital.vercel.app · Último despliegue: `dpl_A3HYG69Uf4xCQ7TyrrZwSKP5BX7e` (Fase 10)
+Producción: https://lucioni-capital.vercel.app · Último despliegue: `dpl_68C4SmgC6bbtELKr6GUSGi3XjPvN`
 
 ## Estado final de la plataforma (Fase 10 · 17 nov 2026)
 
@@ -19,7 +19,7 @@ Ver `AUDITORIA.md` e `INVENTARIO_Y_PLAN.md`. Cada fase empezó con una auditorí
 ### 3. Arquitectura objetivo (para escalar)
 - Base de datos relacional (por ejemplo Postgres) para movimientos y documentos cuando crezca el volumen; hoy Blob + JSON por usuario es suficiente para la beta.
 - Separar el cliente en módulos cargados bajo demanda (hoy el HTML pesa ~1,3 MB con todo incluido).
-- Proveedor de datos de mercado con licencia de redistribución, y Stripe activo para cobrar Premium.
+- Proveedor de datos de mercado con licencia de redistribución, y Mercado Pago activo para cobrar Premium en soles.
 
 ### 4. Módulos existentes (antes del master prompt) y 5. módulos nuevos
 | Existían y se ampliaron | Nuevos |
@@ -35,7 +35,7 @@ Ver `AUDITORIA.md` e `INVENTARIO_Y_PLAN.md`. Cada fase empezó con una auditorí
 Mis finanzas, Credit, Patrimonio, Estate, Retirement, Economía global, Intelligence Network, Strategy Lab, Document Vault, Tax & Compliance, Life Planner, Premium con límites en el servidor, internacionalización base, herramientas de bróker, panel de beta. Cada una tiene su archivo de pruebas (ver punto 11).
 
 ### 7. Funciones pendientes
-- Pagos de Premium (Stripe) y correos (Resend): preparados, inactivos sin claves.
+- Pagos de Premium (Mercado Pago, en soles) y correos (Resend): preparados, inactivos sin claves.
 - Datos mensuales de EE.UU. y calendario completo: requieren `FRED_API_KEY`.
 - Traducción completa al inglés de textos dinámicos, herramientas antiguas, Academy y respuestas de la IA; portugués completo.
 - Recordatorios por correo (hoy dentro de la app).
@@ -45,7 +45,7 @@ Mis finanzas, Credit, Patrimonio, Estate, Retirement, Economía global, Intellig
 Nasdaq (precios, velas, fundamentales; públicos y con posible retraso) · SEC EDGAR · FMI (World Economic Outlook) · BIS (tasas de bancos centrales) · Tesoro de EE.UU. (curva) · OCDE (confianza y ciclo) · Reserva Federal (calendario FOMC) · BCE y BCRP (tipos de cambio) · Gemini (IA, clave en el servidor) · Vercel Blob (almacenamiento).
 
 ### 9. Integraciones simuladas o pendientes (identificadas)
-Stripe (preparado, inactivo) · Resend/SMTP (inactivo) · FRED (opcional, inactivo) · Banco Mundial (bloquea los servidores de Vercel; reemplazado por el FMI) · BLS (bloquea servidores) · conexión bancaria (no existe). En las pruebas, las fuentes externas se sustituyen por un servidor local con sus formatos reales; nunca en producción.
+Mercado Pago (preparado y probado con su API simulada; inactivo hasta configurar claves) · Stripe (alternativa para otros países; Stripe no acepta empresas del Perú) · Resend/SMTP (inactivo) · FRED (opcional, inactivo) · Banco Mundial (bloquea los servidores de Vercel; reemplazado por el FMI) · BLS (bloquea servidores) · conexión bancaria (no existe). En las pruebas, las fuentes externas se sustituyen por un servidor local con sus formatos reales; nunca en producción.
 
 ### 10. Problemas conocidos
 - La IA a veces devuelve cifras que no están en los datos: se marcan como "cifra no verificada" en vez de ocultarlas.
@@ -67,7 +67,7 @@ Stripe (preparado, inactivo) · Resend/SMTP (inactivo) · FRED (opcional, inacti
 - Cada módulo nuevo aislado en su propia función (lección aprendida en la Fase 6).
 
 ### 14. Próximos pasos y qué falta para producción
-1. Configurar en Vercel: `RESEND_API_KEY` (correos), Stripe (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL`), `FRED_API_KEY`, `ADMIN_EMAILS` (para ver el panel de la beta) y rotar `GEMINI_API_KEY`.
+1. Configurar en Vercel: `RESEND_API_KEY` (correos), Mercado Pago (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `PREMIUM_PRICE_PEN` y la URL de notificaciones `https://lucioni-capital.vercel.app/api/billing?mp=1` con el evento de suscripciones), `FRED_API_KEY`, `ADMIN_EMAILS` (para ver el panel de la beta) y rotar `GEMINI_API_KEY`.
 2. Revisión legal: política de privacidad, términos, y revisión regulatoria por país; revisión de las reglas fiscales por un contador.
 3. Datos de mercado con licencia antes de un lanzamiento comercial.
 4. Beta cerrada: invitar usuarios, leer comentarios y errores en el panel de administración y corregir.
@@ -483,13 +483,20 @@ Auditoría previa: Premium ya existía (Entrega 1): planes Free y Premium con l�
 ### Desplegado
 `dpl_EPZSqVtNnje6Z9iTo8NDthiTnwDj`.
 
+## Entrega 13 — Ajustes: cabecera y pagos con Mercado Pago (17 nov 2026)
+
+- **Cabecera**: la insignia "Beta" se cortaba debajo de "Lucioni Capital" en pantallas medianas. Ahora va en la misma línea y, por debajo de 1180 px, se oculta para no cortar el nombre (los comentarios siguen disponibles en el pie, en Lucioni Pro y en el perfil). Verificado de 360 a 1920 px.
+- **Pagos**: Stripe no acepta empresas del Perú. Se agregó **Mercado Pago** como proveedor principal: suscripción mensual en soles (API de suscripciones `preapproval`), notificaciones con firma `x-signature` verificada, el estado se consulta siempre a la API de Mercado Pago (el cuerpo de la notificación no decide el plan), cancelación desde la app sin nuevos cobros y con Premium hasta el fin del periodo pagado, y vuelta a Free al vencer sin borrar datos. La pantalla de plan muestra precio en soles, renovación mensual, próximo cobro y cómo cancelar. Stripe se conserva como alternativa para otros países.
+- **Pruebas**: `test/billing-mp.test.cjs` (18 correctas) con la API de Mercado Pago simulada en el servidor de pruebas. La batería completa pasa. **No se probó con una cuenta real de Mercado Pago**: hace falta configurar las claves y hacer un pago de prueba con las credenciales de prueba de Mercado Pago antes de cobrar.
+- Desplegado: `dpl_68C4SmgC6bbtELKr6GUSGi3XjPvN`.
+
 ## Lo que necesita el dueño (variables en Vercel → Settings → Environment Variables)
 
 | Para | Variables | Estado |
 |---|---|---|
 | Rotar la clave de IA | `GEMINI_API_KEY` | Recomendado (se compartió por chat) |
 | Correos de recuperación y verificación | `RESEND_API_KEY` + `MAIL_FROM`, o `SMTP_USER` + `SMTP_PASS` | Sin configurar |
-| Pagos de Premium | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL` (ej. "US$ 7,99 al mes") y el webhook `https://lucioni-capital.vercel.app/api/billing?webhook=1` con los eventos `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` | Sin configurar; antes elegir proveedor según la entidad legal |
+| Pagos de Premium (Perú) | Cuenta de **Mercado Pago** Perú → credenciales de producción: `MP_ACCESS_TOKEN`; en Webhooks, la URL `https://lucioni-capital.vercel.app/api/billing?mp=1` con el evento **Planes y suscripciones**, y su clave secreta en `MP_WEBHOOK_SECRET`; el precio mensual en soles en `PREMIUM_PRICE_PEN` (ej. `29.90`). Stripe queda solo como alternativa para otros países (`BILLING_PROVIDER=stripe`). | Sin configurar |
 | Métricas de producto | `ADMIN_EMAILS` (correos de administradores) | Sin configurar |
 | Límites de planes | `PLAN_LIMITS` (opcional, JSON; incluye `intelDaily`, `docs`, `docMB` y `strategies`) | Valores por defecto |
 | Traducciones | Revisar el inglés y completar el portugués (`src/v41.js`) | Inglés parcial; portugués en vista previa |

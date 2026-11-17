@@ -13,7 +13,7 @@ const FEAT=[
  ['fx','Tipos de cambio de referencia del BCE',()=>true],
  ['tax','Reglas fiscales cargadas en Tax & Compliance',c=>c==='PE'||c==='US'],
  ['bank','Conexión automática con bancos',()=>false,'No disponible en ningún país: registras movimientos a mano o importas el archivo de tu banco.'],
- ['pay','Pago de Premium',()=>null,'Depende de que el proveedor de pagos esté activo para tu país; hoy la prueba de 7 días es gratuita y sin tarjeta.'],
+ ['pay','Pago de Premium con Mercado Pago (en soles)',c=>['PE'].includes(c)?true:null,'Mercado Pago cobra en soles para el Perú; en otros países depende de que haya un proveedor activo. La prueba de 7 días es gratuita y sin tarjeta.'],
  ['ai','Intelligence, Copilot y lectura de documentos con IA',()=>true]];
 const COUNTRY=()=>(ACC&&ACC.country)||store.get('country41','')||'PE';
 const LANGNOW=()=>(ACC&&ACC.lang)||store.get('lang','es')||'es';

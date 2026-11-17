@@ -22,6 +22,11 @@ globalThis.fetch=async(u,o)=>{const s=String(u);
   const text=B.includes('Responde SOLO con JSON')?JSON.stringify(RJ):B.includes('FUENTES')?'Según los datos, la acción cotiza a **$100** [1] y su volatilidad anual es alta [2]. Las noticias recientes hablan de ingresos récord [3].\n- Riesgo: caídas fuertes [2]\n- Objetivo de analistas: $125 [1]':JSON.stringify(globalThis.PLAN);
   return new Response(JSON.stringify({candidates:[{content:{parts:[{text}]}}],usageMetadata:{promptTokenCount:120,candidatesTokenCount:80}}),{status:200,headers:{'content-type':'application/json'}});}
  if(/imf\.org|stats\.bis\.org|home\.treasury\.gov|sdmx\.oecd\.org|federalreserve\.gov|bls\.gov|stlouisfed\.org/.test(s))return macroFix(s);
+ if(s.includes('api.mercadopago.com')){const MP=globalThis.MPS||(globalThis.MPS={n:0,subs:{},last:null});const J=(o,st=200)=>new Response(JSON.stringify(o),{status:st,headers:{'content-type':'application/json'}});
+  if(!String(o?.headers?.authorization||'').startsWith('Bearer TEST-'))return J({message:'invalid token'},401);
+  const m=s.match(/\/preapproval(?:\/([\w-]+))?/);if(!m)return J({message:'not found'},404);
+  if(!m[1]&&o.method==='POST'){const b=JSON.parse(o.body);MP.last=b;const id='pre'+(++MP.n);MP.subs[id]={id,status:'pending',external_reference:b.external_reference,payer_email:b.payer_email,auto_recurring:b.auto_recurring,next_payment_date:new Date(Date.now()+30*864e5).toISOString(),init_point:'https://www.mercadopago.com.pe/subscriptions/checkout?preapproval_id='+id};return J(MP.subs[id],201);}
+  const x=MP.subs[m[1]];if(!x)return J({message:'not found'},404);if(o.method==='PUT'){Object.assign(x,JSON.parse(o.body));return J(x);}return J(x);}
  return _f(u,o);};
 /* Fuentes macro de prueba (formatos idénticos a los reales; valores sintéticos solo para las pruebas) */
 const ISO3=['USA','EURO','CHN','JPN','DEU','GBR','FRA','ITA','ESP','IND','BRA','MEX','CAN','KOR','AUS','CHE','ZAF','CHL','COL','PER','ARG'];
@@ -53,6 +58,8 @@ http.createServer(async(req,res)=>{const u=new URL(req.url,'http://x');res.setHe
  if(u.pathname==='/__setsub'){const c=[];for await(const x of req)c.push(x);const {uid,sub}=JSON.parse(Buffer.concat(c).toString());const p=JSON.parse(store.get(`users/${uid}/profile.json`));p.sub={...p.sub,...sub};store.set(`users/${uid}/profile.json`,JSON.stringify(p));return res.end('{"ok":true}');}
  for(const n of ['academy','billing','event','finance','macro','intel','vault'])if(u.pathname==='/api/'+n)return mod[n](await wrapReq(req),res);
  if(u.pathname==='/__ai')return res.end(String(globalThis.LASTAI||''));
+ if(u.pathname==='/__env'){const k=u.searchParams.get('k'),v=u.searchParams.get('v');if(/^(MP_|PREMIUM_PRICE|BILLING_PROVIDER)/.test(k)){if(v==null||v==='')delete process.env[k];else process.env[k]=v;}return res.end('{}');}
+ if(u.pathname==='/__mp'){const MP=globalThis.MPS||(globalThis.MPS={n:0,subs:{},last:null});const id=u.searchParams.get('id');if(id&&MP.subs[id]){if(u.searchParams.get('status'))MP.subs[id].status=u.searchParams.get('status');if(u.searchParams.get('next'))MP.subs[id].next_payment_date=u.searchParams.get('next');if(u.searchParams.get('ref'))MP.subs[id].external_reference=u.searchParams.get('ref');}return res.end(JSON.stringify(MP));}
  if(u.pathname==='/__intel')return res.end(String(globalThis.LASTINTEL||''));
  if(u.pathname==='/__intelfail'){globalThis.INTEL_FAIL=u.searchParams.get('on')==='1';return res.end('{}');}
  if(u.pathname==='/__mail')return res.end(JSON.stringify(LASTMAIL));

@@ -4,7 +4,7 @@ const EV=AUTH?AUTH.replace(/account$/,'event'):null;
 const tok=()=>{try{return localStorage.getItem('lc_tok')||'';}catch(e){return '';}};
 const plan=()=>member()?((ACC&&ACC.sub&&ACC.sub.plan)||'free'):'anon';
 const LIMITS=['Las respuestas de la IA y parte de la interfaz están en español; el inglés cubre la navegación y los módulos principales, y el portugués es una vista previa.',
- 'El pago de Premium no está activo todavía: la prueba de 7 días es gratuita y sin tarjeta.','No hay conexión automática con bancos: los movimientos se registran a mano o se importan desde el archivo del banco.',
+ 'El pago de Premium con Mercado Pago se activa cuando el dueño configura sus claves; mientras tanto, la prueba de 7 días es gratuita y sin tarjeta.','No hay conexión automática con bancos: los movimientos se registran a mano o se importan desde el archivo del banco.',
  'Los precios de mercado provienen de fuentes públicas y pueden tener minutos de retraso.','Las reglas fiscales cubren Perú y EE.UU. y deben revisarse cada año.','Los recordatorios se muestran dentro de la app; aún no se envían por correo.'];
 const AREAS=[['general','General'],['finanzas','Mis finanzas'],['mercados','Mercados y gráficos'],['intelligence','Intelligence y Copilot'],['strategy','Strategy Lab'],['documentos','Document Vault'],['impuestos','Tax & Compliance'],['metas','Metas y Life Planner'],['premium','Premium'],['idioma','Idioma y formatos'],['error','Algo no funciona'],['otro','Otro']];
 

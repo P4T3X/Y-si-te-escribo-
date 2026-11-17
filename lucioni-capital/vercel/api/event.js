@@ -55,7 +55,7 @@ export default async function handler(req, res) {
   const tr = sum('trial_started', 30), pa = sum('premium_activated', 30);
   /* estado de integraciones: solo si cada variable está configurada (nunca su valor) */
   const E = process.env, health = { almacenamiento: !!E.BLOB_READ_WRITE_TOKEN, sesiones: !!E.AUTH_SECRET, ia_gemini: !!E.GEMINI_API_KEY, correo: !!(E.RESEND_API_KEY || (E.SMTP_USER && E.SMTP_PASS)),
-    pagos_stripe: !!(E.STRIPE_SECRET_KEY && E.STRIPE_PRICE_ID && E.STRIPE_WEBHOOK_SECRET), fred: !!E.FRED_API_KEY, administradores: admins.length, limites_personalizados: !!E.PLAN_LIMITS };
+    pagos_mercadopago: !!(E.MP_ACCESS_TOKEN && E.MP_WEBHOOK_SECRET && +E.PREMIUM_PRICE_PEN > 0), pagos_stripe_otros_paises: !!(E.STRIPE_SECRET_KEY && E.STRIPE_PRICE_ID && E.STRIPE_WEBHOOK_SECRET), fred: !!E.FRED_API_KEY, administradores: admins.length, limites_personalizados: !!E.PLAN_LIMITS };
   const fb = (await Promise.all(days.slice(0, 14).map(dd => readJSON(`feedback/${dd}.json`)))).flat().filter(Boolean).sort((a, b) => b.t - a.t).slice(0, 100);
   const errsAll = {}; (await Promise.all(days.slice(0, 7).map(dd => readJSON(`errors/${dd}.json`)))).forEach(d => Object.entries(d || {}).forEach(([k, e]) => { const x = errsAll[k] || (errsAll[k] = { msg: e.msg, n: 0, views: {}, last: 0 }); x.n += e.n; x.last = Math.max(x.last, e.last || 0); Object.entries(e.views || {}).forEach(([v, n]) => x.views[v] = (x.views[v] || 0) + n); }));
   const errors = Object.values(errsAll).sort((a, b) => b.n - a.n).slice(0, 30);

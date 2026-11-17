@@ -2,7 +2,7 @@
 // Contraseñas con scrypt + sal; sesiones firmadas con HMAC (AUTH_SECRET). Datos en Vercel Blob privado.
 import { put, get, del } from '@vercel/blob';
 import crypto from 'node:crypto';
-import { entitlements, audit, delPrefix, TRIAL_DAYS, PLANS } from '../lib/core.js';
+import { entitlements, audit, delPrefix, TRIAL_DAYS, PLANS, billingProvider, priceLabel } from '../lib/core.js';
 
 const SECRET = process.env.AUTH_SECRET || '';
 const MAX_STATE = 250_000;
@@ -187,7 +187,7 @@ export default async function handler(req, res) {
       await delPrefix(`users/${uid}/`).catch(() => {}); await delPrefix(`usage/${uid}/`).catch(() => {});
       return send(res, 200, { ok: true });
     }
-    if (a === 'plan') return send(res, 200, { sub: entitlements(u), plans: PLANS, trialDays: TRIAL_DAYS, billing: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID), price: process.env.PREMIUM_PRICE_LABEL || null });
+    if (a === 'plan') return send(res, 200, { sub: entitlements(u), plans: PLANS, trialDays: TRIAL_DAYS, billing: !!billingProvider(), provider: billingProvider(), price: priceLabel() });
     if (a === 'trial') {
       const e = entitlements(u);
       if (e.plan === 'premium') return err(res, 409, 'already', 'Ya tienes Premium activo.');
