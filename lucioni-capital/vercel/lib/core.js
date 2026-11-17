@@ -71,7 +71,12 @@ export const ANON_AI_DAILY = 5;
 
 /* Estado de suscripción del usuario → plan efectivo. Una prueba vencida vuelve a Free sola, sin borrar nada. */
 /* Cuentas con Premium permanente (dueño y equipo): correos en la variable PREMIUM_EMAILS de Vercel, separados por comas. Nunca en el código. */
-export const ownerPremium = u => !!(u && u.email) && String(process.env.PREMIUM_EMAILS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean).includes(String(u.email).trim().toLowerCase());
+/* Dueño (CEO): correos en OWNER_EMAILS. Tiene Premium permanente, acceso de administración y el título "CEO". Lo decide el servidor. */
+const emailsOf = k => String(process.env[k] || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+export const isOwner = u => !!(u && u.email) && emailsOf('OWNER_EMAILS').includes(String(u.email).trim().toLowerCase());
+export const adminUids = () => [...new Set([...emailsOf('ADMIN_EMAILS'), ...emailsOf('OWNER_EMAILS')])].map(uidOf);
+export const roleOf = u => isOwner(u) ? 'ceo' : (u && u.email && emailsOf('ADMIN_EMAILS').includes(String(u.email).trim().toLowerCase())) ? 'admin' : 'user';
+export const ownerPremium = u => isOwner(u) || !!(u && u.email) && String(process.env.PREMIUM_EMAILS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean).includes(String(u.email).trim().toLowerCase());
 export function subOf(u, now = Date.now()) {
   if (ownerPremium(u)) return { ...(u.sub || {}), status: 'active', source: 'owner', trialUsed: !!u.sub?.trialUsed, trialEnd: null, periodEnd: null, plan: 'premium' };
   const s = { status: 'none', trialUsed: false, ...(u && u.sub || {}) };

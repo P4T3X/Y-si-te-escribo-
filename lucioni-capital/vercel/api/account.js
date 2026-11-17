@@ -2,7 +2,7 @@
 // Contraseñas con scrypt + sal; sesiones firmadas con HMAC (AUTH_SECRET). Datos en Vercel Blob privado.
 import { put, get, del } from '@vercel/blob';
 import crypto from 'node:crypto';
-import { entitlements, audit, delPrefix, TRIAL_DAYS, PLANS, billingProvider, priceLabel } from '../lib/core.js';
+import { entitlements, audit, delPrefix, TRIAL_DAYS, PLANS, billingProvider, priceLabel, roleOf } from '../lib/core.js';
 
 const SECRET = process.env.AUTH_SECRET || '';
 const MAX_STATE = 250_000;
@@ -31,7 +31,7 @@ const writeJSON = (path, obj) => put(path, JSON.stringify(obj), { access: 'priva
 const CURS = ['USD', 'EUR', 'PEN', 'GBP'], LANGS = ['es', 'en', 'pt'], LEVELS = ['principiante', 'avanzado'];
 const pick = (v, list, d) => list.includes(v) ? v : d;
 const pub = u => ({ email: u.email, name: u.name, risk: u.risk, cur: u.cur, goal: u.goal || '', since: u.since, lang: u.lang || 'es', country: u.country || '', tz: u.tz || '', level: u.level || 'principiante',
-  prefs: { notif: u.prefs?.notif !== false, analytics: u.prefs?.analytics !== false }, sub: entitlements(u) });
+  prefs: { notif: u.prefs?.notif !== false, analytics: u.prefs?.analytics !== false }, sub: entitlements(u), role: roleOf(u), title: roleOf(u) === 'ceo' ? 'CEO' : null });
 /* una prueba por persona: se registra el correo normalizado (sin alias +etiqueta ni puntos en Gmail) aunque la cuenta se borre */
 const trialKey = email => { let [a, d] = String(email).toLowerCase().split('@'); a = a.split('+')[0]; if (/^(gmail|googlemail)\.com$/.test(d)) { a = a.replace(/\./g, ''); d = 'gmail.com'; } return crypto.createHash('sha256').update('lc-trial:' + a + '@' + d).digest('hex').slice(0, 40); };
 function limited(key, max = 6, win = 10 * 60_000) { const now = Date.now(), l = (attempts.get(key) || []).filter(t => now - t < win); if (l.length >= max) return true; l.push(now); attempts.set(key, l); return false; }

@@ -2,7 +2,8 @@
 // Solo guarda conteos diarios por evento y un identificador anónimo cifrado (HMAC) para DAU/WAU/MAU y retención.
 // Nunca guarda correos, nombres, IP, montos ni contenido de conversaciones.
 import crypto from 'node:crypto';
-import { send, err, body, readJSON, writeJSON, verify, bearer, uidOf, limited, ipOf, SECRET } from '../lib/core.js';
+import { list } from '@vercel/blob';
+import { send, err, body, readJSON, writeJSON, verify, bearer, uidOf, limited, ipOf, SECRET, adminUids, entitlements } from '../lib/core.js';
 
 const AREAS = ['general', 'finanzas', 'mercados', 'intelligence', 'strategy', 'documentos', 'impuestos', 'metas', 'premium', 'idioma', 'error', 'otro'];
 const clean = (s, n) => String(s ?? '').replace(/<[^>]*>/g, '').replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
@@ -43,9 +44,18 @@ export default async function handler(req, res) {
     return send(res, 200, { ok: true });
   }
   /* métricas solo para administradores (ADMIN_EMAILS en Vercel, separados por comas) */
-  const uid = verify(bearer(req)), admins = String(process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean).map(uidOf);
+  const uid = verify(bearer(req)), admins = adminUids();
   if (new URL(req.url, 'http://x').searchParams.get('me')) return send(res, 200, { admin: !!uid && admins.includes(uid) });
   if (!uid || !admins.includes(uid)) return err(res, 403, 'forbidden', 'Solo administradores.');
+  /* usuarios registrados (solo administradores): datos de la cuenta, nunca contraseñas ni datos financieros */
+  if (new URL(req.url, 'http://x').searchParams.get('users')) {
+    const cursor = new URL(req.url, 'http://x').searchParams.get('cursor') || undefined;
+    const r = await list({ prefix: 'users/', cursor, limit: 1000 }), paths = r.blobs.map(b => b.pathname || b.url).filter(p => /^users\/[a-f0-9]{40}\/profile\.json$/.test(p));
+    const out = []; for (let i = 0; i < paths.length; i += 8) { const part = await Promise.all(paths.slice(i, i + 8).map(p => readJSON(p))); part.forEach(u => { if (!u || !u.email) return; const s = entitlements(u);
+      out.push({ name: String(u.name || '').slice(0, 60), email: u.email, since: u.since || null, plan: s.plan, source: s.source, status: s.status, country: u.country || '', lang: u.lang || 'es', verified: !!u.verified }); }); }
+    out.sort((a, b) => (b.since || 0) - (a.since || 0));
+    return send(res, 200, { users: out, total: out.length, cursor: r.hasMore ? r.cursor : null, premium: out.filter(x => x.plan === 'premium').length, last7: out.filter(x => x.since && Date.now() - x.since < 7 * 864e5).length });
+  }
   const days = []; for (let i = 0; i < 38; i++) days.push(day(Date.now() - i * 864e5));
   const files = await Promise.all(days.map(dd => readJSON(`analytics/${dd}.json`)));
   const set = i => new Set(Object.keys(files[i]?.u || {}));

@@ -24,6 +24,7 @@ run test/security.test.mjs
 run test/qa-ui.test.cjs
 run test/billing-mp.test.cjs
 run test/owner.test.cjs
+run test/ceo.test.cjs
 run test/chat-sources.test.cjs dark
 run test/video.test.cjs
 fresh; printf "%-34s " "test/perf.test.cjs"; SEL='#hub' node test/perf.test.cjs
