@@ -2,7 +2,93 @@
 
 Registro real de lo terminado y lo pendiente. "Hecho" significa implementado **y** probado; lo que no se pudo probar se dice.
 
-Producción: https://lucioni-capital.vercel.app · Despliegue de esta entrega: `dpl_uqrzod1USVrkrJLFojp46KBT1msv`
+Producción: https://lucioni-capital.vercel.app · Último despliegue: `dpl_A3HYG69Uf4xCQ7TyrrZwSKP5BX7e` (Fase 10)
+
+## Estado final de la plataforma (Fase 10 · 17 nov 2026)
+
+Resumen consolidado de las 10 fases del master prompt "Complete Financial Platform". El detalle de cada entrega está más abajo (Entregas 1 a 12).
+
+### 1. Auditoría inicial
+Ver `AUDITORIA.md` e `INVENTARIO_Y_PLAN.md`. Cada fase empezó con una auditoría de lo existente para ampliarlo en vez de duplicarlo; el resultado está al inicio de cada entrega.
+
+### 2. Arquitectura actual
+- **Cliente**: aplicación de una sola página. `build.sh` aplica los módulos `src/v16.js` … `src/v42.js` (y sus `.css`) sobre la base y genera `vercel/index.html` (web) y `dist/lucioni-capital.html` (artifact). Desde v36 cada módulo vive en su propia función para no pisar funciones globales.
+- **Servidor**: 12 funciones de Vercel (límite del plan): `account`, `ai`, `academy`, `billing`, `event`, `finance`, `intel`, `logo`, `macro`, `market`, `sec`, `vault`, con librerías compartidas en `vercel/lib/` (`core.js` sesiones, límites y planes; `gemini.js` IA; `tax-rules.js` reglas fiscales).
+- **Datos**: Vercel Blob privado. El identificador de usuario sale siempre de la sesión firmada (HMAC), nunca del cuerpo de la petición.
+
+### 3. Arquitectura objetivo (para escalar)
+- Base de datos relacional (por ejemplo Postgres) para movimientos y documentos cuando crezca el volumen; hoy Blob + JSON por usuario es suficiente para la beta.
+- Separar el cliente en módulos cargados bajo demanda (hoy el HTML pesa ~1,3 MB con todo incluido).
+- Proveedor de datos de mercado con licencia de redistribución, y Stripe activo para cobrar Premium.
+
+### 4. Módulos existentes (antes del master prompt) y 5. módulos nuevos
+| Existían y se ampliaron | Nuevos |
+|---|---|
+| Copilot y Deep Research → Intelligence Network | Mis finanzas (Personal Finance, Banking, Credit) |
+| Metas → Life Planner | Patrimonio neto, Estate y Retirement |
+| Backtest → motor único de Strategy Lab | Economía global |
+| Mesa del inversor (impuestos y lotes) y Costo real desde Perú → Tax & Compliance | Intelligence Network (informe de 10 secciones) |
+| Simulador → boleta de bróker avanzada | Strategy Lab |
+| Terminal, Watchtower, i18n de Daily, Premium y prueba de 7 días | Gráfico profesional, Document Vault, Tax & Compliance, Life Planner, panel de beta |
+
+### 6. Funciones completadas (lógica + validación + persistencia + permisos + errores + pruebas)
+Mis finanzas, Credit, Patrimonio, Estate, Retirement, Economía global, Intelligence Network, Strategy Lab, Document Vault, Tax & Compliance, Life Planner, Premium con límites en el servidor, internacionalización base, herramientas de bróker, panel de beta. Cada una tiene su archivo de pruebas (ver punto 11).
+
+### 7. Funciones pendientes
+- Pagos de Premium (Stripe) y correos (Resend): preparados, inactivos sin claves.
+- Datos mensuales de EE.UU. y calendario completo: requieren `FRED_API_KEY`.
+- Traducción completa al inglés de textos dinámicos, herramientas antiguas, Academy y respuestas de la IA; portugués completo.
+- Recordatorios por correo (hoy dentro de la app).
+- Conexión automática con bancos: no disponible (se registra a mano o se importa el archivo del banco).
+
+### 8. Integraciones reales
+Nasdaq (precios, velas, fundamentales; públicos y con posible retraso) · SEC EDGAR · FMI (World Economic Outlook) · BIS (tasas de bancos centrales) · Tesoro de EE.UU. (curva) · OCDE (confianza y ciclo) · Reserva Federal (calendario FOMC) · BCE y BCRP (tipos de cambio) · Gemini (IA, clave en el servidor) · Vercel Blob (almacenamiento).
+
+### 9. Integraciones simuladas o pendientes (identificadas)
+Stripe (preparado, inactivo) · Resend/SMTP (inactivo) · FRED (opcional, inactivo) · Banco Mundial (bloquea los servidores de Vercel; reemplazado por el FMI) · BLS (bloquea servidores) · conexión bancaria (no existe). En las pruebas, las fuentes externas se sustituyen por un servidor local con sus formatos reales; nunca en producción.
+
+### 10. Problemas conocidos
+- La IA a veces devuelve cifras que no están en los datos: se marcan como "cifra no verificada" en vez de ocultarlas.
+- Los datos de mercado públicos pueden tener retraso y cambiar de formato sin aviso.
+- El backtest usa solo precio (sin dividendos) y tiene sesgo de supervivencia, documentado en cada resultado.
+- El HTML inicial es grande; en un celular simulado con CPU lenta, la portada está lista en ~5 s.
+
+### 11. Pruebas realizadas
+`bash test/run-all.sh` ejecuta 21 grupos, **todos en verde** al cierre de esta fase: flujos de API (41), finanzas en el servidor (22), plataforma (27), Pro (41), Mis finanzas (40), Fase 3 (34), bróker (33), Economía global (46), Intelligence servidor (32) e interfaz (19), Strategy Lab (27), Vault servidor (31) e interfaz (29), Life Planner (25), Premium e idiomas (23), **cálculos financieros (21)**, **seguridad (24)**, **QA de interfaz (16)**, fuentes del chat, video y rendimiento. Cubren pruebas unitarias de los motores, integración, permisos, cálculos financieros, errores, responsive (todas las vistas en 360, 768 y 1280 px), rendimiento, seguridad y accesibilidad básica.
+
+### 12. Cambios en la base de datos (rutas en Vercel Blob)
+`users/<uid>/profile.json` · `state.json` (estado sincronizado: cartera, metas con prioridad y dependencias, deudas, jubilación, estrategias `slab`, impuestos `tax`, Life Planner `lp`…) · `fin/meta.json`, `fin/tx-<año>.json`, `fin/estate.json`, `fin/wealth.json` · `intel/consent.json`, `intel/log.json`, `intel/reports.json` · `docs/index.json`, `docs/<id>/v<n>.<ext>` · `audit.json` · `usage/<uid>/<día>.json` · `analytics/<día>.json` · `feedback/<día>.json` · `errors/<día>.json`. Todo lo del usuario se incluye en la exportación y se borra al eliminar la cuenta.
+
+### 13. Decisiones técnicas
+- Reutilizar antes que crear: un solo asistente, un solo motor de metas, un solo motor de backtest y un solo Gemini compartido.
+- Todo lo sensible en el servidor: permisos por módulo, límites de plan, lectura de datos para la IA, validación de archivos por contenido.
+- Sin datos inventados: si una fuente falla se dice; las reglas fiscales que cambian se marcan "por verificar".
+- Límites de plan sin borrar datos al bajar de Premium a Free.
+- Cada módulo nuevo aislado en su propia función (lección aprendida en la Fase 6).
+
+### 14. Próximos pasos y qué falta para producción
+1. Configurar en Vercel: `RESEND_API_KEY` (correos), Stripe (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_PRICE_LABEL`), `FRED_API_KEY`, `ADMIN_EMAILS` (para ver el panel de la beta) y rotar `GEMINI_API_KEY`.
+2. Revisión legal: política de privacidad, términos, y revisión regulatoria por país; revisión de las reglas fiscales por un contador.
+3. Datos de mercado con licencia antes de un lanzamiento comercial.
+4. Beta cerrada: invitar usuarios, leer comentarios y errores en el panel de administración y corregir.
+5. Completar traducciones y medir rendimiento en dispositivos reales.
+
+## Entrega 12 — Complete Financial Platform, Fase 10: QA, optimización y beta (17 nov 2026)
+
+### Hecho
+- **Pruebas de cálculos financieros** (`test/calc.test.cjs`, 21): divisas (conversión, ida y vuelta, triangulación, sin tasa = sin conversión inventada), flujo de caja, intereses y amortización (cuota de libro a TEA 12%), rentabilidad inmobiliaria (bruta, neta, NOI, LTV, cash-on-cash), patrimonio neto en varias monedas, jubilación (tasa real, trayectoria), inflación y simulaciones (Monte Carlo sin volatilidad y backtest con aportes).
+- **Pruebas de seguridad** (`test/security.test.mjs`, 24): sesión obligatoria en todo lo privado, tokens alterados, separación entre usuarios (finanzas, metas, documentos, Intelligence), HTML en nombres, rutas manipuladas, tamaños, JSON roto, métodos, fuerza bruta, administración, comentarios y errores sin datos personales, cabeceras y ausencia de claves en el código.
+- **QA de interfaz** (`test/qa-ui.test.cjs`, 16): las 24 vistas en 360, 768 y 1280 px sin desborde ni errores, accesibilidad básica, ids únicos y herramientas de la beta.
+- **Beta**: insignia Beta y formulario de comentarios (tema, calificación, limitaciones conocidas; sin datos personales), reporte de errores agrupados solo con estadísticas aceptadas, y **panel de administración** (estado de integraciones sin valores secretos, uso y retención, comentarios y errores). El servidor decide quién es administrador (`ADMIN_EMAILS`).
+- **Optimización**: Economía global ya no consulta FMI, BIS y OCDE al abrir la app, solo al entrar a la vista.
+
+### Problemas encontrados y corregidos
+- **Id duplicado `dList`**: Deudas y el Diario de inversión usaban el mismo id; la lista de deudas podía dibujarse en el lugar equivocado. Renombrado a `dbtList`.
+- **Terminal desbordaba 46 px en celulares de 360 px**: etiquetas del mapa de calor y una tabla. Corregido.
+- **Consulta de administrador generaba un error en consola** para usuarios normales (403): ahora existe una consulta que responde sí/no.
+
+### Desplegado
+`dpl_A3HYG69Uf4xCQ7TyrrZwSKP5BX7e`. Verificado en producción: `/api/event?me=1` responde `{admin:false}` sin sesión de administrador.
 
 ## Cómo trabajar
 

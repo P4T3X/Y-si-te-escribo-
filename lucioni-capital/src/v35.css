@@ -36,3 +36,6 @@
 .tk35 .cta.sell{background:var(--down)}.tk35 .cta:disabled{opacity:.45;cursor:not-allowed}
 @media (max-width:900px){.tk35g{grid-template-columns:repeat(2,minmax(0,1fr))}.ch35sym .f{width:100px}.ch35bar{gap:8px}.ch35sk{height:300px}}
 @media (prefers-reduced-motion:reduce){.ch35svg,.ch35c g,.ch35line{animation:none!important}.px35u,.px35d{animation:none!important}}
+
+/* QA: el mapa de calor y las tablas del Terminal no desbordan en pantallas de 360 px */
+.hs30{overflow:hidden}@media (max-width:420px){#terminal .panel{overflow-x:auto}}

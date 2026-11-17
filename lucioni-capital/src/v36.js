@@ -155,7 +155,8 @@ async function rUS(){const B=$('#ecBody');B.innerHTML=`<div class="panel">${sk(6
  if(d.blocked){B.innerHTML=`<div class="panel ec36lock">${ic('stop','',false)}<div><h3>Datos mensuales de EE.UU.: pendiente de activar</h3><p>${esc(d.msg)}</p><p class="note">Activa: inflación general y subyacente, desempleo, empleo no agrícola, tasa de fondos federales, producción industrial, ventas minoristas y confianza del consumidor de la Universidad de Michigan, además del calendario completo de publicaciones. Mientras tanto, los datos anuales de EE.UU. están en Resumen y Comparar países.</p></div></div>`;return;}
  B.innerHTML=`<div class="panel"><div class="ec36g wide">${d.rows.map((r,i)=>r.error?`<div class="ec36k"><small>${esc(r.name)}</small><b>—</b><span class="note">${esc(r.error)}</span></div>`:`<a class="ec36k" style="--i:${i}" href="${esc(r.url)}" target="_blank" rel="noopener"><small>${esc(r.name)}</small><b class="mono">${nf(r.last?.[1],r.unit.includes('miles')?0:1)}${r.unit.startsWith('%')?'%':''}</b><span>${fd(r.last?.[0]?.slice(0,7))} · ${esc(r.unit)}</span>${lines30([{pts:r.series.slice(-36).map(p=>[Date.parse(p[0]),p[1]]),color:'var(--em)'}],{w:300,h:70,labels:false})}</a>`).join('')}</div>${src(d)}</div>`;}
 
-render();
+/* carga diferida: Economía global solo consulta FMI, BIS y OCDE cuando abres la vista */
+let EC_ON=false;const _sv36=setView;setView=function(v){const r=_sv36.apply(this,arguments);if(v==='macro'&&!EC_ON){EC_ON=true;render();}return r;};if(typeof VIEW!=='undefined'&&VIEW==='macro'){EC_ON=true;render();}
 window.EC36={open(tab,c){if(tab)EC.tab=tab;if(c)EC.c=c;store.set('ecT',EC.tab);setView('macro');$$('#ecTabs button').forEach(x=>{x.classList.toggle('on',x.dataset.t===EC.tab);x.setAttribute('aria-selected',x.dataset.t===EC.tab);});render();},EC,fv,read};
 
 /* Lucioni Pro: categoría Economy */
